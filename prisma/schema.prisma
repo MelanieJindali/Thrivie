@@ -1,0 +1,144 @@
+// Thrivie data model. All dates are stored as "YYYY-MM-DD" strings in the
+// user's timezone (see Settings.timezone) so a "day" is unambiguous.
+// All measurements are stored in metric units (kg, km, ml) and converted
+// for display according to Settings.units.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Settings {
+  id             Int      @id @default(1)
+  name           String   @default("")
+  units          String   @default("metric") // metric | imperial
+  timezone       String   @default("UTC")
+  visibleModules String   @default("health,workouts,habits,goals,journal") // comma separated
+  updatedAt      DateTime @updatedAt
+}
+
+model HealthLog {
+  id           String   @id @default(cuid())
+  date         String   @unique
+  weightKg     Float?
+  sleepHours   Float?
+  sleepQuality Int? // 1-5
+  waterMl      Int?
+  mood         Int? // 1-5
+  energy       Int? // 1-5
+  steps        Int?
+  custom       String? // JSON object: { "Resting HR": 58 }
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Workout {
+  id          String     @id @default(cuid())
+  date        String
+  type        String // strength | cardio | mobility | sport | other
+  title       String?
+  durationMin Int
+  intensity   Int        @default(3) // 1-5
+  distanceKm  Float?
+  paceMinKm   Float? // minutes per km
+  notes       String?
+  exercises   Exercise[]
+  createdAt   DateTime   @default(now())
+
+  @@index([date])
+}
+
+model Exercise {
+  id        String  @id @default(cuid())
+  workoutId String
+  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  name      String
+  sets      Int?
+  reps      Int?
+  weightKg  Float?
+  order     Int     @default(0)
+}
+
+model Habit {
+  id           String         @id @default(cuid())
+  name         String
+  emoji        String?
+  frequency    String         @default("daily") // daily | weekly
+  timesPerWeek Int            @default(7)
+  archived     Boolean        @default(false)
+  order        Int            @default(0)
+  createdAt    DateTime       @default(now())
+  checkins     HabitCheckin[]
+  goals        Goal[]
+}
+
+model HabitCheckin {
+  id      String @id @default(cuid())
+  habitId String
+  habit   Habit  @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  date    String
+
+  @@unique([habitId, date])
+  @@index([date])
+}
+
+model Goal {
+  id         String  @id @default(cuid())
+  title      String
+  target     Float
+  unit       String
+  startDate  String
+  deadline   String
+  startValue Float? // for "reach a value" goals such as weight
+  // How progress is measured:
+  //   manual  – sum of GoalProgress entries
+  //   metric  – health metric (steps/water: sum, weight: latest value)
+  //   workout – workouts of linkWorkoutType (or any): count | minutes | distance
+  //   habit   – number of check-ins of linkHabitId
+  linkType        String  @default("manual")
+  linkMetric      String? // steps | water | weight | sleep
+  linkWorkoutType String? // strength | cardio | ... | any
+  linkMeasure     String? // count | minutes | distance
+  linkHabitId     String?
+  habit           Habit?  @relation(fields: [linkHabitId], references: [id], onDelete: SetNull)
+  archived        Boolean @default(false)
+  createdAt       DateTime @default(now())
+  progress        GoalProgress[]
+}
+
+model GoalProgress {
+  id     String  @id @default(cuid())
+  goalId String
+  goal   Goal    @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  date   String
+  value  Float
+  note   String?
+
+  @@index([goalId, date])
+}
+
+model JournalEntry {
+  id        String   @id @default(cuid())
+  date      String
+  content   String
+  mood      Int? // 1-5
+  prompt    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+}
+
+// Cached AI output (daily brief + phrased highlights), one row per day.
+model DailyBrief {
+  date       String   @id
+  brief      String
+  highlights String // JSON array of strings
+  source     String   @default("ai") // ai | fallback
+  createdAt  DateTime @default(now())
+}

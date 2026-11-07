@@ -1,0 +1,67 @@
+import { prisma } from "@/lib/db";
+import { getSettings } from "@/lib/settings";
+import { todayInTz } from "@/lib/dates";
+import { getGoalViews } from "@/lib/queries";
+import { GoalSummary } from "@/components/GoalCard";
+import { Empty } from "@/components/ui";
+import { GoalForm, GoalActions } from "./GoalForm";
+import { goalDisplay } from "@/lib/goalDisplay";
+
+export default async function GoalsPage() {
+  const settings = await getSettings();
+  const today = todayInTz(settings.timezone);
+  const goals = await getGoalViews(today, true);
+  const habits = await prisma.habit.findMany({ where: { archived: false }, select: { id: true, name: true } });
+  const active = goals.filter((g) => !g.archived);
+  const archived = goals.filter((g) => g.archived);
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="h1">Goals</h1>
+        <p className="mt-1 text-sm text-muted">Link a goal to your logs and it updates itself. The thin line marks a steady pace.</p>
+      </div>
+      <section className="space-y-3">
+        {active.length ? (
+          active.map((g) => {
+            const d = goalDisplay(g, settings.units);
+            return (
+              <div key={g.id} className="card">
+                <GoalSummary goal={g} units={settings.units} />
+                <GoalActions
+                  goal={{
+                    id: g.id, title: g.title, target: d.target, unit: g.unit, startDate: g.startDate, deadline: g.deadline,
+                    startValue: d.start, linkType: g.linkType, linkMetric: g.linkMetric, linkWorkoutType: g.linkWorkoutType,
+                    linkMeasure: g.linkMeasure, linkHabitId: g.linkHabitId, archived: g.archived,
+                  }}
+                  habits={habits}
+                  today={today}
+                  units={settings.units}
+                />
+              </div>
+            );
+          })
+        ) : (
+          <Empty>No goals yet. Try “Run 100 km by March”.</Empty>
+        )}
+      </section>
+      <section className="card">
+        <h2 className="h2 mb-3">New goal</h2>
+        <GoalForm habits={habits} today={today} units={settings.units} />
+      </section>
+      {archived.length > 0 && (
+        <section className="card">
+          <h2 className="h2 mb-3">Archived</h2>
+          <ul className="space-y-4">
+            {archived.map((g) => (
+              <li key={g.id}>
+                <GoalSummary goal={g} units={settings.units} />
+                <GoalActions goal={{ ...g, target: goalDisplay(g, settings.units).target, startValue: goalDisplay(g, settings.units).start }} habits={habits} today={today} units={settings.units} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </div>
+  );
+}

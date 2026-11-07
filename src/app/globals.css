@@ -1,0 +1,151 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Calm palette: sage primary, warm neutral surfaces. Tokens flip in dark mode. */
+:root {
+  --bg: #f7f6f2;
+  --surface: #ffffff;
+  --surface-2: #f0eee8;
+  --border: #e6e3db;
+  --text: #2b2d2a;
+  --muted: #74776f;
+  --primary: #5b8a72;
+  --primary-soft: #e3eee7;
+  --primary-text: #ffffff;
+  --accent: #d08c60;
+  --accent-soft: #f8e9dd;
+  --lavender: #8e88c7;
+  --lavender-soft: #eceaf7;
+  --sky: #5d93b8;
+  --sky-soft: #e2eef6;
+  --warn: #c2883b;
+  --warn-soft: #f9eedb;
+  --danger: #c0615a;
+  --danger-soft: #f7e3e1;
+  --chart-grid: #ebe8e0;
+  /* Validated categorical chart slots (fixed order) */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #161816;
+  --surface: #1f221f;
+  --surface-2: #272b27;
+  --border: #323732;
+  --text: #e8eae5;
+  --muted: #9ca197;
+  --primary: #7fb196;
+  --primary-soft: #263a2f;
+  --primary-text: #132018;
+  --accent: #e0a37c;
+  --accent-soft: #3d2c20;
+  --lavender: #aaa4e0;
+  --lavender-soft: #2d2b42;
+  --sky: #82b4d6;
+  --sky-soft: #1f3341;
+  --warn: #ddb070;
+  --warn-soft: #3b301f;
+  --danger: #e08a83;
+  --danger-soft: #402624;
+  --chart-grid: #2c302c;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-text: var(--primary-text);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-lavender: var(--lavender);
+  --color-lavender-soft: var(--lavender-soft);
+  --color-sky: var(--sky);
+  --color-sky-soft: var(--sky-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  -webkit-tap-highlight-color: transparent;
+}
+
+input, select, textarea {
+  font-size: 16px; /* prevents iOS zoom on focus */
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility card {
+    @apply rounded-2xl border border-border bg-surface p-4 sm:p-5;
+  }
+
+@utility input {
+    @apply w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-text outline-none transition placeholder:text-muted/70 focus:border-primary focus:ring-2 focus:ring-primary/20;
+  }
+
+@utility label {
+    @apply mb-1 block text-xs font-medium tracking-wide text-muted uppercase;
+  }
+
+@utility btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+@utility btn-primary {
+    @apply btn bg-primary text-primary-text hover:brightness-105;
+  }
+
+@utility btn-soft {
+    @apply btn bg-primary-soft text-primary hover:brightness-95 dark:hover:brightness-110;
+  }
+
+@utility btn-ghost {
+    @apply btn text-muted hover:bg-surface-2 hover:text-text;
+  }
+
+@utility btn-danger {
+    @apply btn bg-danger-soft text-danger hover:brightness-95;
+  }
+
+@utility chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm transition;
+  }
+
+@utility chip-on {
+    @apply border-primary bg-primary-soft text-primary;
+  }
+
+@utility h1 {
+    @apply text-2xl font-semibold tracking-tight;
+  }
+
+@utility h2 {
+    @apply text-base font-semibold;
+  }
