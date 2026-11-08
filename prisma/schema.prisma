@@ -18,8 +18,8 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL") // pooled connection used by the app
-  directUrl = env("DIRECT_URL") // direct connection used for migrations
+  url       = env("POSTGRES_PRISMA_URL") // pooled connection (set automatically by Vercel → Storage → Neon)
+  directUrl = env("POSTGRES_URL_NON_POOLING") // direct connection for migrations (also set automatically)
 }
 
 // ---------------------------------------------------------------- accounts --

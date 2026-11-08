@@ -9,7 +9,7 @@ export default defineConfig({
     include: ["tests/**/*.test.ts"],
     environment: "node",
     globalSetup: ["tests/setup-db.ts"],
-    env: { DATABASE_URL: TEST_DB, DIRECT_URL: TEST_DB },
+    env: { POSTGRES_PRISMA_URL: TEST_DB, POSTGRES_URL_NON_POOLING: TEST_DB },
     fileParallelism: false,
   },
 });

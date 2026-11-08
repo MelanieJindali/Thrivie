@@ -8,7 +8,7 @@ import { decryptText, encryptText } from "@/lib/crypto";
 //   1. scopedDb (application layer + RLS together), the way the app uses it
 //   2. the database alone, with raw SQL that skips every application check
 
-const url = process.env.DATABASE_URL!;
+const url = process.env.POSTGRES_PRISMA_URL!;
 let raw: Client;
 let alice: string, bob: string;
 

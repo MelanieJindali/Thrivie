@@ -51,7 +51,7 @@ Needs Node.js 20+ and PostgreSQL 14+.
 
 ```bash
 npm install
-cp .env.example .env            # set DATABASE_URL / DIRECT_URL to your local Postgres
+cp .env.example .env            # point POSTGRES_PRISMA_URL / POSTGRES_URL_NON_POOLING at your local Postgres
 npm run gen:key                 # paste the output into ENCRYPTION_KEY in .env
 npm run setup                   # apply migrations (incl. RLS) + create two demo accounts
 npm run dev                     # http://localhost:3000
@@ -76,21 +76,16 @@ Latest results:
 
 ---
 
-## Free hosting (works from an iPad)
+## Free hosting on Vercel (works from an iPad)
 
-**Vercel** (app) + **Neon** (Postgres). Both are free with no credit card. Neon resumes automatically after idling. Supabase works too, but its free projects pause after a week of inactivity and must be resumed by hand.
+Vercel runs the app; a free **Neon** Postgres database, added from inside Vercel, stores the data.
 
-1. **Database:** at [neon.tech](https://neon.tech), sign in with GitHub and create a project. Copy two connection strings:
-   - the **pooled** one → `DATABASE_URL`. Append `&pgbouncer=true`.
-   - the **direct** one (turn off "Connection pooling") → `DIRECT_URL`.
-2. **Code:** merge this branch into `main` on GitHub.
-3. **App:** at [vercel.com](https://vercel.com), choose **Add New → Project** and import the repo. Add these environment variables, then deploy:
-   `DATABASE_URL`, `DIRECT_URL`, `ENCRYPTION_KEY`, `SIGNUP_CODE`, `CRON_SECRET`.
-   - No terminal? Deploy once with just the database variables, then open `https://<your-app>/setup` to generate the keys *in your browser*. Add them in Vercel and redeploy.
-   - The build applies database migrations, including all security policies, automatically.
+1. **Database (one click):** in your Vercel project, open **Storage → Create Database → Neon** (free plan) and connect it to the project for all environments. This adds `POSTGRES_PRISMA_URL` and `POSTGRES_URL_NON_POOLING` automatically.
+2. **Keys:** open `https://<your-app>/setup` (it works before setup is finished). It generates `ENCRYPTION_KEY`, `CRON_SECRET` and `SIGNUP_CODE` in your browser. Add them under **Settings → Environment Variables**.
+3. **Deploy the new version:** merge this branch into `main` on GitHub (or set **Settings → Git → Production Branch** to this branch). Vercel rebuilds, and the build applies the database migrations, including all security policies, automatically.
 4. **Reminders (optional):** at [cron-job.org](https://cron-job.org), call `https://<your-app>/api/cron/reminders?secret=<CRON_SECRET>` **every hour**.
 5. **Email sign-in links (optional):** add `RESEND_API_KEY`, `EMAIL_FROM` and `APP_URL`.
-6. Open your URL in Safari, create your account with the signup code, then tap **Share → Add to Home Screen**.
+6. Open the site in Safari, create your account with the signup code, then tap **Share → Add to Home Screen**.
 
 > **Keep a safe copy of `ENCRYPTION_KEY`.** Without it, encrypted entries can't be read. To rotate it, set the old key as `ENCRYPTION_KEY_PREVIOUS` and the new one as `ENCRYPTION_KEY`.
 
