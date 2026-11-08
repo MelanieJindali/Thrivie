@@ -1,0 +1,285 @@
+// Thrivie data model.
+// - Multi-user: every record belongs to exactly one User (directly via userId,
+//   or through its parent for Exercise / HabitCheckin / GoalProgress). All app
+//   queries go through a per-user scoped client (src/lib/db.ts), so one user's
+//   data is never visible to another.
+// - Dates are "YYYY-MM-DD" strings in the user's timezone (Settings.timezone).
+// - Measurements are stored metric (kg, km, ml) and converted for display.
+// - Runs on SQLite locally (file) or Turso (hosted libSQL) in production.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------- accounts --
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  sessions      Session[]
+  settings      Settings?
+  healthLogs    HealthLog[]
+  workouts      Workout[]
+  habits        Habit[]
+  goals         Goal[]
+  journal       JournalEntry[]
+  attachments   Attachment[]
+  briefs        DailyBrief[]
+  reviews       WeeklyReview[]
+  pushSubs      PushSubscription[]
+  apiTokens     ApiToken[]
+}
+
+model Session {
+  id        String   @id // sha256 of the cookie token (the raw token is never stored)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  key       String // lowercased email
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+}
+
+model Settings {
+  userId         String   @id
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String   @default("")
+  units          String   @default("imperial") // imperial (U.S.) | metric
+  timezone       String   @default("America/New_York")
+  visibleModules String   @default("health,workouts,habits,goals,journal")
+  // Reminders (web push)
+  remindersOn    Boolean  @default(false)
+  reminderHour   Int      @default(20) // local hour 0-23
+  lastReminded   String? // YYYY-MM-DD of the last reminder sent
+  updatedAt      DateTime @updatedAt
+}
+
+// ------------------------------------------------------------------ health --
+
+model HealthLog {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date         String
+  weightKg     Float?
+  sleepHours   Float?
+  sleepQuality Int? // 1-5
+  waterMl      Int?
+  mood         Int? // 1-5
+  energy       Int? // 1-5
+  steps        Int?
+  custom       String? // JSON object: { "Resting HR": 58 }
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, date])
+}
+
+model Workout {
+  id          String     @id @default(cuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date        String
+  type        String // strength | cardio | mobility | sport | other
+  title       String?
+  durationMin Int
+  intensity   Int        @default(3) // 1-5
+  distanceKm  Float?
+  paceMinKm   Float? // minutes per km
+  notes       String?
+  source      String? // e.g. "apple-health" when synced
+  exercises   Exercise[]
+  createdAt   DateTime   @default(now())
+
+  @@index([userId, date])
+}
+
+model Exercise {
+  id        String  @id @default(cuid())
+  workoutId String
+  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  name      String
+  sets      Int?
+  reps      Int?
+  weightKg  Float?
+  order     Int     @default(0)
+}
+
+// ------------------------------------------------------------------ habits --
+
+model Habit {
+  id           String         @id @default(cuid())
+  userId       String
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  emoji        String?
+  frequency    String         @default("daily") // daily | weekly
+  timesPerWeek Int            @default(7)
+  archived     Boolean        @default(false)
+  order        Int            @default(0)
+  createdAt    DateTime       @default(now())
+  checkins     HabitCheckin[]
+  goals        Goal[]
+
+  @@index([userId])
+}
+
+model HabitCheckin {
+  id      String @id @default(cuid())
+  habitId String
+  habit   Habit  @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  date    String
+
+  @@unique([habitId, date])
+  @@index([date])
+}
+
+// ------------------------------------------------------------------- goals --
+
+model Goal {
+  id              String         @id @default(cuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title           String
+  target          Float
+  unit            String
+  startDate       String
+  deadline        String
+  startValue      Float?
+  // manual | metric | workout | habit (see README)
+  linkType        String         @default("manual")
+  linkMetric      String?
+  linkWorkoutType String?
+  linkMeasure     String?
+  linkHabitId     String?
+  habit           Habit?         @relation(fields: [linkHabitId], references: [id], onDelete: SetNull)
+  archived        Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+  progress        GoalProgress[]
+
+  @@index([userId])
+}
+
+model GoalProgress {
+  id     String  @id @default(cuid())
+  goalId String
+  goal   Goal    @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  date   String
+  value  Float
+  note   String?
+
+  @@index([goalId, date])
+}
+
+// ----------------------------------------------------------------- journal --
+
+model JournalEntry {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date        String
+  content     String
+  mood        Int? // 1-5
+  prompt      String?
+  attachments Attachment[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([userId, date])
+}
+
+/// Photos and voice notes attached to journal entries (stored in the DB so
+/// hosting needs no separate file storage; photos are resized on the device).
+model Attachment {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  journalId String?
+  journal   JournalEntry? @relation(fields: [journalId], references: [id], onDelete: Cascade)
+  kind      String // photo | audio
+  mime      String
+  size      Int
+  durationS Float?
+  data      Bytes
+  createdAt DateTime      @default(now())
+
+  @@index([userId])
+  @@index([journalId])
+}
+
+// ---------------------------------------------------------------- AI cache --
+
+model DailyBrief {
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date       String
+  brief      String
+  highlights String // JSON array of {id, text}
+  source     String   @default("ai") // ai | fallback
+  createdAt  DateTime @default(now())
+
+  @@id([userId, date])
+}
+
+model WeeklyReview {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekStart String // Monday, YYYY-MM-DD
+  content   String // JSON: { summary, wins[], focus }
+  source    String   @default("ai")
+  createdAt DateTime @default(now())
+
+  @@id([userId, weekStart])
+}
+
+// ------------------------------------------------- reminders & integrations --
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+/// Personal access tokens for the health-sync endpoint (Apple Shortcuts etc.).
+model ApiToken {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  tokenHash  String    @unique // sha256 of the token
+  prefix     String // first characters, shown in the UI
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+}
+
+/// Server-wide settings generated at runtime (e.g. push keys when not set in env).
+model AppConfig {
+  key   String @id
+  value String
+}
