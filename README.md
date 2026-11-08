@@ -14,44 +14,66 @@ A calm, private, mobile-friendly wellness tracker for **health, workouts, habits
 
 ---
 
-## Quick start
+## Quick start (local)
 
 Requirements: **Node.js 20+** (tested on 22) and npm.
 
 ```bash
 git clone <this repo> thrivie && cd thrivie
 npm install                 # also generates the Prisma client
-cp .env.example .env        # then edit .env (see below)
-npm run setup               # creates the SQLite DB and loads ~30 days of sample data
+cp .env.example .env        # optional keys: see the comments in the file
+npm run setup               # creates the SQLite DB + a demo account with ~30 days of data
 npm run dev                 # http://localhost:3000
 ```
 
-### `.env`
-
-```ini
-DATABASE_URL="file:./thrivie.db"     # SQLite file, relative to prisma/
-ANTHROPIC_API_KEY="sk-ant-..."        # optional – only needed for AI features
-ANTHROPIC_MODEL="claude-sonnet-5-5"   # optional – defaults to claude-sonnet-5-5
-```
-
-Without an API key, everything works except AI Notes Import. The daily brief and highlights fall back to summaries written by code.
+Sign in with **demo@thrivie.app / thrivie-demo**, or create your own account. A new account starts empty. The welcome screen offers sample data if you want to look around first.
 
 ### Useful scripts
 
 | Command | What it does |
 |---|---|
 | `npm run dev` | Start the dev server |
-| `npm run build && npm start` | Production build and server (needed to test the PWA/offline mode) |
-| `npm test` | Run unit tests (Vitest) |
-| `npm run lint` | Type-check the project |
-| `npm run db:seed` | **Wipe** the DB and reload sample data (set `SEED_TZ=America/Chicago` to choose the timezone) |
-| `npm run db:reset` | Recreate the schema from scratch and seed it |
-
-### Install on your phone
-
-Run a production build (`npm run build && npm start`) on a machine your phone can reach, open it in Safari or Chrome, then choose **Share → Add to Home Screen** (iOS) or **Install app** (Android/desktop Chrome). Browsers only allow installing from `https://` or `localhost`, so for phone access use an HTTPS tunnel or reverse proxy.
+| `npm run build && npm start` | Production build and server |
+| `npm test` | Unit and integration tests (Vitest), including the data-isolation tests |
+| `npm run lint` | Type-check |
+| `npm run db:migrate` | Apply database migrations (local file, or Turso when `TURSO_*` is set) |
+| `npm run db:seed` | Reset **only the demo account** with fresh sample data |
+| `npm run db:reset` | Delete the local database and start over |
+| `npm run db:new-migration name` | Create a migration after you change `prisma/schema.prisma` |
+| `npm run vapid` | Generate the keys for push reminders |
 
 ---
+
+## Multiple users and privacy
+
+- **Accounts**: people sign up with email and password. Passwords are hashed with scrypt. Sessions are random tokens in an httpOnly cookie, and only a hash of each token is stored. Repeated wrong passwords are rate-limited.
+- **Every record belongs to one user.** All app queries go through a per-user database client (`src/lib/db.ts`) that adds the signed-in user to every read, update and delete, and stamps them on every new record. A user can't read, change or attach to another user's data even by guessing IDs. `tests/isolation.test.ts` checks this against a real database.
+- **Photos and voice notes** are only served to their owner. Everyone else gets 401 or 404.
+- **Who can sign up**: on a public URL, set `SIGNUP_CODE` so only people you give the code to can create accounts, or set `ALLOW_SIGNUP=false` once everyone has joined.
+- **Deleting**: Settings → *Delete all data* clears your entries. *Delete account* removes the account and everything in it.
+
+## Free hosting: Vercel + Turso (recommended)
+
+Both have free plans that need no credit card. Vercel runs the app. Turso is a hosted SQLite database, so the code is the same as running locally.
+
+1. **Database.** Sign up at [turso.tech](https://turso.tech) and create a database. Copy its URL (`libsql://…`) and create an auth token.
+2. **Create the tables.** On your computer, run:
+   ```bash
+   TURSO_DATABASE_URL="libsql://…" TURSO_AUTH_TOKEN="…" npm run db:migrate
+   ```
+   Run this again whenever a new migration is added.
+3. **Push keys.** Run `npm run vapid` and keep the two keys it prints.
+4. **Deploy.** Push this repo to GitHub, then on [vercel.com](https://vercel.com) choose **Add New → Project** and import it. Add these environment variables:
+   `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `SIGNUP_CODE`, `ANTHROPIC_API_KEY` (optional), `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, and `CRON_SECRET` (any long random string). Then deploy. You get an `https://….vercel.app` URL.
+5. **Reminders schedule.** Vercel's free plan only runs scheduled jobs once a day, so use [cron-job.org](https://cron-job.org) (free). Create a job that calls
+   `https://<your-app>.vercel.app/api/cron/reminders?secret=<CRON_SECRET>` **every hour**. Each user gets at most one reminder a day, at the hour they choose.
+6. Open the URL on your phone, create your account, and add it to your Home Screen.
+
+> Why not keep the SQLite file on the server? Free serverless hosts don't keep files between requests, so a local database file would be wiped. Turso keeps the data. If you'd rather self-host on a small always-on machine (a home server, or a VPS with a disk), plain `npm run build && npm start` with the SQLite file works too. Put it behind HTTPS, for example with Caddy.
+
+### On your phone
+- **iPhone (iOS 16.4+)**: open the URL in Safari, tap **Share → Add to Home Screen**, then open Thrivie from the Home Screen. On iPhone, push reminders only work from the Home Screen app.
+- **Android**: in Chrome, tap **⋮ → Install app**.
 
 ## Features
 
@@ -72,6 +94,29 @@ Run a production build (`npm run build && npm start`) on a machine your phone ca
 - **Highlights**: wins and patterns **computed in code** (streak records, sleep on workout days vs rest days, mood on active days, weekly volume vs last week, distance, steps trend, goals on track). When an API key is set, the AI only rewords these facts. It never invents numbers.
 - **Charts**: weight, sleep and mood trends (7/30/90-day toggle), weekly workout minutes, habit heatmap, goal progress bars.
 - **Daily brief**: 3–5 sentences generated **once per day** from the last 7 days and cached in the database. It covers yesterday's recap, streaks at risk, goal status, and one gentle suggestion. A **Refresh** button regenerates it.
+
+### Weekly review
+Pick any week (Monday to Sunday) to see workouts, sleep, mood, steps, habit completion and goals. **Write my review** produces a short reflection with your wins and one gentle idea for the next week. The numbers are computed in code, the AI only writes the prose, and it's cached per week.
+
+### Photos and voice notes in the journal
+Attach photos (resized on your device to about 1600px JPEG before upload), record voice notes (up to 2 minutes), or **dictate** text with your browser's speech recognition. Attachments are stored in the database, so hosting doesn't need separate file storage, and only you can load them. They aren't included in the JSON backup.
+
+### Reminders
+Settings → **Daily reminder** sends one push notification a day at the hour you pick, and only if you still have habits to check off or haven't logged anything. The message names a streak that's at risk when there is one. **Send a test** checks your device. This needs the VAPID keys and an hourly scheduler (see hosting above).
+
+### Apple Health and Android sync
+Settings → **Health sync** creates a personal token (shown once; you can revoke it any time). Your phone then posts JSON to `/api/ingest`:
+
+```bash
+curl -X POST https://<your-app>/api/ingest \
+  -H "Authorization: Bearer thr_…" -H "Content-Type: application/json" \
+  -d '{"steps": 9120, "sleepHours": 7.4, "weight": 171.6,
+       "workouts": [{"type": "running", "durationMin": 32, "distance": 3.1}]}'
+```
+
+Accepted fields: `date` (defaults to today), `steps`, `sleepHours` or `sleepMinutes`, `weight` (+`weightUnit`), `water` (+`waterUnit`), `mood`, `energy`, `restingHeartRate`, `custom` ({name: number}), and `workouts` (each with `type`, `title`, `durationMin`, `distance`, `distanceUnit`). Apple workout names such as "Running" or "Yoga" are mapped to Thrivie's types. Numbers sent as text (which Shortcuts often does) are accepted. Sending the same day again updates it without duplicating workouts.
+
+**iPhone:** use the Shortcuts app with *Find Health Samples*, then *Calculate Statistics*, then *Get Contents of URL* (POST, JSON). Run it daily with an automation; step-by-step instructions are in the app. **Android:** use Tasker or any Health Connect exporter that can send a web request.
 
 ### AI Notes Import
 Paste text from Apple Notes, Google Keep, Notion and similar apps. It can be messy, abbreviated, and cover several days:
@@ -94,7 +139,7 @@ How it works:
 
 ## Privacy
 
-- Data is stored in `prisma/thrivie.db` on the machine running the server. There are no accounts, analytics or third-party scripts.
+- Data is stored in the server's database (a local SQLite file or your Turso database), separated per account. There are no analytics or third-party scripts.
 - Only two features send data out, both to **Anthropic's Claude API** and both server-side (the API key never reaches the browser):
   - **AI Notes Import**: the text you paste, plus your habit and goal names (used for matching).
   - **Daily brief and highlights**: a compact summary of the last 7 days (averages, counts, habit and goal names, computed highlights). **Journal text is never sent.**

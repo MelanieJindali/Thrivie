@@ -13,7 +13,8 @@
     "setup": "tsx scripts/migrate.ts && tsx prisma/seed.ts",
     "postinstall": "prisma generate",
     "db:migrate": "tsx scripts/migrate.ts",
-    "db:new-migration": "tsx scripts/new-migration.ts"
+    "db:new-migration": "tsx scripts/new-migration.ts",
+    "vapid": "web-push generate-vapid-keys"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.6.0",
