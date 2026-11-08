@@ -99,6 +99,16 @@ export async function rateLimit(key: string, max: number, windowSec: number): Pr
   return true;
 }
 
+/** Check a limit without recording a hit (e.g. only failed sign-ins should count). */
+export async function isRateLimited(key: string, max: number, windowSec: number): Promise<boolean> {
+  const since = new Date(Date.now() - windowSec * 1000);
+  return (await systemDb().rateEvent.count({ where: { key: sha256(`rl:${key}`), createdAt: { gte: since } } })) >= max;
+}
+
+export async function recordRateHit(key: string) {
+  await systemDb().rateEvent.create({ data: { key: sha256(`rl:${key}`) } });
+}
+
 export async function clearRateLimit(key: string) {
   await systemDb().rateEvent.deleteMany({ where: { key: sha256(`rl:${key}`) } });
 }

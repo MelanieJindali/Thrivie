@@ -41,7 +41,7 @@ export function HabitCheckList({ habits, today, showAll = false }: { habits: Hab
             type="button"
             onClick={() => tap(h)}
             aria-pressed={h.checkedToday}
-            className={`group flex min-h-16 w-full items-center gap-3 rounded-2xl border px-3.5 py-2.5 text-left transition duration-200 active:scale-[0.98] ${
+            className={`group flex min-h-16 w-full flex-wrap items-center gap-3 rounded-2xl border px-3.5 py-2.5 text-left transition duration-200 active:scale-[0.98] ${
               h.checkedToday ? "border-transparent bg-sage-soft" : "border-border bg-surface hover:-translate-y-0.5 hover:border-sage hover:shadow-soft"
             }`}
           >

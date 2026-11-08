@@ -87,7 +87,7 @@ export function Nav({ visible, email }: { visible: ModuleKey[]; email: string })
             const active = match(path);
             return (
               <Link key={href} href={href} aria-current={active ? "page" : undefined}
-                className={`relative flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-2xl text-[11px] font-semibold ${active ? "text-text" : "text-muted"}`}>
+                className={`relative flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-2xl text-[11px] text-text ${active ? "font-bold" : "font-medium"}`}>
                 <Icon size={22} strokeWidth={active ? 2.3 : 1.8} aria-hidden />
                 {label}
                 {active && <span aria-hidden className="absolute bottom-1 h-[3px] w-5 rounded-full bg-aqua shadow-[0_0_10px_var(--aqua)]" />}

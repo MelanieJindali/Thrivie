@@ -1,4 +1,5 @@
 "use client";
+import { useOfflineAction } from "@/components/OfflineSync";
 
 import { UndoDeleteButton } from "@/components/Toast";
 import { useState } from "react";
@@ -164,6 +165,7 @@ export function GoalActions({ goal, habits, today, units = "metric" }: { goal: G
   const [mode, setMode] = useState<"none" | "edit" | "progress">("none");
   const [value, setValue] = useState("");
   const [note, setNote] = useState("");
+  const offline = useOfflineAction();
   const { pending, error, message, run } = useAction();
 
   if (mode === "edit")
@@ -182,7 +184,7 @@ export function GoalActions({ goal, habits, today, units = "metric" }: { goal: G
             e.preventDefault();
             const n = numOrNull(value);
             if (n == null) return;
-            run(() => addGoalProgress(goal.id, n, note), { success: "Progress added ✓", onOk: () => { setValue(""); setNote(""); setMode("none"); } });
+            run(() => offline("addGoalProgress", goal.id, n, note), { success: "Progress added ✓", onOk: () => { setValue(""); setNote(""); setMode("none"); } });
           }}
         >
           <input className="input w-24" inputMode="decimal" placeholder={`+ ${goal.unit}`} value={value} onChange={(e) => setValue(e.target.value)} autoFocus />

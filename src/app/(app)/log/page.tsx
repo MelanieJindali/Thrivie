@@ -34,7 +34,7 @@ export default async function LogPage() {
     <div className="space-y-6">
       <PageHeader theme="today" eyebrow="Log" title="What would you like to log?" />
       <Tip id="log" seen={settings.tipsSeen}>Every field is optional. Log just what you know; you can always come back to it.</Tip>
-      <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {TILES.filter((t) => settings.visibleModules.includes(t.module)).map(({ href, label, sub, icon: Icon, tone }) => (
           <li key={href}>
             <Link href={href} className="lift flex min-h-24 items-center gap-4 rounded-3xl border border-border/70 bg-surface p-5 shadow-soft">

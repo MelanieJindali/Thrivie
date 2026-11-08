@@ -5,7 +5,7 @@ import crypto from "node:crypto";
 import { z } from "zod";
 import { systemDb } from "@/lib/db";
 import {
-  clearRateLimit, createSession, destroySession, getPendingMfaUser, hashPassword, markSessionVerified, rateLimit, requireUser, sha256, verifyPassword,
+  clearRateLimit, createSession, isRateLimited, recordRateHit, destroySession, getPendingMfaUser, hashPassword, markSessionVerified, rateLimit, requireUser, sha256, verifyPassword,
 } from "@/lib/auth";
 import { checkPassword } from "@/lib/passwordPolicy";
 import { newRecoveryCodes, newTotpSetup, useRecoveryCode, verifyTotp } from "@/lib/totp";
@@ -65,13 +65,18 @@ export async function signIn(_: AuthState, form: FormData): Promise<AuthState> {
   if (!parsed.success) return { error: parsed.error.issues[0].message, email: keepEmail };
   const { email: e, password: pw } = parsed.data;
   const ip = await clientIp();
-  if (!(await rateLimit(`login-ip:${ip}`, 30, 900)) || !(await rateLimit(`login:${e}`, 8, 900))) {
+  // Only failed attempts count, so people sharing a network don't lock each other out.
+  if ((await isRateLimited(`login-ip:${ip}`, 30, 900)) || (await isRateLimited(`login:${e}`, 8, 900))) {
     return { error: "Too many attempts. Please wait 15 minutes and try again.", email: e };
   }
   const user = await systemDb().user.findUnique({ where: { email: e } });
   // Constant work whether or not the account exists, and the same message.
   const ok = user ? await verifyPassword(pw, user.passwordHash) : (await verifyPassword(pw, DUMMY_HASH), false);
-  if (!user || !ok) return { error: SAME_MESSAGE, email: e };
+  if (!user || !ok) {
+    await recordRateHit(`login-ip:${ip}`);
+    await recordRateHit(`login:${e}`);
+    return { error: SAME_MESSAGE, email: e };
+  }
   await clearRateLimit(`login:${e}`);
   await createSession(user.id, !user.totpEnabled);
   if (user.totpEnabled) redirect(`/login/verify?next=${encodeURIComponent(safeNext(form.get("next")))}`);

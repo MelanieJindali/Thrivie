@@ -152,14 +152,14 @@ export function TrendGroup({ specs, title = "Trends", initial = 30 }: { specs: T
   const [days, setDays] = useState(initial);
   return (
     <section className="card">
-      <div className="mb-4 flex items-center justify-between gap-2">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h2 className="h2 flex items-center gap-2.5">
           <span className="grid h-8 w-8 place-items-center rounded-xl bg-rose-soft text-rose"><LineIcon size={16} /></span>
           {title}
         </h2>
         <RangeToggle value={days} onChange={setDays} />
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {specs.map((s) => (
           <TrendChart key={s.key} spec={s} days={days} />
         ))}

@@ -5,6 +5,7 @@ import { rateLimit, sha256 } from "@/lib/auth";
 import { loadSettings } from "@/lib/settings";
 import { todayInTz } from "@/lib/dates";
 import { IngestSchema, normalizeIngest } from "@/lib/ingest";
+import { readJson, tooLarge } from "@/lib/body";
 
 export const runtime = "nodejs";
 
@@ -17,7 +18,9 @@ export async function POST(req: Request) {
   if (!row) return NextResponse.json({ error: "Missing or invalid token." }, { status: 401 });
 
   if (!(await rateLimit(`ingest:${row.id}`, 120, 3600))) return NextResponse.json({ error: "Too many requests. Try again later." }, { status: 429 });
-  const body = IngestSchema.safeParse(await req.json().catch(() => null));
+  const raw = await readJson(req, 64_000);
+  if (raw === undefined) return tooLarge("64 KB");
+  const body = IngestSchema.safeParse(raw);
   if (!body.success) {
     const i = body.error.issues[0];
     return NextResponse.json({ error: `Invalid body (${i.path.join(".") || "root"}: ${i.message}).` }, { status: 400 });

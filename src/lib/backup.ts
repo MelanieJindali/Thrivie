@@ -6,13 +6,14 @@ import { kgToDisplay, kmToDisplay, mlToDisplay, paceToDisplay, distanceUnit, wei
 export const BACKUP_VERSION = 1;
 
 export async function exportAll(db: ScopedDb, userId: string) {
-  const [settings, healthLogs, workouts, habits, goals, journal] = await Promise.all([
+  const [settings, healthLogs, workouts, habits, goals, journal, aliases] = await Promise.all([
     db.settings.findUnique({ where: { userId } }),
     db.healthLog.findMany({ orderBy: { date: "asc" } }),
     db.workout.findMany({ include: { exercises: { orderBy: { order: "asc" } } }, orderBy: { date: "asc" } }),
     db.habit.findMany({ include: { checkins: { orderBy: { date: "asc" } } }, orderBy: { order: "asc" } }),
     db.goal.findMany({ include: { progress: { orderBy: { date: "asc" } } } }),
     db.journalEntry.findMany({ orderBy: { date: "asc" } }),
+    db.alias.findMany({ select: { kind: true, alias: true, target: true } }),
   ]);
   return {
     app: "thrivie",
@@ -25,6 +26,7 @@ export async function exportAll(db: ScopedDb, userId: string) {
     habits: habits.map(({ checkins, createdAt, ...h }) => ({ ...h, createdAt: createdAt.toISOString(), checkins: checkins.map((c) => c.date) })),
     goals: goals.map(({ progress, createdAt, ...g }) => ({ ...g, progress: progress.map(({ id, goalId, ...p }) => p) })),
     journal: journal.map(({ createdAt, updatedAt, ...j }) => ({ ...j, createdAt: createdAt.toISOString() })),
+    aliases,
   };
 }
 
@@ -125,6 +127,7 @@ export const BackupSchema = z.object({
     progress: z.array(z.object({ date: d, value: z.number(), note: z.string().nullable().optional() })).default([]),
   })).default([]),
   journal: z.array(z.object({ date: d, content: z.string(), mood: n, prompt: z.string().nullable().optional() })).default([]),
+  aliases: z.array(z.object({ kind: z.enum(["exercise", "habit", "workout", "metric"]), alias: z.string().min(1).max(40), target: z.string().min(1).max(60) })).max(500).default([]),
 });
 
 /** Replace all data with the backup contents (atomic). */
@@ -174,6 +177,8 @@ export async function restoreBackup(db: ScopedDb, userId: string, raw: unknown) 
         progress: { create: g.progress.map((p) => ({ date: p.date, value: p.value, note: p.note ?? null })) },
       } });
     }
+    await tx.alias.deleteMany();
+    for (const a of b.aliases) await tx.alias.create({ data: { userId, ...a } });
     for (const j of b.journal) {
       await tx.journalEntry.create({ data: { userId, date: j.date, content: j.content, mood: int(j.mood), prompt: j.prompt ?? null } });
     }

@@ -8,7 +8,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // 3. Redirects visitors without a session cookie to /login. The session itself
 //    is validated on the server for every page, action and API call.
 
-const PUBLIC = ["/login", "/signup", "/privacy", "/api/ingest", "/api/cron", "/manifest.webmanifest", "/sw.js", "/icon.svg", "/icons", "/apple-icon", "/offline"];
+const PUBLIC = ["/robots.txt", "/setup", "/login", "/signup", "/privacy", "/api/ingest", "/api/cron", "/manifest.webmanifest", "/sw.js", "/icon.svg", "/icons", "/apple-icon", "/offline"];
 const TOKEN_APIS = ["/api/ingest", "/api/cron"]; // bearer-token auth, no cookies
 const SESSION_COOKIES = ["__Host-thrivie", "thrivie_session"];
 

@@ -1,4 +1,5 @@
 "use client";
+import { useOfflineAction } from "@/components/OfflineSync";
 
 import { useEffect, useState } from "react";
 import { Plus, X } from "lucide-react";
@@ -49,6 +50,7 @@ export function HealthForm({
   const [notes, setNotes] = useState("");
   const [custom, setCustom] = useState<{ k: string; v: string }[]>([]);
   const { pending, error, message, run } = useAction();
+  const offline = useOfflineAction();
   const existing = prefill[date];
 
   // Load the selected day's values so editing is the same as logging.
@@ -77,7 +79,7 @@ export function HealthForm({
     }
     run(
       () =>
-        saveHealthLog({
+        offline("saveHealthLog", {
           date,
           weight: numOrNull(weight),
           sleepHours: numOrNull(sleep),

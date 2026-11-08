@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { systemDb } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
+import { readJson } from "@/lib/body";
 import { getVapidKeys } from "@/lib/push";
 
 export const runtime = "nodejs";
@@ -16,7 +17,7 @@ export async function GET() {
 export async function POST(req: Request) {
   const auth = await apiUser();
   if (!auth) return NextResponse.json({ error: "Please sign in." }, { status: 401 });
-  const sub = Sub.safeParse(await req.json().catch(() => null));
+  const sub = Sub.safeParse(await readJson(req, 8_000));
   if (!sub.success) return NextResponse.json({ error: "Invalid subscription." }, { status: 400 });
   // A device that switches accounts should only notify the current account.
   await systemDb().pushSubscription.deleteMany({ where: { endpoint: sub.data.endpoint } });
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   const auth = await apiUser();
   if (!auth) return NextResponse.json({ error: "Please sign in." }, { status: 401 });
-  const { endpoint } = (await req.json().catch(() => ({}))) as { endpoint?: string };
+  const { endpoint } = ((await readJson(req, 8_000)) ?? {}) as { endpoint?: string };
   if (endpoint) await auth.db.pushSubscription.deleteMany({ where: { endpoint } });
   return NextResponse.json({ ok: true });
 }

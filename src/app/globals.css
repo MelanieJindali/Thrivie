@@ -33,7 +33,7 @@
   --aqua: #2EF2E0;
   --ring-1: #0B8A80;  --ring-2: #7461D6;  --ring-3: #D2553A;
   --glow: rgb(46 242 224 / 0.45);
-  --glass: rgb(255 253 249 / 0.66);
+  --glass: rgb(255 253 249 / 0.84);
   --glass-edge: rgb(255 255 255 / 0.75);
   --chart-grid: #EAE2D5;
   --series-1: #00897B; --series-2: #D2553A; --series-3: #6A55C9; --series-4: #B8820E; --series-5: #3D7AB8;
@@ -67,7 +67,7 @@
   --gold-bright: #D4B26A;  --gold-ink: #D4B26A;  --gold-soft: #352D1C;
   --ring-1: #2EF2E0;  --ring-2: #B9A6F7;  --ring-3: #FF8A73;
   --glow: rgb(46 242 224 / 0.55);
-  --glass: rgb(22 38 47 / 0.62);
+  --glass: rgb(22 38 47 / 0.88);
   --glass-edge: rgb(237 230 218 / 0.12);
   --chart-grid: #22343D;
   --series-1: #1FA898; --series-2: #E0603F; --series-3: #8C78E8; --series-4: #B88A1C; --series-5: #4F8FD0;
@@ -149,6 +149,9 @@ body {
   background-attachment: fixed;
 }
 input, select, textarea { font-size: 16px; } /* no iOS zoom on focus */
+:where(.grid) > * { min-width: 0; } /* grid items may shrink; long words wrap instead of overflowing */
+:where(h1, h2, h3, p, li, dd, dt, a, label, span, button) { overflow-wrap: break-word; }
+:where(code, kbd) { overflow-wrap: anywhere; }
 :focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; border-radius: 12px; }
 .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
 

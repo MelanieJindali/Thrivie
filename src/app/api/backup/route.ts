@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { logError } from "@/lib/log";
+import { readJson } from "@/lib/body";
 import { revalidatePath } from "next/cache";
 import { ZodError } from "zod";
 import { restoreBackup } from "@/lib/backup";
@@ -11,12 +12,8 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   const auth = await apiUser();
   if (!auth) return NextResponse.json({ error: "Please sign in." }, { status: 401 });
-  let json: unknown;
-  try {
-    json = await req.json();
-  } catch {
-    return NextResponse.json({ error: "That file isn't valid JSON." }, { status: 400 });
-  }
+  const json = await readJson(req, 10_000_000);
+  if (json === undefined) return NextResponse.json({ error: "That file isn't a valid backup or is larger than 10 MB." }, { status: 400 });
   try {
     const counts = await restoreBackup(auth.db, auth.user.id, json);
     revalidatePath("/", "layout");

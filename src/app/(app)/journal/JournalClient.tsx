@@ -1,4 +1,5 @@
 "use client";
+import { useOfflineAction } from "@/components/OfflineSync";
 
 import { UndoDeleteButton } from "@/components/Toast";
 import { useEffect, useState } from "react";
@@ -19,6 +20,7 @@ export function JournalComposer({ today, initial, onDone, compact = false }: { t
   const [mood, setMood] = useState<number | null>(initial?.mood ?? null);
   const [media, setMedia] = useState<PendingMedia[]>([]);
   const { pending, error, message, run } = useAction();
+  const offline = useOfflineAction();
   const fallbackText = media.some((m) => m.kind === "photo") ? "📷 Photo entry" : media.length ? "🎙️ Voice note" : "";
   return (
     <form
@@ -28,7 +30,7 @@ export function JournalComposer({ today, initial, onDone, compact = false }: { t
         e.preventDefault();
         run(
           async () => {
-            const r = await saveJournal({ id: initial?.id, date, content: content.trim() || fallbackText, mood, prompt });
+            const r = media.length ? await saveJournal({ id: initial?.id, date, content: content.trim() || fallbackText, mood, prompt }) : await offline("saveJournal", { id: initial?.id, date, content: content.trim() || fallbackText, mood, prompt });
             if (r.ok && r.id && media.length) {
               try {
                 await uploadMedia(r.id, media);

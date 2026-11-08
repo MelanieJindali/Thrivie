@@ -60,7 +60,7 @@ export default async function TodayPage() {
         <h1 className="h1 mt-2">{greeting(settings.name, settings.timezone)}<span className="text-gold-bright">.</span></h1>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2"><DailyBrief brief={brief.brief} hasData={hasAnyData} /></div>
         <section className="card flex flex-col items-center justify-center gap-3 text-center" aria-labelledby="today-progress">
           <h2 id="today-progress" className="sr-only">Today&apos;s progress</h2>
@@ -86,7 +86,7 @@ export default async function TodayPage() {
         </div>
       )}
 
-      <nav aria-label="Quick log" className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fit,minmax(11rem,1fr))]">
+      <nav aria-label="Quick log" className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,9.5rem),1fr))] gap-3">
         {quick.map(({ href, label, icon: Icon, tone }) => (
           <Link key={href} href={href} className="lift flex min-h-20 items-center gap-3 rounded-3xl border border-border/70 bg-surface p-4 text-sm font-bold shadow-soft">
             <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${tone}`} aria-hidden><Icon size={20} /></span>
@@ -96,10 +96,10 @@ export default async function TodayPage() {
         {vis.includes("workouts") && lastWorkout && <RepeatLastButton summary={describeWorkout(lastWorkout, u)} />}
       </nav>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {vis.includes("habits") && (
           <section className="card" aria-labelledby="habits-h">
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <h2 id="habits-h" className="h2 flex items-center gap-2.5">
                 <span className="grid h-8 w-8 place-items-center rounded-xl bg-sage-soft text-sage-ink" aria-hidden><CircleCheck size={16} /></span>
                 Today&apos;s habits
@@ -117,7 +117,7 @@ export default async function TodayPage() {
           </h2>
           {vis.includes("health") &&
             (todayLog ? (
-              <dl className="grid grid-cols-3 gap-2.5 text-center">
+              <dl className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,6rem),1fr))] gap-2.5 text-center">
                 <Stat tone="bg-ocean-soft" label="Sleep" value={todayLog.sleepHours != null ? `${todayLog.sleepHours}h` : "—"} />
                 <Stat tone="bg-iris-soft" label="Mood" value={todayLog.mood ? MOOD_EMOJI[todayLog.mood - 1] : "—"} />
                 <Stat tone="bg-gold-soft" label="Energy" value={todayLog.energy ? ENERGY_EMOJI[todayLog.energy - 1] : "—"} />
@@ -141,7 +141,7 @@ export default async function TodayPage() {
 
       {vis.includes("goals") && topGoals.length > 0 && (
         <section className="card" aria-labelledby="goals-h">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <h2 id="goals-h" className="h2">Goals</h2>
             <Link href="/goals" className="inline-flex min-h-10 items-center text-xs font-bold text-primary">Manage <ChevronRight size={14} aria-hidden /></Link>
           </div>
@@ -189,7 +189,7 @@ function Stat({ label, value, tone }: { label: string; value: string; tone: stri
   return (
     <div className={`rounded-2xl px-2 py-3 ${tone}`}>
       <dd className="font-display text-lg font-semibold">{value}</dd>
-      <dt className="mt-0.5 text-[10px] font-bold tracking-[0.12em] text-muted uppercase">{label}</dt>
+      <dt className="mt-0.5 text-[10px] font-bold tracking-[0.12em] text-text uppercase">{label}</dt>
     </div>
   );
 }

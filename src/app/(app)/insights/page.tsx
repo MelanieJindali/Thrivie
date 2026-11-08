@@ -51,7 +51,7 @@ export default async function InsightsPage() {
 
       {vis.includes("health") && <TrendGroup specs={healthTrendSpecs(health, today, u, ["weight", "sleep", "mood", "energy", "steps", "water"])} />}
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         {vis.includes("workouts") && (
           <section className="card" aria-labelledby="vol">
             <h2 id="vol" className="h2 mb-4 flex items-center gap-2.5"><span className="grid h-8 w-8 place-items-center rounded-xl bg-ocean-soft text-ocean" aria-hidden><Dumbbell size={16} /></span>Weekly workout minutes</h2>
@@ -60,7 +60,7 @@ export default async function InsightsPage() {
         )}
         {vis.includes("habits") && habits.length > 0 && (
           <section className="card" aria-labelledby="hm">
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <h2 id="hm" className="h2 flex items-center gap-2.5"><span className="grid h-8 w-8 place-items-center rounded-xl bg-sage-soft text-sage-ink" aria-hidden><CalendarDays size={16} /></span>Habit consistency</h2>
               <Link href="/habits" className="inline-flex min-h-10 items-center text-xs font-bold text-primary">Details <ChevronRight size={14} aria-hidden /></Link>
             </div>

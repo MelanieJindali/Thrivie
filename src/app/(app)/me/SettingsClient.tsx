@@ -82,7 +82,7 @@ export function ThemePicker() {
     document.documentElement.classList.toggle("dark", dark);
   };
   return (
-    <div className="flex gap-2">
+    <div className="flex flex-wrap gap-2">
       {["system", "light", "dark"].map((t) => (
         <button key={t} type="button" className={`chip capitalize ${theme === t ? "chip-on" : ""}`} onClick={() => apply(t)}>
           {t === "system" ? "Match device" : t}
