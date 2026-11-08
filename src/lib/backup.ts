@@ -1,0 +1,182 @@
+import "server-only";
+import { z } from "zod";
+import { prisma } from "./db";
+import { kgToDisplay, kmToDisplay, mlToDisplay, paceToDisplay, distanceUnit, weightUnit, waterUnit, type Units } from "./units";
+
+export const BACKUP_VERSION = 1;
+
+export async function exportAll() {
+  const [settings, healthLogs, workouts, habits, goals, journal] = await Promise.all([
+    prisma.settings.findUnique({ where: { id: 1 } }),
+    prisma.healthLog.findMany({ orderBy: { date: "asc" } }),
+    prisma.workout.findMany({ include: { exercises: { orderBy: { order: "asc" } } }, orderBy: { date: "asc" } }),
+    prisma.habit.findMany({ include: { checkins: { orderBy: { date: "asc" } } }, orderBy: { order: "asc" } }),
+    prisma.goal.findMany({ include: { progress: { orderBy: { date: "asc" } } } }),
+    prisma.journalEntry.findMany({ orderBy: { date: "asc" } }),
+  ]);
+  return {
+    app: "thrivie",
+    version: BACKUP_VERSION,
+    exportedAt: new Date().toISOString(),
+    note: "Measurements are stored in metric (kg, km, ml, min/km) regardless of display units.",
+    settings: settings && { name: settings.name, units: settings.units, timezone: settings.timezone, visibleModules: settings.visibleModules },
+    healthLogs: healthLogs.map(({ createdAt, updatedAt, ...h }) => ({ ...h, custom: h.custom ? JSON.parse(h.custom) : null })),
+    workouts: workouts.map(({ createdAt, exercises, ...w }) => ({ ...w, exercises: exercises.map(({ id, workoutId, ...e }) => e) })),
+    habits: habits.map(({ checkins, createdAt, ...h }) => ({ ...h, createdAt: createdAt.toISOString(), checkins: checkins.map((c) => c.date) })),
+    goals: goals.map(({ progress, createdAt, ...g }) => ({ ...g, progress: progress.map(({ id, goalId, ...p }) => p) })),
+    journal: journal.map(({ createdAt, updatedAt, ...j }) => ({ ...j, createdAt: createdAt.toISOString() })),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// CSV
+// ---------------------------------------------------------------------------
+
+function csvCell(v: unknown): string {
+  if (v == null) return "";
+  const s = typeof v === "object" ? JSON.stringify(v) : String(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+export function toCsv(rows: Record<string, unknown>[], columns: string[]): string {
+  return [columns.join(","), ...rows.map((r) => columns.map((c) => csvCell(r[c])).join(","))].join("\r\n") + "\r\n";
+}
+
+export const CSV_TABLES = ["health", "workouts", "exercises", "habits", "checkins", "goals", "goal_progress", "journal"] as const;
+export type CsvTable = (typeof CSV_TABLES)[number];
+
+/** CSV export in the user's display units (column names include the unit). */
+export async function exportCsv(table: CsvTable, u: Units): Promise<string> {
+  const wu = weightUnit(u);
+  switch (table) {
+    case "health": {
+      const rows = await prisma.healthLog.findMany({ orderBy: { date: "asc" } });
+      const cols = ["date", `weight_${wu}`, "sleep_hours", "sleep_quality", `water_${waterUnit(u)}`, "mood", "energy", "steps", "custom", "notes"];
+      return toCsv(rows.map((r) => ({
+        date: r.date, [`weight_${wu}`]: r.weightKg != null ? kgToDisplay(r.weightKg, u) : null, sleep_hours: r.sleepHours, sleep_quality: r.sleepQuality,
+        [`water_${waterUnit(u)}`]: r.waterMl != null ? mlToDisplay(r.waterMl, u) : null, mood: r.mood, energy: r.energy, steps: r.steps, custom: r.custom, notes: r.notes,
+      })), cols);
+    }
+    case "workouts": {
+      const rows = await prisma.workout.findMany({ orderBy: { date: "asc" } });
+      const du = distanceUnit(u);
+      const cols = ["id", "date", "type", "title", "duration_min", "intensity", `distance_${du}`, `pace_min_per_${du}`, "notes"];
+      return toCsv(rows.map((r) => ({
+        id: r.id, date: r.date, type: r.type, title: r.title, duration_min: r.durationMin, intensity: r.intensity,
+        [`distance_${du}`]: r.distanceKm != null ? kmToDisplay(r.distanceKm, u) : null, [`pace_min_per_${du}`]: r.paceMinKm != null ? paceToDisplay(r.paceMinKm, u) : null, notes: r.notes,
+      })), cols);
+    }
+    case "exercises": {
+      const rows = await prisma.exercise.findMany({ include: { workout: { select: { date: true } } }, orderBy: [{ workoutId: "asc" }, { order: "asc" }] });
+      return toCsv(rows.map((r) => ({ workout_id: r.workoutId, date: r.workout.date, name: r.name, sets: r.sets, reps: r.reps, [`weight_${wu}`]: r.weightKg != null ? kgToDisplay(r.weightKg, u) : null })), ["workout_id", "date", "name", "sets", "reps", `weight_${wu}`]);
+    }
+    case "habits": {
+      const rows = await prisma.habit.findMany({ orderBy: { order: "asc" } });
+      return toCsv(rows.map((r) => ({ id: r.id, name: r.name, emoji: r.emoji, frequency: r.frequency, times_per_week: r.timesPerWeek, archived: r.archived })), ["id", "name", "emoji", "frequency", "times_per_week", "archived"]);
+    }
+    case "checkins": {
+      const rows = await prisma.habitCheckin.findMany({ include: { habit: { select: { name: true } } }, orderBy: { date: "asc" } });
+      return toCsv(rows.map((r) => ({ date: r.date, habit: r.habit.name, habit_id: r.habitId })), ["date", "habit", "habit_id"]);
+    }
+    case "goals": {
+      const rows = await prisma.goal.findMany();
+      return toCsv(rows.map((r) => ({ id: r.id, title: r.title, target: r.target, unit: r.unit, start_date: r.startDate, deadline: r.deadline, start_value: r.startValue, link_type: r.linkType, link_metric: r.linkMetric, link_workout_type: r.linkWorkoutType, link_measure: r.linkMeasure, link_habit_id: r.linkHabitId, archived: r.archived })),
+        ["id", "title", "target", "unit", "start_date", "deadline", "start_value", "link_type", "link_metric", "link_workout_type", "link_measure", "link_habit_id", "archived"]);
+    }
+    case "goal_progress": {
+      const rows = await prisma.goalProgress.findMany({ include: { goal: { select: { title: true } } }, orderBy: { date: "asc" } });
+      return toCsv(rows.map((r) => ({ date: r.date, goal: r.goal.title, goal_id: r.goalId, value: r.value, note: r.note })), ["date", "goal", "goal_id", "value", "note"]);
+    }
+    case "journal": {
+      const rows = await prisma.journalEntry.findMany({ orderBy: { date: "asc" } });
+      return toCsv(rows.map((r) => ({ date: r.date, mood: r.mood, prompt: r.prompt, content: r.content })), ["date", "mood", "prompt", "content"]);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Restore
+// ---------------------------------------------------------------------------
+
+const d = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const n = z.number().finite().nullable().optional();
+
+export const BackupSchema = z.object({
+  app: z.literal("thrivie"),
+  version: z.number().int().max(BACKUP_VERSION),
+  settings: z.object({ name: z.string(), units: z.string(), timezone: z.string(), visibleModules: z.string() }).nullable().optional(),
+  healthLogs: z.array(z.object({
+    date: d, weightKg: n, sleepHours: n, sleepQuality: n, waterMl: n, mood: n, energy: n, steps: n,
+    custom: z.record(z.string(), z.number()).nullable().optional(), notes: z.string().nullable().optional(),
+  })).default([]),
+  workouts: z.array(z.object({
+    id: z.string().optional(), date: d, type: z.string(), title: z.string().nullable().optional(), durationMin: z.number().int().positive(),
+    intensity: z.number().int().min(1).max(5).default(3), distanceKm: n, paceMinKm: n, notes: z.string().nullable().optional(),
+    exercises: z.array(z.object({ name: z.string(), sets: n, reps: n, weightKg: n, order: z.number().int().optional() })).default([]),
+  })).default([]),
+  habits: z.array(z.object({
+    id: z.string(), name: z.string(), emoji: z.string().nullable().optional(), frequency: z.string(), timesPerWeek: z.number().int(),
+    archived: z.boolean().default(false), order: z.number().int().default(0), checkins: z.array(d).default([]),
+  })).default([]),
+  goals: z.array(z.object({
+    id: z.string(), title: z.string(), target: z.number(), unit: z.string(), startDate: d, deadline: d, startValue: n,
+    linkType: z.string(), linkMetric: z.string().nullable().optional(), linkWorkoutType: z.string().nullable().optional(),
+    linkMeasure: z.string().nullable().optional(), linkHabitId: z.string().nullable().optional(), archived: z.boolean().default(false),
+    progress: z.array(z.object({ date: d, value: z.number(), note: z.string().nullable().optional() })).default([]),
+  })).default([]),
+  journal: z.array(z.object({ date: d, content: z.string(), mood: n, prompt: z.string().nullable().optional() })).default([]),
+});
+
+/** Replace all data with the backup contents (atomic). */
+export async function restoreBackup(raw: unknown) {
+  const b = BackupSchema.parse(raw);
+  const int = (v: number | null | undefined) => (v == null ? null : Math.round(v));
+  await prisma.$transaction(async (tx) => {
+    await tx.dailyBrief.deleteMany();
+    await tx.goalProgress.deleteMany();
+    await tx.goal.deleteMany();
+    await tx.habitCheckin.deleteMany();
+    await tx.habit.deleteMany();
+    await tx.exercise.deleteMany();
+    await tx.workout.deleteMany();
+    await tx.healthLog.deleteMany();
+    await tx.journalEntry.deleteMany();
+    if (b.settings) {
+      await tx.settings.upsert({ where: { id: 1 }, update: b.settings, create: { id: 1, ...b.settings } });
+    }
+    for (const h of b.healthLogs) {
+      await tx.healthLog.create({ data: {
+        date: h.date, weightKg: h.weightKg ?? null, sleepHours: h.sleepHours ?? null, sleepQuality: int(h.sleepQuality), waterMl: int(h.waterMl),
+        mood: int(h.mood), energy: int(h.energy), steps: int(h.steps), custom: h.custom ? JSON.stringify(h.custom) : null, notes: h.notes ?? null,
+      } });
+    }
+    for (const w of b.workouts) {
+      await tx.workout.create({ data: {
+        date: w.date, type: w.type, title: w.title ?? null, durationMin: w.durationMin, intensity: w.intensity, distanceKm: w.distanceKm ?? null,
+        paceMinKm: w.paceMinKm ?? null, notes: w.notes ?? null,
+        exercises: { create: w.exercises.map((e, i) => ({ name: e.name, sets: int(e.sets), reps: int(e.reps), weightKg: e.weightKg ?? null, order: e.order ?? i })) },
+      } });
+    }
+    for (const h of b.habits) {
+      await tx.habit.create({ data: {
+        id: h.id, name: h.name, emoji: h.emoji ?? null, frequency: h.frequency, timesPerWeek: h.timesPerWeek, archived: h.archived, order: h.order,
+        checkins: { create: [...new Set(h.checkins)].map((date) => ({ date })) },
+      } });
+    }
+    const habitIds = new Set(b.habits.map((h) => h.id));
+    for (const g of b.goals) {
+      await tx.goal.create({ data: {
+        id: g.id, title: g.title, target: g.target, unit: g.unit, startDate: g.startDate, deadline: g.deadline, startValue: g.startValue ?? null,
+        linkType: g.linkType, linkMetric: g.linkMetric ?? null, linkWorkoutType: g.linkWorkoutType ?? null, linkMeasure: g.linkMeasure ?? null,
+        linkHabitId: g.linkHabitId && habitIds.has(g.linkHabitId) ? g.linkHabitId : null, archived: g.archived,
+        progress: { create: g.progress.map((p) => ({ date: p.date, value: p.value, note: p.note ?? null })) },
+      } });
+    }
+    for (const j of b.journal) {
+      await tx.journalEntry.create({ data: { date: j.date, content: j.content, mood: int(j.mood), prompt: j.prompt ?? null } });
+    }
+  }, { timeout: 60_000 });
+  return {
+    health: b.healthLogs.length, workouts: b.workouts.length, habits: b.habits.length, goals: b.goals.length, journal: b.journal.length,
+  };
+}

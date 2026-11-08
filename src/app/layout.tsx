@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: "A calm, private wellness tracker for health, workouts, habits, goals and journaling.",
   applicationName: "Thrivie",
   appleWebApp: { capable: true, title: "Thrivie", statusBarStyle: "default" },
-  icons: { icon: "/icon.svg", apple: "/apple-icon" },
+  icons: { icon: "/icon.svg" },
 };
 
 export const viewport: Viewport = {
