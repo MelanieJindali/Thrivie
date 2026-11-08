@@ -21,7 +21,7 @@ export default async function GoalsPage() {
   return (
     <div className="space-y-6">
       <PageHeader theme="goals" icon={<Target size={26} />} eyebrow="Ambitions" title="Goals" subtitle="Link a goal to your logs and it updates itself. The thin marker shows a steady pace." />
-      <section className="space-y-3">
+      <section className="scroll-mt-6 space-y-3" id="progress">
         {active.length ? (
           active.map((g) => {
             const d = goalDisplay(g, settings.units);

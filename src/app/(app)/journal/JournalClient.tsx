@@ -1,10 +1,11 @@
 "use client";
 
+import { UndoDeleteButton } from "@/components/Toast";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { deleteJournal, saveJournal } from "@/app/actions";
-import { ConfirmButton, Empty, FormStatus, RatingPicker, useAction } from "@/components/ui";
+import { Empty, FormStatus, RatingPicker, useAction } from "@/components/ui";
 import { JOURNAL_PROMPTS, MOOD_EMOJI } from "@/lib/constants";
 import { relativeLabel } from "@/lib/dates";
 import { AttachmentGallery, MediaBar, PendingList, uploadMedia, type PendingMedia, type SavedAttachment } from "./media";
@@ -21,7 +22,8 @@ export function JournalComposer({ today, initial, onDone, compact = false }: { t
   const fallbackText = media.some((m) => m.kind === "photo") ? "📷 Photo entry" : media.length ? "🎙️ Voice note" : "";
   return (
     <form
-      className={compact || initial ? "space-y-3" : "card space-y-3"}
+      id={compact || initial ? undefined : "new"}
+      className={compact || initial ? "space-y-3" : "card scroll-mt-6 space-y-3"}
       onSubmit={(e) => {
         e.preventDefault();
         run(
@@ -125,7 +127,7 @@ export function JournalList({ entries, today, query }: { entries: Entry[]; today
                     {e.prompt && <span className="italic">· {e.prompt}</span>}
                     <span className="ml-auto flex">
                       <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEditing(e.id)}>Edit</button>
-                      <ConfirmButton onConfirm={() => run(() => deleteJournal(e.id))} />
+                      <UndoDeleteButton what="Journal entry" action={() => deleteJournal(e.id)} />
                     </span>
                   </div>
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">{highlight(e.content, query)}</p>

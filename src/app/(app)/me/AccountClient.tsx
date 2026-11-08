@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { changePassword, deleteAccount, signOut, signOutEverywhere } from "@/app/authActions";
+import { clearDeviceData } from "@/components/OfflineSync";
 
 export function AccountSection({ email }: { email: string }) {
   const [pwState, pwAction, pwPending] = useActionState(changePassword, undefined);
@@ -13,7 +14,7 @@ export function AccountSection({ email }: { email: string }) {
           <h2 className="h2">Account</h2>
           <p className="text-sm text-muted">Signed in as <b className="text-text">{email}</b></p>
         </div>
-        <div className="flex flex-wrap gap-2"><form action={signOut}><button className="btn-soft">Sign out</button></form><form action={signOutEverywhere}><button className="btn-outline">Sign out everywhere</button></form></div>
+        <div className="flex flex-wrap gap-2"><form action={signOut} onSubmit={() => { void clearDeviceData(); }}><button className="btn-soft">Sign out</button></form><form action={signOutEverywhere} onSubmit={() => { void clearDeviceData(); }}><button className="btn-outline">Sign out everywhere</button></form></div>
       </div>
 
       <form action={pwAction} className="space-y-2">
@@ -27,7 +28,7 @@ export function AccountSection({ email }: { email: string }) {
         {pwState?.ok && <p className="text-sm text-primary">{pwState.ok}</p>}
       </form>
 
-      <form action={delAction} className="space-y-2 rounded-2xl bg-danger-soft/60 p-4">
+      <form action={delAction} onSubmit={() => { void clearDeviceData(); }} className="space-y-2 rounded-2xl bg-danger-soft/60 p-4">
         <span className="label text-danger">Delete account</span>
         <p className="text-sm text-muted">Permanently deletes your account and <b>all</b> of its data from this server. This can&apos;t be undone.</p>
         <div className="flex flex-wrap gap-2">

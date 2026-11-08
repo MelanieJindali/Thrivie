@@ -58,6 +58,7 @@ export function middleware(req: NextRequest) {
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("content-security-policy", policy);
+  requestHeaders.set("x-pathname", pathname);
 
   const isPublic = PUBLIC.some((p) => pathname === p || pathname.startsWith(p + "/"));
   const hasSession = SESSION_COOKIES.some((c) => req.cookies.has(c));

@@ -14,6 +14,12 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   serverExternalPackages: ["web-push", "@prisma/client"],
+  async redirects() {
+    return [
+      { source: "/settings", destination: "/me", permanent: true },
+      { source: "/more", destination: "/me", permanent: true },
+    ];
+  },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

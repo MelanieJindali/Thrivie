@@ -1,9 +1,10 @@
 "use client";
 
+import { UndoDeleteButton } from "@/components/Toast";
 import { useEffect, useState } from "react";
 import { Copy, Smartphone } from "lucide-react";
 import { createApiToken, revokeApiToken } from "@/app/actions";
-import { ConfirmButton, FormStatus, useAction } from "@/components/ui";
+import { FormStatus, useAction } from "@/components/ui";
 
 type Token = { id: string; name: string; prefix: string; lastUsedAt: string | null };
 
@@ -60,7 +61,7 @@ export function HealthSyncCard({ tokens }: { tokens: Token[] }) {
             <li key={t.id} className="flex items-center gap-3 py-2">
               <span className="flex-1">{t.name} <code className="text-xs text-muted">{t.prefix}…</code></span>
               <span className="text-xs text-muted">{t.lastUsedAt ? `used ${new Date(t.lastUsedAt).toLocaleDateString()}` : "never used"}</span>
-              <ConfirmButton label="Revoke" onConfirm={() => run(() => revokeApiToken(t.id), { success: "Token revoked" })} />
+              <UndoDeleteButton label="Revoke" what="Token" action={() => revokeApiToken(t.id)} />
             </li>
           ))}
         </ul>

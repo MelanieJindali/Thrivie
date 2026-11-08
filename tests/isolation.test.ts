@@ -154,6 +154,18 @@ describe("encryption at rest", () => {
     expect(() => decryptText(r.rows[0].content, bob)).toThrow(); // copied into another user's row, it won't decrypt
   });
 
+  it("stores photos and voice notes encrypted", async () => {
+    const a = scopedDb(alice);
+    const j = await a.journalEntry.create({ data: { userId: alice, date: "2026-11-06", content: "with photo" } });
+    const bytes = Buffer.from("fake-jpeg-bytes-0123456789");
+    const att = await a.attachment.create({ data: { userId: alice, journalId: j.id, kind: "photo", mime: "image/jpeg", size: bytes.length, data: bytes } });
+    const stored = (await raw.query(`SELECT data FROM "Attachment" WHERE id = $1`, [att.id])).rows[0].data as Buffer;
+    expect(stored.subarray(0, 4).toString()).toBe("THV1");
+    expect(stored.includes(bytes)).toBe(false);
+    expect(Buffer.from((await a.attachment.findUniqueOrThrow({ where: { id: att.id } })).data).equals(bytes)).toBe(true);
+    expect(await scopedDb(bob).attachment.findUnique({ where: { id: att.id } })).toBeNull();
+  });
+
   it("round-trips unicode and detects tampering", () => {
     const enc = encryptText("Grateful 🌊 for the morning", alice);
     expect(decryptText(enc, alice)).toBe("Grateful 🌊 for the morning");

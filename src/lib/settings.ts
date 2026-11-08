@@ -15,6 +15,9 @@ export type AppSettings = {
   visibleModules: ModuleKey[];
   remindersOn: boolean;
   reminderHour: number;
+  onboarded: boolean;
+  tipsSeen: string[];
+  onDeviceAi: boolean;
 };
 
 export async function loadSettings(db: ScopedDb, userId: string): Promise<AppSettings> {
@@ -29,6 +32,9 @@ export async function loadSettings(db: ScopedDb, userId: string): Promise<AppSet
       .filter((m): m is ModuleKey => (ALL_MODULES as readonly string[]).includes(m)),
     remindersOn: s.remindersOn,
     reminderHour: s.reminderHour,
+    onboarded: s.onboarded,
+    tipsSeen: s.tipsSeen.split(",").filter(Boolean),
+    onDeviceAi: s.onDeviceAi,
   };
 }
 

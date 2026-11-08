@@ -7,7 +7,7 @@ import { logError } from "@/lib/log";
 import crypto from "node:crypto";
 import { loadSampleData } from "@/lib/sampleData";
 import { getSettings, getToday, ALL_MODULES } from "@/lib/settings";
-import { isDateStr, isValidTimezone } from "@/lib/dates";
+import { addDays, isDateStr, isValidTimezone } from "@/lib/dates";
 import { WORKOUT_TYPES } from "@/lib/constants";
 import { displayToKg, displayToKm, displayToMl, displayToPace } from "@/lib/units";
 
@@ -438,6 +438,72 @@ export async function revokeApiToken(id: string): Promise<ActionResult> {
   const { db, user } = await requireUser();
   if (!(await rateLimit(`write:${user.id}`, 600, 600))) return { ok: false, error: "You're going a little fast. Please wait a minute and try again." } as never;
   await db.apiToken.deleteMany({ where: { id } });
+  done();
+  return { ok: true };
+}
+
+export async function dismissTip(id: string): Promise<ActionResult> {
+  const { db, user } = await requireUser();
+  if (!/^[a-z-]{1,30}$/.test(id)) return { ok: false, error: "Invalid tip." };
+  const s = await db.settings.findUnique({ where: { userId: user.id } });
+  const seen = new Set((s?.tipsSeen ?? "").split(",").filter(Boolean));
+  seen.add(id);
+  await db.settings.update({ where: { userId: user.id }, data: { tipsSeen: [...seen].slice(-50).join(",") } });
+  return { ok: true };
+}
+
+const onboardingInput = z.object({
+  name: z.string().trim().max(60),
+  units: z.enum(["metric", "imperial"]),
+  habits: z.array(z.object({ name: z.string().trim().min(1).max(60), emoji: z.string().max(8).optional() })).max(3),
+  goal: z
+    .object({ title: z.string().trim().min(1).max(100), target: z.number().positive(), unit: z.string().max(20), days: z.number().int().min(7).max(365), linkType: z.enum(["manual", "workout", "habit"]), linkMeasure: z.enum(["count", "minutes", "distance"]).optional() })
+    .nullable(),
+});
+
+/** Finish onboarding: everything optional; nothing is created unless the user picked it. */
+export async function completeOnboarding(input: z.input<typeof onboardingInput>): Promise<ActionResult> {
+  try {
+    const v = onboardingInput.parse(input);
+    const { db, user } = await requireUser();
+    const today = await getToday();
+    await db.settings.update({ where: { userId: user.id }, data: { name: v.name, units: v.units, onboarded: true } });
+    const created: string[] = [];
+    for (const [i, h] of v.habits.entries()) {
+      created.push((await db.habit.create({ data: { userId: user.id, name: h.name, emoji: h.emoji ?? null, frequency: "daily", timesPerWeek: 7, order: i } })).id);
+    }
+    if (v.goal) {
+      const g = v.goal;
+      const target = g.linkMeasure === "distance" ? displayToKm(g.target, v.units) : g.target;
+      await db.goal.create({
+        data: {
+          userId: user.id, title: g.title, target, unit: g.unit, startDate: today, deadline: addDays(today, g.days), linkType: g.linkType,
+          linkWorkoutType: g.linkType === "workout" ? "any" : null, linkMeasure: g.linkType === "workout" ? g.linkMeasure ?? "count" : null,
+          linkHabitId: g.linkType === "habit" ? created[0] ?? null : null,
+        },
+      });
+    }
+    done();
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function skipOnboarding(): Promise<ActionResult> {
+  const { db, user } = await requireUser();
+  await db.settings.update({ where: { userId: user.id }, data: { onboarded: true } });
+  return { ok: true };
+}
+
+/** Idempotent habit check (safe to replay from the offline queue). */
+export async function setHabitCheck(habitId: string, date: string, checked: boolean): Promise<ActionResult> {
+  const { db, user } = await requireUser();
+  if (!(await rateLimit(`write:${user.id}`, 600, 600))) return { ok: false, error: "You're going a little fast. Please wait a minute and try again." };
+  if (!isDateStr(date)) return { ok: false, error: "Invalid date." };
+  if (!(await db.habit.findUnique({ where: { id: habitId } }))) return { ok: false, error: "Habit not found." };
+  if (checked) await db.habitCheckin.upsert({ where: { habitId_date: { habitId, date } }, update: {}, create: { habitId, date } });
+  else await db.habitCheckin.deleteMany({ where: { habitId, date } });
   done();
   return { ok: true };
 }
