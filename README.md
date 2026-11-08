@@ -1,5 +1,7 @@
 # 🌱 Thrivie
 
+<p align="center"><img src="docs/screenshot-dashboard.png" width="68%" alt="Thrivie dashboard" /> <img src="docs/screenshot-mobile-dark.png" width="24%" alt="Thrivie on mobile, dark mode" /></p>
+
 A calm, private, mobile-friendly wellness tracker for **health, workouts, habits, goals and a journal**, with a visual dashboard, a daily brief, and an **AI Notes Import** that turns messy notes-app text into structured entries.
 
 - **Simple.** Most entries take a few taps: one-tap habit check-offs, "repeat last workout", and a quick-log sheet on the dashboard.
