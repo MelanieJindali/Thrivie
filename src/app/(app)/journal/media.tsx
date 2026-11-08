@@ -118,22 +118,22 @@ export function MediaBar({ onAdd, onDictate }: { onAdd: (m: PendingMedia) => voi
     <div className="space-y-1.5">
       <div className="flex flex-wrap gap-2">
         <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => pickPhotos(e.target.files)} />
-        <button type="button" className={pill} onClick={() => fileRef.current?.click()}><Camera size={14} className="text-rose" /> Photo</button>
+        <button type="button" className={pill} onClick={() => fileRef.current?.click()}><Camera size={14} className="text-terracotta-ink" /> Photo</button>
         {recording ? (
-          <button type="button" className={`${pill} border-rose bg-rose-soft text-rose`} onClick={() => rec.current?.mr.stop()}>
+          <button type="button" className={`${pill} border-terracotta-ink bg-terracotta-soft text-terracotta-ink`} onClick={() => rec.current?.mr.stop()}>
             <Square size={12} fill="currentColor" /> Stop · {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}
           </button>
         ) : (
-          <button type="button" className={pill} onClick={startRecording}><AudioLines size={14} className="text-plum" /> Voice note</button>
+          <button type="button" className={pill} onClick={startRecording}><AudioLines size={14} className="text-iris" /> Voice note</button>
         )}
         {canDictate && (
           <button type="button" className={`${pill} ${dictating ? "border-primary bg-primary-soft text-primary" : ""}`} onClick={toggleDictation}>
-            {dictating ? <MicOff size={14} /> : <Mic size={14} className="text-sapphire" />} {dictating ? "Stop dictation" : "Dictate"}
+            {dictating ? <MicOff size={14} /> : <Mic size={14} className="text-ocean" />} {dictating ? "Stop dictation" : "Dictate"}
           </button>
         )}
       </div>
       {dictating && <p className="text-[11px] text-muted">Listening… speech is converted to text by your browser&apos;s speech service.</p>}
-      {err && <p className="text-xs text-danger">{err}</p>}
+      {err && <p className="text-xs text-terracotta-ink">{err}</p>}
     </div>
   );
 }
@@ -150,7 +150,7 @@ export function PendingList({ items, onRemove }: { items: PendingMedia[]; onRemo
           ) : (
             <audio src={m.url} controls className="h-10 max-w-60" />
           )}
-          <button type="button" onClick={() => onRemove(m.key)} aria-label="Remove" className="absolute -top-2 -right-2 grid h-6 w-6 place-items-center rounded-full bg-surface text-danger shadow-soft">
+          <button type="button" onClick={() => onRemove(m.key)} aria-label="Remove" className="absolute -top-2 -right-2 grid h-6 w-6 place-items-center rounded-full bg-surface text-terracotta-ink shadow-soft">
             <Trash2 size={12} />
           </button>
         </div>

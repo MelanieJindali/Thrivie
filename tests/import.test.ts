@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildImportUserMessage, extractJson, parseImportResponse } from "@/lib/import/schema";
+import { extractJson, parseImportResponse } from "@/lib/import/schema";
 import { matchByName, normalizeEntries } from "@/lib/import/normalize";
 
 const TODAY = "2026-11-07"; // Saturday
@@ -191,15 +191,5 @@ describe("normalizeEntries", () => {
     expect(w.data.distanceKm).toBeCloseTo(4.83, 2);
     expect(w.data.durationMin).toBe(27);
     expect(w.data.paceMinKm).toBeCloseTo(5.59, 2);
-  });
-});
-
-describe("buildImportUserMessage", () => {
-  it("includes today, weekday, timezone, habits and goals", () => {
-    const msg = buildImportUserMessage({ text: "ran 5k", today: TODAY, timezone: "America/New_York", habits: ["Meditate"], goals: [{ title: "Read 6 books", unit: "books" }] });
-    expect(msg).toContain("TODAY: 2026-11-07 (Saturday)");
-    expect(msg).toContain("America/New_York");
-    expect(msg).toContain('["Meditate"]');
-    expect(msg).toContain("ran 5k");
   });
 });

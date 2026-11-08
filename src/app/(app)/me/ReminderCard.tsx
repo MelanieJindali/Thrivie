@@ -57,14 +57,14 @@ export function ReminderCard({ on, hour, publicKey }: { on: boolean; hour: numbe
   return (
     <section className="card space-y-3">
       <h2 className="h2 flex items-center gap-2.5">
-        <span className="grid h-8 w-8 place-items-center rounded-xl bg-amber-soft text-amber"><BellRing size={16} /></span>
+        <span className="grid h-8 w-8 place-items-center rounded-xl bg-gold-soft text-gold-ink"><BellRing size={16} /></span>
         Daily reminder
       </h2>
       <p className="text-sm text-muted">One gentle nudge a day — only if you still have habits to check off or haven&apos;t logged yet.</p>
       {support === "ios-install" && (
-        <p className="rounded-2xl bg-amber-soft px-4 py-3 text-sm">On iPhone, first add Thrivie to your Home Screen (Share → Add to Home Screen), then open it from there to turn on reminders.</p>
+        <p className="rounded-2xl bg-gold-soft px-4 py-3 text-sm">On iPhone, first add Thrivie to your Home Screen (Share → Add to Home Screen), then open it from there to turn on reminders.</p>
       )}
-      {support === "no-sw" && <p className="text-sm text-warn">This browser doesn&apos;t support push notifications.</p>}
+      {support === "no-sw" && <p className="text-sm text-terracotta-ink">This browser doesn&apos;t support push notifications.</p>}
       <div className="flex flex-wrap items-center gap-2">
         <select className="input w-auto" value={h} onChange={(e) => { setH(Number(e.target.value)); if (on) run(() => saveReminders(true, Number(e.target.value)), { success: "Time updated ✓" }); }} aria-label="Reminder time">
           {Array.from({ length: 24 }, (_, i) => <option key={i} value={i}>{hourLabel(i)}</option>)}

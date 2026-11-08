@@ -31,7 +31,7 @@ export function HealthSyncCard({ tokens }: { tokens: Token[] }) {
   return (
     <section className="card space-y-4">
       <h2 className="h2 flex items-center gap-2.5">
-        <span className="grid h-8 w-8 place-items-center rounded-xl bg-rose-soft text-rose"><Smartphone size={16} /></span>
+        <span className="grid h-8 w-8 place-items-center rounded-xl bg-terracotta-soft text-terracotta-ink"><Smartphone size={16} /></span>
         Health sync
       </h2>
       <p className="text-sm text-muted">

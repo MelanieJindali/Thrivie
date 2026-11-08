@@ -17,10 +17,10 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
   const { stats: s, review } = await getReview(db, user.id, weekStart);
   const isLatest = weekStart >= startOfWeek(today);
   const tiles = [
-    { label: "Workouts", value: String(s.workouts), sub: `${s.minutes} min`, tone: "bg-sapphire-soft text-sapphire" },
-    { label: "Avg sleep", value: s.sleep != null ? `${s.sleep}h` : "—", sub: `${s.daysLogged} days logged`, tone: "bg-plum-soft text-plum" },
-    { label: "Avg mood", value: s.mood != null ? `${s.mood}/5` : "—", sub: s.energy != null ? `energy ${s.energy}/5` : "", tone: "bg-amber-soft text-amber" },
-    { label: "Steps / day", value: s.steps != null ? Math.round(s.steps).toLocaleString("en-US") : "—", sub: s.distance ?? "", tone: "bg-emerald-soft text-emerald" },
+    { label: "Workouts", value: String(s.workouts), sub: `${s.minutes} min`, tone: "bg-ocean-soft text-ocean" },
+    { label: "Avg sleep", value: s.sleep != null ? `${s.sleep}h` : "—", sub: `${s.daysLogged} days logged`, tone: "bg-iris-soft text-iris" },
+    { label: "Avg mood", value: s.mood != null ? `${s.mood}/5` : "—", sub: s.energy != null ? `energy ${s.energy}/5` : "", tone: "bg-gold-soft text-gold-ink" },
+    { label: "Steps / day", value: s.steps != null ? Math.round(s.steps).toLocaleString("en-US") : "—", sub: s.distance ?? "", tone: "bg-sage-soft text-sage-ink" },
   ];
   return (
     <div className="space-y-6">

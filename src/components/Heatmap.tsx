@@ -10,10 +10,10 @@ export function Heatmap({ values, today, weeks = 13, label }: { values: Record<s
   const cols = Array.from({ length: weeks }, (_, w) => Array.from({ length: 7 }, (_, d) => addDays(first, w * 7 + d)));
   const shade = (v: number | undefined) => {
     if (!v) return "bg-surface-2";
-    if (v < 0.34) return "bg-emerald/25";
-    if (v < 0.67) return "bg-emerald/55";
-    if (v < 1) return "bg-emerald/80";
-    return "bg-linear-to-br from-emerald to-teal";
+    if (v < 0.34) return "bg-sage-ink/25";
+    if (v < 0.67) return "bg-sage-ink/55";
+    if (v < 1) return "bg-sage-ink/80";
+    return "bg-linear-to-br from-sage-ink to-primary";
   };
   return (
     <div aria-label={label ?? "Activity heatmap"}>

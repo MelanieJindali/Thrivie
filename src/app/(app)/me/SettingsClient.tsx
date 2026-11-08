@@ -134,8 +134,8 @@ export function DangerZone() {
   const [confirmText, setConfirmText] = useState("");
   const { pending, error, message, run } = useAction();
   return (
-    <section className="card space-y-3 border-danger/30">
-      <h2 className="h2 text-danger">Delete all data</h2>
+    <section className="card space-y-3 border-terracotta-ink/30">
+      <h2 className="h2 text-terracotta-ink">Delete all data</h2>
       <p className="text-sm text-muted">Permanently removes every log, workout, habit, goal and journal entry. Export a backup first if you might want it back. Your settings are kept.</p>
       <div className="flex flex-wrap gap-2">
         <input className="input w-40" placeholder='Type "DELETE"' value={confirmText} onChange={(e) => setConfirmText(e.target.value)} aria-label="Type DELETE to confirm" />

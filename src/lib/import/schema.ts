@@ -1,7 +1,6 @@
 // AI Notes Import: the JSON contract with the model, the prompt, and parsing.
 // Pure module (no DB, no network) so it can be unit-tested.
 import { z } from "zod";
-import { formatDate, type DateStr } from "../dates";
 
 // ---------------------------------------------------------------------------
 // Lenient field helpers: models sometimes send "172" instead of 172, or omit
@@ -113,96 +112,6 @@ export const ImportEnvelope = z.object({
   entries: z.array(z.unknown()),
   unparsed: z.array(z.string()).optional().default([]),
 });
-
-// ---------------------------------------------------------------------------
-// Prompt
-// ---------------------------------------------------------------------------
-
-export const IMPORT_SYSTEM_PROMPT = `You convert messy personal wellness notes into structured JSON for a tracking app.
-
-Return ONLY a single JSON object. No prose, no markdown, no code fences.
-
-Schema:
-{
-  "entries": [Entry, ...],
-  "unparsed": [string, ...]   // short snippets you could not interpret (may be empty)
-}
-
-Every Entry has these common fields:
-  "kind": "health" | "workout" | "habit" | "goal_update" | "journal"
-  "date_text": string | null    // the date reference exactly as written ("Mon", "yesterday", "11/3"); null if none applies
-  "date": "YYYY-MM-DD"          // your resolution of that date (see rules)
-  "confidence": number 0-1      // how sure you are about this entry overall
-  "field_confidence": { "<field>": number 0-1 }  // only for fields you are unsure about
-  "source_text": string         // the short snippet this entry came from
-
-kind "health" (at most one per date; merge all health facts for a day):
-  "weight": {"value": number, "unit": "kg"|"lb"} | null
-  "sleep_hours": number | null
-  "sleep_quality": 1-5 | null   // infer from words: "terrible"=1, "poor/tired"=2, "ok"=3, "good"=4, "great"=5
-  "water": {"value": number, "unit": "ml"|"l"|"oz"|"glasses"} | null
-  "mood": 1-5 | null
-  "energy": 1-5 | null          // "tired"/"exhausted" → 2 or 1; "energized" → 4-5
-  "steps": number | null
-  "custom": [{"name": string, "value": number}]  // other numeric metrics, e.g. resting heart rate
-
-kind "workout":
-  "type": "strength" | "cardio" | "mobility" | "sport" | "other"
-  "title": string | null        // e.g. "Run", "Push-ups", "Yoga"
-  "duration_min": number | null
-  "intensity": 1-5 | null
-  "distance": {"value": number, "unit": "km"|"mi"|"m"} | null   // "5k" means 5 km
-  "pace_min_per_unit": number | null
-  "exercises": [{"name": string, "sets": number|null, "reps": number|null, "weight": {"value": number, "unit": "kg"|"lb"}|null}]
-  Group bodyweight/strength exercises from the same day into ONE strength workout. A "rest day" is not a workout.
-
-kind "habit" (a habit was done):
-  "habit_name": string          // as the user described it ("meditated" → "Meditate")
-  "matched_habit": string|null  // EXACT name from EXISTING HABITS if it clearly refers to one, else null
-  "completed": boolean          // false only if the note says it was explicitly missed
-  A ✅ or "done" next to an item usually means a habit was completed.
-
-kind "goal_update" (explicit progress toward a goal, e.g. "read 50 pages of my book" when a reading goal exists):
-  "goal_name": string
-  "matched_goal": string|null   // EXACT title from EXISTING GOALS, else null
-  "value": number               // the amount of progress, in the goal's unit
-  "unit": string|null
-  "note": string|null
-  Do NOT create goal updates for things already captured as workouts or habits (those update linked goals automatically).
-
-kind "journal" (reflections, feelings, events worth remembering):
-  "content": string             // a faithful, lightly cleaned first-person version of what they wrote; do not invent details
-  "mood": 1-5 | null
-
-Date rules:
-- Use TODAY and the weekday given below. Notes describe the past: a bare weekday ("Mon") means the most recent such day on or before today.
-- "yesterday" = today minus 1 day. Text with no date applies to the most recent date mentioned before it, or today if none.
-- Never output a date after today.
-
-Other rules:
-- Only extract what is actually written. Never guess numbers that aren't there.
-- Lower the confidence for abbreviations or ambiguous values, and list those fields in field_confidence.
-- Keep units as written; the app converts them.
-- If the text contains nothing trackable, return {"entries": [], "unparsed": [...]}.`;
-
-export function buildImportUserMessage(opts: {
-  text: string;
-  today: DateStr;
-  timezone: string;
-  habits: string[];
-  goals: { title: string; unit: string }[];
-}): string {
-  return [
-    `TODAY: ${opts.today} (${formatDate(opts.today, { weekday: "long" })}), timezone ${opts.timezone}`,
-    `EXISTING HABITS: ${opts.habits.length ? JSON.stringify(opts.habits) : "none"}`,
-    `EXISTING GOALS: ${opts.goals.length ? JSON.stringify(opts.goals) : "none"}`,
-    "",
-    "NOTES:",
-    "<<<",
-    opts.text.trim(),
-    ">>>",
-  ].join("\n");
-}
 
 // ---------------------------------------------------------------------------
 // Parsing

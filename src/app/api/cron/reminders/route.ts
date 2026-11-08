@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runReminders } from "@/lib/push";
+import { safeEqual } from "@/lib/crypto";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,6 +11,6 @@ export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
   const url = new URL(req.url);
   const given = req.headers.get("authorization")?.replace(/^Bearer /, "") ?? url.searchParams.get("secret");
-  if (!secret || given !== secret) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!secret || !given || !safeEqual(given, secret)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   return NextResponse.json(await runReminders());
 }

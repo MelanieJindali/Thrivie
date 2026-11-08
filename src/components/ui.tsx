@@ -119,14 +119,14 @@ export function useAction() {
 }
 
 export function FormStatus({ error, message }: { error: string | null; message: string | null }) {
-  if (error) return <p className="text-sm text-danger" role="alert">{error}</p>;
+  if (error) return <p className="text-sm text-terracotta-ink" role="alert">{error}</p>;
   if (message) return <p className="rounded-full bg-primary-soft px-3 py-1 text-sm font-medium text-primary" role="status">{message}</p>;
   return null;
 }
 
 export function ProgressBar({ pct, expected, tone = "primary" }: { pct: number; expected?: number; tone?: "primary" | "warn" | "accent" }) {
   const color =
-    tone === "warn" ? "from-amber to-rose" : tone === "accent" ? "from-gold to-amber" : "from-emerald to-teal";
+    tone === "warn" ? "from-gold-ink to-terracotta-ink" : tone === "accent" ? "from-gold-ink to-gold-ink" : "from-sage-ink to-primary";
   return (
     <div className="relative h-3 w-full overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}>
       <div className={`h-full rounded-full bg-linear-to-r ${color} shadow-[inset_0_-1px_0_rgb(0_0_0/0.08)] transition-all duration-700`} style={{ width: `${Math.max(3, pct)}%` }} />
@@ -139,15 +139,4 @@ export function ProgressBar({ pct, expected, tone = "primary" }: { pct: number; 
 
 export function Empty({ children }: { children: React.ReactNode }) {
   return <div className="rounded-3xl border border-dashed border-border bg-surface-2/40 p-8 text-center text-sm text-muted">{children}</div>;
-}
-
-export function ConfirmButton({ onConfirm, label = "Delete", className = "btn-ghost text-xs" }: { onConfirm: () => void; label?: string; className?: string }) {
-  const [ask, setAsk] = useState(false);
-  if (!ask) return <button type="button" className={className} onClick={() => setAsk(true)}>{label}</button>;
-  return (
-    <span className="inline-flex items-center gap-1">
-      <button type="button" className="btn-danger px-3 py-1.5 text-xs" onClick={() => { setAsk(false); onConfirm(); }}>Confirm</button>
-      <button type="button" className="btn-ghost px-3 py-1.5 text-xs" onClick={() => setAsk(false)}>Cancel</button>
-    </span>
-  );
 }

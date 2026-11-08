@@ -3,7 +3,7 @@
 // - Pages: network-first; the last copy is shown offline (falls back to /offline).
 // - API calls and auth pages are never cached.
 // Cached pages are deleted on sign-out (see OfflineSync.clearDeviceData).
-const CACHE = "thrivie-v3";
+const CACHE = "thrivie-v4";
 const NO_CACHE = ["/api/", "/login", "/signup", "/welcome"];
 
 self.addEventListener("install", (event) => {
