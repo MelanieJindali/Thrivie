@@ -14,7 +14,7 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
   const { db, user } = await requireUser();
   const today = todayInTz(settings.timezone);
   const weekStart = weekFromParam(week, today);
-  const { stats: s, review, source } = await getReview(db, user.id, weekStart, false);
+  const { stats: s, review } = await getReview(db, user.id, weekStart);
   const isLatest = weekStart >= startOfWeek(today);
   const tiles = [
     { label: "Workouts", value: String(s.workouts), sub: `${s.minutes} min`, tone: "bg-sapphire-soft text-sapphire" },
@@ -29,7 +29,7 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
         {!isLatest && <Link href={`/review?week=${addDays(weekStart, 7)}`} className="btn-ghost px-3" aria-label="Next week"><ChevronRight size={18} /></Link>}
       </PageHeader>
 
-      <ReviewCard weekStart={weekStart} review={review} source={source} />
+      <ReviewCard review={review} />
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {tiles.map((t) => (

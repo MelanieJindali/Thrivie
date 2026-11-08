@@ -11,12 +11,15 @@ export default async function JournalPage({ searchParams }: { searchParams: Prom
   const { db, user } = await requireUser();
   const today = todayInTz(settings.timezone);
   const query = q.trim();
-  const entries = await db.journalEntry.findMany({
-    where: query ? { OR: [{ content: { contains: query } }, { prompt: { contains: query } }] } : {},
+  // Entries are encrypted at rest, so search decrypts this user's entries and filters here.
+  const all = await db.journalEntry.findMany({
     orderBy: [{ date: "desc" }, { createdAt: "desc" }],
-    take: query ? 200 : 60,
+    take: query ? 2000 : 60,
     include: { attachments: { select: { id: true, kind: true, durationS: true }, orderBy: { createdAt: "asc" } } },
   });
+  const needle = query.toLowerCase();
+  const entries = query ? all.filter((e) => e.content.toLowerCase().includes(needle) || (e.prompt ?? "").toLowerCase().includes(needle)).slice(0, 200) : all;
+
   return (
     <div className="space-y-6">
       <PageHeader theme="journal" icon={<NotebookPen size={26} />} eyebrow="Reflections" title="Journal" subtitle="A few lines is plenty." />

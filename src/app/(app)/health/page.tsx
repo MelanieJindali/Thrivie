@@ -4,7 +4,7 @@ import { todayInTz, formatDate, relativeLabel } from "@/lib/dates";
 import { getHealthRange } from "@/lib/queries";
 import { healthTrendSpecs } from "@/lib/trends";
 import { kgToDisplay, mlToDisplay, waterUnit, weightUnit } from "@/lib/units";
-import { TrendGroup } from "@/components/charts";
+import { TrendGroup } from "@/components/LazyCharts";
 import { HealthForm, type HealthPrefill } from "./HealthForm";
 import { HealthRowActions } from "./HealthRowActions";
 import { MOOD_EMOJI } from "@/lib/constants";

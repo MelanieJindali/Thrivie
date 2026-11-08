@@ -23,13 +23,13 @@ export function PageHeader({
   const t = THEME[theme];
   return (
     <header className="mb-2 flex flex-wrap items-end justify-between gap-4">
-      <div className="flex items-center gap-4">
+      <div className="flex min-w-0 items-center gap-4">
         {icon && (
           <span className={`grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-linear-to-br ${t.grad} text-white shadow-lg ring-4 ${t.ring}`}>
             {icon}
           </span>
         )}
-        <div>
+        <div className="min-w-0">
           {eyebrow && <p className="eyebrow mb-1">{eyebrow}</p>}
           <h1 className="h1">{title}</h1>
           {subtitle && <p className="mt-1 text-sm text-muted">{subtitle}</p>}
@@ -103,7 +103,10 @@ export function useAction() {
     start(async () => {
       const r = await fn();
       if (r.ok) {
-        if (opts.success) {
+        if ((r as { queued?: boolean }).queued) {
+          setMessage("Saved on this device. It will sync when you're back online.");
+          setTimeout(() => setMessage(null), 4000);
+        } else if (opts.success) {
           setMessage(opts.success);
           setTimeout(() => setMessage(null), 2500);
         }

@@ -4,9 +4,9 @@
 import type { ScopedDb } from "./db";
 import { addDays, todayInTz, weekdayOf } from "./dates";
 
-export async function loadSampleData(db: ScopedDb, userId: string, timezone: string, days = 30) {
+export async function loadSampleData(db: ScopedDb, userId: string, timezone: string, days = 30, variant = 0) {
   // Deterministic PRNG so the sample looks the same every time.
-  let s = 42;
+  let s = 42 + variant * 7919;
   const rand = () => {
     s = (s * 1664525 + 1013904223) % 4294967296;
     return s / 4294967296;

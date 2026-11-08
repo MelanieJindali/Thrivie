@@ -59,6 +59,18 @@ function ChartTooltip({ active, payload, label, unit, decimals = 1 }: { active?:
   );
 }
 
+/** Plain-language description of a trend chart for screen readers. */
+function srSummary(spec: TrendSpec, data: TrendPoint[], days: number) {
+  const vals = data.filter((d) => d.value != null) as { date: string; value: number }[];
+  if (!vals.length) return `${spec.title}: no data in the last ${days} days.`;
+  const dp = spec.decimals ?? 1;
+  const f = (v: number) => `${v.toFixed(dp)}${spec.unit ? ` ${spec.unit}` : ""}`;
+  const first = vals[0], last = vals[vals.length - 1];
+  const min = Math.min(...vals.map((v) => v.value)), max = Math.max(...vals.map((v) => v.value));
+  const avg = vals.reduce((a, v) => a + v.value, 0) / vals.length;
+  return `${spec.title} over the last ${days} days: ${vals.length} entries, from ${f(first.value)} on ${formatDate(first.date)} to ${f(last.value)} on ${formatDate(last.date)}. Average ${f(avg)}, lowest ${f(min)}, highest ${f(max)}.`;
+}
+
 function summarize(spec: TrendSpec, data: TrendPoint[]) {
   const vals = data.map((d) => d.value).filter((v): v is number => v != null);
   if (!vals.length) return null;
@@ -80,8 +92,9 @@ export function TrendChart({ spec, days, height = 160 }: { spec: TrendSpec; days
         </h3>
         <span className="text-xs font-semibold text-muted">{summarize(spec, data) ?? "No data yet"}</span>
       </div>
+      <p className="sr-only">{srSummary(spec, data, days)}</p>
       {hasData ? (
-        <div style={{ height }}>
+        <div style={{ height }} aria-hidden="true">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
               <defs>
@@ -139,14 +152,14 @@ export function TrendGroup({ specs, title = "Trends", initial = 30 }: { specs: T
   const [days, setDays] = useState(initial);
   return (
     <section className="card">
-      <div className="mb-4 flex items-center justify-between gap-2">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h2 className="h2 flex items-center gap-2.5">
           <span className="grid h-8 w-8 place-items-center rounded-xl bg-rose-soft text-rose"><LineIcon size={16} /></span>
           {title}
         </h2>
         <RangeToggle value={days} onChange={setDays} />
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {specs.map((s) => (
           <TrendChart key={s.key} spec={s} days={days} />
         ))}
@@ -172,8 +185,10 @@ export function WorkoutVolumeChart({ data, height = 200 }: { data: WeekVolume[];
   const types = Object.keys(TYPE_COLORS).filter((t) => data.some((d) => Number(d[t] ?? 0) > 0));
   if (!types.length)
     return <div className="grid place-items-center rounded-xl bg-surface-2 text-xs text-muted" style={{ height }}>No workouts yet</div>;
+  const summary = data.map((d) => `week of ${formatDate(String(d.week), { month: "short", day: "numeric" })}: ${types.reduce((a, t) => a + Number(d[t] ?? 0), 0)} minutes`).join("; ");
   return (
     <div style={{ height }}>
+      <p className="sr-only">Weekly workout minutes, {summary}.</p>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
           <CartesianGrid stroke="var(--chart-grid)" vertical={false} strokeDasharray="3 4" />

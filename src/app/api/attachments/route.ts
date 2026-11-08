@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { apiUser } from "@/lib/auth";
+import { apiUser, rateLimit } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -14,6 +14,8 @@ const MIME = {
 export async function POST(req: Request) {
   const auth = await apiUser();
   if (!auth) return NextResponse.json({ error: "Please sign in." }, { status: 401 });
+  if (!(await rateLimit(`upload:${auth.user.id}`, 60, 3600))) return NextResponse.json({ error: "Too many uploads. Try again later." }, { status: 429 });
+  if (Number(req.headers.get("content-length") ?? "0") > 4_000_000) return NextResponse.json({ error: "That file is too large." }, { status: 413 });
   const form = await req.formData().catch(() => null);
   const file = form?.get("file");
   const kind = String(form?.get("kind") ?? "") as keyof typeof LIMITS;

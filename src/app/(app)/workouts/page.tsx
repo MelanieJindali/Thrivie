@@ -4,7 +4,7 @@ import { todayInTz } from "@/lib/dates";
 import { getWorkoutsRange } from "@/lib/queries";
 import { weeklyVolume } from "@/lib/trends";
 import { kgToDisplay, kmToDisplay, paceToDisplay } from "@/lib/units";
-import { WorkoutVolumeChart } from "@/components/charts";
+import { WorkoutVolumeChart } from "@/components/LazyCharts";
 import { WorkoutsView, type WorkoutRow } from "./WorkoutsView";
 import { describeWorkout } from "@/lib/format";
 import { PageHeader } from "@/components/ui";

@@ -1,8 +1,9 @@
 "use client";
 
+import { UndoDeleteButton } from "@/components/Toast";
 import { useState } from "react";
 import { archiveHabit, deleteHabit, saveHabit } from "@/app/actions";
-import { ConfirmButton, Field, FormStatus, useAction } from "@/components/ui";
+import { Field, FormStatus, useAction } from "@/components/ui";
 
 type H = { id: string; name: string; emoji: string | null; frequency: string; timesPerWeek: number; archived: boolean };
 
@@ -49,9 +50,9 @@ export function HabitManager({ habits, archived }: { habits: H[]; archived: H[] 
   const [editing, setEditing] = useState<string | null>(null);
   const { run } = useAction();
   return (
-    <section className="card space-y-5" id="manage">
+    <section className="card scroll-mt-6 space-y-5" id="manage">
       <div>
-        <h2 className="h2 mb-3">New habit</h2>
+        <h2 className="h2 mb-3" id="new">New habit</h2>
         <HabitForm />
       </div>
       {(habits.length > 0 || archived.length > 0) && (
@@ -67,7 +68,7 @@ export function HabitManager({ habits, archived }: { habits: H[]; archived: H[] 
                     <span className={`flex-1 ${h.archived ? "text-muted line-through" : ""}`}>{h.emoji} {h.name} <span className="text-xs text-muted">· {h.frequency === "weekly" ? `${h.timesPerWeek}×/week` : "daily"}</span></span>
                     <button className="btn-ghost px-2 py-1 text-xs" onClick={() => setEditing(h.id)}>Edit</button>
                     <button className="btn-ghost px-2 py-1 text-xs" onClick={() => run(() => archiveHabit(h.id, !h.archived))}>{h.archived ? "Restore" : "Archive"}</button>
-                    <ConfirmButton onConfirm={() => run(() => deleteHabit(h.id))} />
+                    <UndoDeleteButton what="Habit" action={() => deleteHabit(h.id)} />
                   </div>
                 )}
               </li>

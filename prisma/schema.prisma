@@ -5,26 +5,36 @@
 //   data is never visible to another.
 // - Dates are "YYYY-MM-DD" strings in the user's timezone (Settings.timezone).
 // - Measurements are stored metric (kg, km, ml) and converted for display.
-// - Runs on SQLite locally (file) or Turso (hosted libSQL) in production.
+// - Postgres. Row Level Security is enabled and FORCED on every table (see
+//   prisma/migrations/*_rls): the app runs each query as the restricted role
+//   "thrivie_rls" with the user id set for that transaction, so the database
+//   itself refuses to return or change another user's rows.
+// - Journal text, notes and attachments are encrypted (AES-256-GCM) before
+//   they reach the database (src/lib/crypto.ts).
 
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL") // pooled connection (set automatically by Vercel → Storage → Neon)
+  directUrl = env("POSTGRES_URL_NON_POOLING") // direct connection for migrations (also set automatically)
 }
 
 // ---------------------------------------------------------------- accounts --
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  createdAt    DateTime @default(now())
+  id             String   @id @default(cuid())
+  email          String   @unique
+  passwordHash   String
+  // Two-factor authentication (TOTP). Secret is encrypted; recovery codes are hashed.
+  totpSecret     String?
+  totpEnabled    Boolean  @default(false)
+  recoveryCodes  String? // JSON array of sha256 hashes
+  createdAt      DateTime @default(now())
 
+  aliases       Alias[]
   sessions      Session[]
   settings      Settings?
   healthLogs    HealthLog[]
@@ -33,28 +43,39 @@ model User {
   goals         Goal[]
   journal       JournalEntry[]
   attachments   Attachment[]
-  briefs        DailyBrief[]
-  reviews       WeeklyReview[]
   pushSubs      PushSubscription[]
   apiTokens     ApiToken[]
 }
 
 model Session {
-  id        String   @id // sha256 of the cookie token (the raw token is never stored)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
+  id          String   @id // sha256 of the cookie token (the raw token is never stored)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mfaVerified Boolean  @default(false) // false until the 2FA code is entered (when 2FA is on)
+  expiresAt   DateTime
   createdAt DateTime @default(now())
 
   @@index([userId])
 }
 
-model LoginAttempt {
+/// Rate-limit events (login failures, writes, magic-link requests). Keys are hashed.
+model RateEvent {
   id        String   @id @default(cuid())
-  key       String // lowercased email
+  key       String
   createdAt DateTime @default(now())
 
   @@index([key, createdAt])
+}
+
+/// One-time sign-in links. Only the token hash is stored.
+model MagicLink {
+  id        String    @id // sha256 of the token
+  email     String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email])
 }
 
 model Settings {
@@ -68,6 +89,9 @@ model Settings {
   remindersOn    Boolean  @default(false)
   reminderHour   Int      @default(20) // local hour 0-23
   lastReminded   String? // YYYY-MM-DD of the last reminder sent
+  onboarded      Boolean  @default(false)
+  tipsSeen       String   @default("") // comma-separated tip ids already shown
+  onDeviceAi     Boolean  @default(false)
   updatedAt      DateTime @updatedAt
 }
 
@@ -218,36 +242,26 @@ model Attachment {
   mime      String
   size      Int
   durationS Float?
-  data      Bytes
+  data      Bytes // AES-256-GCM encrypted
   createdAt DateTime      @default(now())
 
   @@index([userId])
   @@index([journalId])
 }
 
-// ---------------------------------------------------------------- AI cache --
+// ----------------------------------------------------------- smart import --
 
-model DailyBrief {
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date       String
-  brief      String
-  highlights String // JSON array of {id, text}
-  source     String   @default("ai") // ai | fallback
-  createdAt  DateTime @default(now())
-
-  @@id([userId, date])
-}
-
-model WeeklyReview {
+/// Personal shorthand learned from import corrections, e.g. "bb" → "Bench press".
+model Alias {
+  id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  weekStart String // Monday, YYYY-MM-DD
-  content   String // JSON: { summary, wins[], focus }
-  source    String   @default("ai")
+  kind      String // exercise | habit | workout | metric
+  alias     String
+  target    String
   createdAt DateTime @default(now())
 
-  @@id([userId, weekStart])
+  @@unique([userId, kind, alias])
 }
 
 // ------------------------------------------------- reminders & integrations --

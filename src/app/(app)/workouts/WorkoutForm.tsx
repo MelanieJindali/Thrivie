@@ -1,4 +1,5 @@
 "use client";
+import { useOfflineAction } from "@/components/OfflineSync";
 
 import { useEffect, useState } from "react";
 import { Plus, Repeat, X } from "lucide-react";
@@ -43,6 +44,7 @@ export function WorkoutForm({
 }) {
   const [w, setW] = useState<WorkoutDraft>(editing ?? emptyWorkout(today));
   const { pending, error, message, run } = useAction();
+  const offline = useOfflineAction();
   const set = <K extends keyof WorkoutDraft>(k: K, v: WorkoutDraft[K]) => setW((x) => ({ ...x, [k]: v }));
 
   useEffect(() => {
@@ -58,7 +60,7 @@ export function WorkoutForm({
     if (!dur || dur <= 0) return run(async () => ({ ok: false, error: "Add a duration in minutes." }));
     run(
       () =>
-        saveWorkout({
+        offline("saveWorkout", {
           id: w.id,
           date: w.date,
           type: w.type,

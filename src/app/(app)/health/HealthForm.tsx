@@ -1,4 +1,5 @@
 "use client";
+import { useOfflineAction } from "@/components/OfflineSync";
 
 import { useEffect, useState } from "react";
 import { Plus, X } from "lucide-react";
@@ -49,6 +50,7 @@ export function HealthForm({
   const [notes, setNotes] = useState("");
   const [custom, setCustom] = useState<{ k: string; v: string }[]>([]);
   const { pending, error, message, run } = useAction();
+  const offline = useOfflineAction();
   const existing = prefill[date];
 
   // Load the selected day's values so editing is the same as logging.
@@ -77,7 +79,7 @@ export function HealthForm({
     }
     run(
       () =>
-        saveHealthLog({
+        offline("saveHealthLog", {
           date,
           weight: numOrNull(weight),
           sleepHours: numOrNull(sleep),
@@ -94,7 +96,7 @@ export function HealthForm({
   }
 
   return (
-    <form onSubmit={submit} className={compact ? "space-y-4" : "card space-y-4"}>
+    <form onSubmit={submit} id={compact ? undefined : "log"} className={compact ? "space-y-4" : "card scroll-mt-6 space-y-4"}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         {!compact && <h2 className="h2">{existing ? "Update log" : "Quick log"}</h2>}
         <input type="date" className="input w-auto py-1.5 text-sm" value={date} max={today} onChange={(e) => setDate(e.target.value || today)} aria-label="Date" />

@@ -1,8 +1,9 @@
 "use client";
 
+import { UndoDeleteButton } from "@/components/Toast";
 import { useState } from "react";
 import { deleteWorkout } from "@/app/actions";
-import { ConfirmButton, Empty, useAction } from "@/components/ui";
+import { Empty, useAction } from "@/components/ui";
 import { relativeLabel } from "@/lib/dates";
 import type { Units } from "@/lib/units";
 import { WorkoutForm, type WorkoutDraft } from "./WorkoutForm";
@@ -14,7 +15,7 @@ export function WorkoutsView({ today, units, rows, exerciseNames, lastSummary }:
   const { run } = useAction();
   return (
     <>
-      <div id="workout-form">
+      <div id="log" className="scroll-mt-6">
         <WorkoutForm key={editing?.id ?? "new"} today={today} units={units} exerciseNames={exerciseNames} lastSummary={lastSummary} editing={editing} onDone={() => setEditing(null)} />
       </div>
       <section className="card">
@@ -28,10 +29,10 @@ export function WorkoutsView({ today, units, rows, exerciseNames, lastSummary }:
                   <div className="font-medium">{r.summary}</div>
                   {r.exercises.length > 0 && <div className="mt-0.5 text-xs text-muted">{r.exercises.join(" · ")}</div>}
                 </div>
-                <button className="btn-ghost px-2 py-1 text-xs" onClick={() => { setEditing(r.draft); document.getElementById("workout-form")?.scrollIntoView({ behavior: "smooth" }); }}>
+                <button className="btn-ghost px-2 py-1 text-xs" onClick={() => { setEditing(r.draft); document.getElementById("log")?.scrollIntoView({ behavior: "smooth" }); }}>
                   Edit
                 </button>
-                <ConfirmButton onConfirm={() => run(() => deleteWorkout(r.id))} />
+                <UndoDeleteButton what="Workout" action={() => deleteWorkout(r.id)} />
               </li>
             ))}
           </ul>

@@ -1,17 +1,22 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AlertTriangle, Check, Lock, RotateCcw, Sparkles, Trash2, X } from "lucide-react";
+import { AlertTriangle, Check, ClipboardPaste, Lock, RotateCcw, Trash2, X } from "lucide-react";
 import { PageHeader, numOrNull } from "@/components/ui";
 import { formatDate } from "@/lib/dates";
 import { ENERGY_EMOJI, MOOD_EMOJI, WORKOUT_LABELS, WORKOUT_TYPES } from "@/lib/constants";
 import {
   displayToKg, displayToKm, displayToMl, distanceUnit, kgToDisplay, kmToDisplay, mlToDisplay, waterUnit, weightUnit, type Units,
 } from "@/lib/units";
-import type { Decision, ReviewItemWithDup } from "@/lib/import/server";
-import { LOW_CONFIDENCE } from "@/lib/import/normalize";
+import { flagDuplicates, type Decision, type Existing, type ReviewItemWithDup } from "@/lib/import/duplicates";
+import { LOW_CONFIDENCE, normalizeEntries, type ReviewItem } from "@/lib/import/normalize";
+import { parseNotes, type AliasRule } from "@/lib/import/parser";
+import type { ImportEntry } from "@/lib/import/schema";
+import { Tip } from "@/components/Tip";
+import { useToast } from "@/components/Toast";
+import { OnDeviceEnhance } from "./OnDeviceEnhance";
 
 type Item = ReviewItemWithDup & { approved: boolean };
 type Opt = { id: string; name: string };
@@ -22,31 +27,54 @@ Tues: rest day, 8h sleep, journaled about work stress`;
 const KIND_LABEL: Record<Item["kind"], string> = { health: "Health", workout: "Workout", habit: "Habit", goal_update: "Goal progress", journal: "Journal" };
 const DECISION_LABEL: Record<Decision, string> = { add: "Add anyway", merge: "Keep existing, fill gaps", overwrite: "Overwrite existing", replace: "Replace existing", skip: "Skip" };
 
-export function ImportClient({ units, habits, goals, configured, model }: { units: Units; habits: Opt[]; goals: (Opt & { unit: string })[]; configured: boolean; model: string }) {
+export function ImportClient({ today, units, habits, goals, aliases, tipsSeen, onDeviceAi }: {
+  today: string; units: Units; habits: Opt[]; goals: (Opt & { unit: string })[]; aliases: AliasRule[]; tipsSeen: string[]; onDeviceAi: boolean;
+}) {
   const [text, setText] = useState("");
-  const [phase, setPhase] = useState<"input" | "loading" | "review" | "saving" | "done">("input");
-  const [error, setError] = useState<{ message: string; retryable: boolean } | null>(null);
+  const [phase, setPhase] = useState<"input" | "checking" | "review" | "saving" | "done">("input");
+  const [error, setError] = useState<string | null>(null);
   const [items, setItems] = useState<Item[]>([]);
-  const [unparsed, setUnparsed] = useState<string[]>([]);
+  const [originals, setOriginals] = useState<Record<string, ReviewItem>>({});
   const [result, setResult] = useState<string | null>(null);
+  const [enhanced, setEnhanced] = useState<ImportEntry[] | null>(null);
   const router = useRouter();
+  const toast = useToast();
 
-  async function parse() {
-    setError(null);
-    setPhase("loading");
+  // Tier 1: parse instantly on this device as the user types or pastes.
+  const ctx = useMemo(() => ({ today, units, habits: habits.map((h) => h.name), goals: goals.map((g) => ({ title: g.name, unit: g.unit })), aliases }), [today, units, habits, goals, aliases]);
+  const parsed = useMemo(() => (text.trim() ? parseNotes(text, ctx) : null), [text, ctx]);
+  const entries = enhanced ?? parsed?.entries ?? [];
+  const preview = useMemo(() => {
+    const items = normalizeEntries(entries, { today, units, habits, goals });
+    const count = (k: ReviewItem["kind"]) => items.filter((i) => i.kind === k).length;
+    return { items, days: new Set(items.map((i) => i.date)).size, health: count("health"), workout: count("workout"), habit: count("habit"), goal: count("goal_update"), journal: count("journal"), low: items.filter((i) => i.confidence < LOW_CONFIDENCE || i.lowFields.length).length };
+  }, [entries, today, units, habits, goals]);
+  useEffect(() => setEnhanced(null), [text]);
+
+  async function pasteFromClipboard() {
     try {
-      const res = await fetch("/api/import/parse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
-      const json = await res.json();
-      if (!res.ok) {
-        setError({ message: json.error ?? "Something went wrong.", retryable: json.retryable !== false });
-        setPhase("input");
-        return;
-      }
-      setItems((json.items as ReviewItemWithDup[]).map((i) => ({ ...i, approved: false })));
-      setUnparsed(json.unparsed ?? []);
+      const t = await navigator.clipboard.readText();
+      if (t) setText((x) => (x ? `${x}\n${t}` : t));
+    } catch {
+      toast({ message: "Clipboard access was blocked. Long-press the box and choose Paste instead.", tone: "error" });
+    }
+  }
+
+  async function review() {
+    setError(null);
+    setPhase("checking");
+    try {
+      // Only dates are sent; your own existing entries for those dates come back for a duplicate check here.
+      const dates = [...new Set(preview.items.map((i) => i.date))].join(",");
+      const res = await fetch(`/api/import/existing?dates=${encodeURIComponent(dates)}`);
+      if (!res.ok) throw new Error();
+      const existing = (await res.json()) as Existing;
+      const flagged = flagDuplicates(preview.items, existing, units).map((i) => ({ ...i, approved: false }));
+      setOriginals(Object.fromEntries(preview.items.map((i) => [i.key, i])));
+      setItems(flagged);
       setPhase("review");
     } catch {
-      setError({ message: "Couldn't reach the server. Check your connection and retry.", retryable: true });
+      setError("Couldn't check for duplicates. Check your connection and try again.");
       setPhase("input");
     }
   }
@@ -57,6 +85,26 @@ export function ImportClient({ units, habits, goals, configured, model }: { unit
   const approveAll = () => setItems((xs) => xs.map((x) => ({ ...x, approved: savable(x) })));
   const toSave = items.filter((i) => i.approved && savable(i));
 
+  /** Corrections become personal shorthand ("bb" → "Bench press") for next time. */
+  function learnedAliases() {
+    const out: { kind: AliasRule["kind"]; alias: string; target: string }[] = [];
+    for (const it of toSave) {
+      const o = originals[it.key];
+      if (!o) continue;
+      if (it.kind === "habit" && o.kind === "habit" && !o.data.habitId && it.data.habitId) {
+        const target = habits.find((h) => h.id === it.data.habitId)?.name;
+        if (target) out.push({ kind: "habit", alias: o.data.habitName.toLowerCase().slice(0, 40), target });
+      }
+      if (it.kind === "workout" && o.kind === "workout") {
+        it.data.exercises.forEach((e, idx) => {
+          const before = o.data.exercises[idx]?.name;
+          if (before && e.name && before !== e.name) out.push({ kind: "exercise", alias: before.toLowerCase().slice(0, 40), target: e.name.slice(0, 60) });
+        });
+      }
+    }
+    return out.slice(0, 50);
+  }
+
   async function save() {
     setPhase("saving");
     setError(null);
@@ -64,21 +112,22 @@ export function ImportClient({ units, habits, goals, configured, model }: { unit
       const res = await fetch("/api/import/commit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: toSave.map(({ kind, date, data, decision }) => ({ kind, date, data, decision })) }),
+        body: JSON.stringify({ items: toSave.map(({ kind, date, data, decision }) => ({ kind, date, data, decision })), aliases: learnedAliases() }),
       });
       const json = await res.json();
       if (!res.ok) {
-        setError({ message: json.error ?? "Saving failed.", retryable: true });
+        setError(json.error ?? "Saving failed. Nothing was changed.");
         setPhase("review");
         return;
       }
       const s = json.saved as Record<string, number>;
       const parts = Object.entries(s).filter(([, n]) => n > 0).map(([k, n]) => `${n} ${KIND_LABEL[k as Item["kind"]].toLowerCase()}`);
       setResult(parts.length ? `Saved ${parts.join(", ")}.` : "Nothing new to save.");
+      setText("");
       setPhase("done");
       router.refresh();
     } catch {
-      setError({ message: "Couldn't reach the server. Your entries are still here — try again.", retryable: true });
+      setError("Couldn't reach the server. Your entries are still here. Try again.");
       setPhase("review");
     }
   }
@@ -88,97 +137,100 @@ export function ImportClient({ units, habits, goals, configured, model }: { unit
     for (const i of [...items].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))) m.set(i.date, [...(m.get(i.date) ?? []), i]);
     return [...m.entries()];
   }, [items]);
+  const total = preview.items.length;
 
   return (
     <div className="space-y-5">
-      <PageHeader theme="import" icon={<Sparkles size={26} />} eyebrow="Powered by Claude" title="AI Notes Import" subtitle="Paste notes from any app. Review everything before it's saved." />
+      <PageHeader theme="import" eyebrow="Smart Import" title="Paste your notes" subtitle="From Apple Notes, Google Keep, Notion, anywhere. You approve everything before it's saved." />
 
-      <div className="flex items-start gap-3 rounded-2xl bg-lavender-soft px-4 py-3 text-sm">
-        <Lock size={16} className="mt-0.5 shrink-0 text-lavender" />
-        <p>
-          <b>Privacy:</b> the text you paste here is sent to Anthropic&apos;s Claude API ({model}) to extract entries, along with your habit and goal names.
-          Nothing else leaves this device, and nothing is saved until you approve it.
-        </p>
-      </div>
-
-      {!configured && (
-        <div className="rounded-2xl bg-warn-soft px-4 py-3 text-sm">
-          AI import needs an <code>ANTHROPIC_API_KEY</code> in your <code>.env</code> file. See the README for setup. Everything else in Thrivie works without it.
-        </div>
-      )}
+      <p className="flex items-start gap-2.5 rounded-2xl bg-seaglass-soft px-4 py-3 text-sm">
+        <Lock size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
+        <span>Your notes are read <b>on this device</b>. The pasted text is never sent to our server; only the entries you approve are saved.</span>
+      </p>
+      <Tip id="import" seen={tipsSeen}>Write the day first, like “Mon -” or “yesterday:”, and Thrivie will sort entries by date. Checkmarks (✅ ❌) mark habits as done or missed.</Tip>
 
       {phase === "done" && (
-        <div className="card space-y-3 text-center">
-          <div className="text-3xl">🎉</div>
-          <p className="font-medium">{result}</p>
-          <div className="flex justify-center gap-2">
-            <Link href="/" className="btn-primary">Go to dashboard</Link>
-            <button className="btn-soft" onClick={() => { setText(""); setItems([]); setPhase("input"); }}>Import more</button>
+        <div className="card space-y-3 text-center" role="status">
+          <div className="text-3xl" aria-hidden>✦</div>
+          <p className="font-display text-xl">{result}</p>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Link href="/" className="btn-primary">See today</Link>
+            <button className="btn-soft" onClick={() => { setItems([]); setPhase("input"); }}>Import more</button>
           </div>
         </div>
       )}
 
-      {(phase === "input" || phase === "loading") && (
-        <section className="card space-y-3">
-          <textarea
-            className="input min-h-48 text-sm leading-relaxed"
-            placeholder={EXAMPLE}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            disabled={phase === "loading"}
-            aria-label="Notes to import"
-          />
+      {(phase === "input" || phase === "checking") && (
+        <section className="card space-y-4">
+          <label className="block">
+            <span className="sr-only">Notes to import</span>
+            <textarea
+              className="input min-h-56 text-[15px] leading-relaxed"
+              placeholder={EXAMPLE}
+              value={text}
+              maxLength={20000}
+              onChange={(e) => setText(e.target.value)}
+              spellCheck={false}
+            />
+          </label>
           <div className="flex flex-wrap items-center gap-2">
-            <button className="btn-primary" onClick={parse} disabled={!configured || !text.trim() || phase === "loading"}>
-              <Sparkles size={16} /> {phase === "loading" ? "Reading your notes…" : "Extract entries"}
-            </button>
-            {!text && <button className="btn-ghost text-xs" onClick={() => setText(EXAMPLE)}>Try the example</button>}
-            <span className="text-xs text-muted">{text.length ? `${text.length.toLocaleString()} characters` : "Works with messy, abbreviated, multi-day notes."}</span>
+            <button type="button" className="btn-outline" onClick={pasteFromClipboard}><ClipboardPaste size={16} aria-hidden /> Paste from clipboard</button>
+            {!text && <button type="button" className="btn-ghost" onClick={() => setText(EXAMPLE)}>Try the example</button>}
+            {text && <button type="button" className="btn-ghost" onClick={() => setText("")}>Clear</button>}
           </div>
-          {phase === "loading" && <div className="h-1 overflow-hidden rounded-full bg-surface-2"><div className="h-full w-1/3 animate-pulse rounded-full bg-primary" /></div>}
+
+          {parsed && (
+            <div className="rounded-2xl bg-surface-2/60 p-4" aria-live="polite">
+              <p className="text-sm font-bold">
+                {total ? `Found ${total} entr${total === 1 ? "y" : "ies"} across ${preview.days} day${preview.days === 1 ? "" : "s"}` : "Nothing recognised yet. Try adding a day and a number, like “Mon - slept 7h”."}
+              </p>
+              {total > 0 && (
+                <ul className="mt-2 flex flex-wrap gap-2 text-xs font-semibold">
+                  {preview.health > 0 && <li className="rounded-full bg-terracotta-soft px-3 py-1 text-terracotta-ink">{preview.health} check-in{preview.health === 1 ? "" : "s"}</li>}
+                  {preview.workout > 0 && <li className="rounded-full bg-ocean-soft px-3 py-1 text-ocean">{preview.workout} workout{preview.workout === 1 ? "" : "s"}</li>}
+                  {preview.habit > 0 && <li className="rounded-full bg-sage-soft px-3 py-1 text-sage-ink">{preview.habit} habit{preview.habit === 1 ? "" : "s"}</li>}
+                  {preview.goal > 0 && <li className="rounded-full bg-gold-soft px-3 py-1 text-gold-ink">{preview.goal} goal update{preview.goal === 1 ? "" : "s"}</li>}
+                  {preview.journal > 0 && <li className="rounded-full bg-iris-soft px-3 py-1 text-iris">{preview.journal} journal</li>}
+                  {preview.low > 0 && <li className="rounded-full bg-surface px-3 py-1 text-muted">{preview.low} to double-check</li>}
+                </ul>
+              )}
+              {parsed.unparsed.length > 0 && <p className="mt-2 text-xs text-muted">Not recognised: {parsed.unparsed.slice(0, 4).map((u) => `“${u.slice(0, 40)}”`).join(", ")}{parsed.unparsed.length > 4 ? "…" : ""}</p>}
+            </div>
+          )}
+
+          <OnDeviceEnhance enabled={onDeviceAi} text={text} ctx={ctx} parsed={parsed} onResult={setEnhanced} active={!!enhanced} />
+
+          <button type="button" className="btn-primary w-full sm:w-auto" disabled={!total || phase === "checking"} onClick={review}>
+            {phase === "checking" ? "Checking for duplicates…" : total ? `Review ${total} entr${total === 1 ? "y" : "ies"}` : "Review entries"}
+          </button>
         </section>
       )}
 
       {error && (
-        <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger" role="alert">
-          <AlertTriangle size={16} />
-          <span className="flex-1">{error.message}</span>
-          {error.retryable && phase === "input" && (
-            <button className="btn bg-surface px-3 py-1.5 text-xs text-text" onClick={parse}><RotateCcw size={14} /> Retry</button>
-          )}
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-terracotta-soft px-4 py-3 text-sm text-terracotta-ink" role="alert">
+          <AlertTriangle size={16} aria-hidden />
+          <span className="flex-1">{error}</span>
+          {phase === "input" && <button className="btn bg-surface px-3 text-xs text-text" onClick={review}><RotateCcw size={14} aria-hidden /> Retry</button>}
         </div>
       )}
 
       {(phase === "review" || phase === "saving") && (
         <>
-          <div className="sticky top-0 z-30 -mx-4 flex flex-wrap items-center gap-2 border-b border-border bg-bg/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
-            <span className="mr-auto text-xs text-muted sm:text-sm">
-              <b className="text-text">{toSave.length}</b>/{items.length} approved
-            </span>
-            <button className="btn-ghost px-2 text-xs" onClick={() => { setItems([]); setPhase("input"); }}>Back</button>
-            <button className="btn-soft" onClick={approveAll} disabled={!items.length}><Check size={16} /> Approve all</button>
-            <button className="btn-primary" onClick={save} disabled={!toSave.length || phase === "saving"}>
-              {phase === "saving" ? "Saving…" : `Save ${toSave.length}`}
-            </button>
+          <div className="glass sticky top-[env(safe-area-inset-top)] z-30 -mx-1 flex flex-wrap items-center gap-2 rounded-2xl px-3 py-2.5">
+            <span className="mr-auto text-sm text-muted"><b className="text-text">{toSave.length}</b> of {items.length} approved</span>
+            <button className="btn-ghost px-3" onClick={() => { setItems([]); setPhase("input"); }}>Back</button>
+            <button className="btn-soft" onClick={approveAll} disabled={!items.length}><Check size={16} aria-hidden /> Approve all</button>
+            <button className="btn-primary" onClick={save} disabled={!toSave.length || phase === "saving"}>{phase === "saving" ? "Saving…" : `Save ${toSave.length}`}</button>
           </div>
-
-          {!items.length && <p className="card text-sm text-muted">No trackable entries were found in that text. Try adding dates or numbers.</p>}
-
+          <p className="text-xs text-muted">Highlighted fields are ones Thrivie is less sure about. Check them quickly before approving.</p>
           {grouped.map(([date, group]) => (
-            <section key={date} className="space-y-3">
-              <h2 className="text-sm font-semibold text-muted">{formatDate(date, { weekday: "long", month: "short", day: "numeric" })}</h2>
+            <section key={date} className="space-y-3" aria-label={formatDate(date, { weekday: "long", month: "long", day: "numeric" })}>
+              <h2 className="text-sm font-bold text-muted">{formatDate(date, { weekday: "long", month: "short", day: "numeric" })}</h2>
               {group.map((item) => (
                 <ReviewCard key={item.key} item={item} units={units} habits={habits} goals={goals} onChange={(fn) => update(item.key, fn)} onRemove={() => remove(item.key)} />
               ))}
             </section>
           ))}
-
-          {unparsed.length > 0 && (
-            <div className="card text-sm">
-              <h3 className="mb-1 font-medium">Couldn&apos;t interpret</h3>
-              <ul className="list-disc pl-5 text-muted">{unparsed.map((u, i) => <li key={i}>{u}</li>)}</ul>
-            </div>
-          )}
         </>
       )}
     </div>

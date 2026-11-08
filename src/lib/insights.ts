@@ -75,7 +75,7 @@ export function computeInsights(input: InsightInput): Insight[] {
 
   // 4. Distance in the last 30 days
   const dist = workouts.filter((w) => diffDays(w.date, today) < 30 && w.date <= today).reduce((a, w) => a + (w.distanceKm ?? 0), 0);
-  if (dist >= 5) out.push({ id: "distance", emoji: "🏃", score: 55, text: `${kmToDisplay(dist, units)} ${distanceUnit(units)} covered in the last 30 days.` });
+  if (dist >= 5) out.push({ id: "distance", emoji: "🏃", score: 55, text: `${Math.round(kmToDisplay(dist, units) * 10) / 10} ${distanceUnit(units)} covered in the last 30 days.` });
 
   // 5. Steps trend: this week's average vs the previous 3 weeks
   const avgSteps = (from: DateStr, to: DateStr) => mean(health.filter((h) => h.date >= from && h.date <= to && h.steps != null).map((h) => h.steps!));
