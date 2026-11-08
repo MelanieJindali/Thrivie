@@ -30,3 +30,16 @@ export const MODULE_INFO = {
 } as const;
 
 export const MEDICAL_NOTE = "Thrivie is for personal tracking only and isn't medical advice.";
+
+/** Visual identity per area of the app (literal class names so Tailwind picks them up). */
+export const THEME = {
+  today: { hover: "group-hover:text-gold", text: "text-gold", soft: "bg-gold-soft", grad: "from-gold to-amber", ring: "ring-gold/30" },
+  health: { hover: "group-hover:text-rose", text: "text-rose", soft: "bg-rose-soft", grad: "from-rose to-amber", ring: "ring-rose/30" },
+  workouts: { hover: "group-hover:text-sapphire", text: "text-sapphire", soft: "bg-sapphire-soft", grad: "from-sapphire to-teal", ring: "ring-sapphire/30" },
+  habits: { hover: "group-hover:text-emerald", text: "text-emerald", soft: "bg-emerald-soft", grad: "from-emerald to-teal", ring: "ring-emerald/30" },
+  goals: { hover: "group-hover:text-amber", text: "text-amber", soft: "bg-amber-soft", grad: "from-amber to-rose", ring: "ring-amber/30" },
+  journal: { hover: "group-hover:text-plum", text: "text-plum", soft: "bg-plum-soft", grad: "from-plum to-sapphire", ring: "ring-plum/30" },
+  import: { hover: "group-hover:text-primary", text: "text-primary", soft: "bg-primary-soft", grad: "from-primary to-plum", ring: "ring-primary/30" },
+  settings: { hover: "group-hover:text-text", text: "text-muted", soft: "bg-surface-2", grad: "from-muted to-text", ring: "ring-border" },
+} as const;
+export type ThemeKey = keyof typeof THEME;

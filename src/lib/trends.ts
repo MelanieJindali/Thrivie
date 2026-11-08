@@ -11,12 +11,12 @@ export function healthTrendSpecs(logs: HealthLog[], today: DateStr, units: Units
     return { date, value: l ? fn(l) : null };
   });
   const all: Record<string, TrendSpec> = {
-    weight: { key: "weight", title: "Weight", unit: weightUnit(units), summary: "latest", data: series((l) => (l.weightKg != null ? kgToDisplay(l.weightKg, units) : null)) },
-    sleep: { key: "sleep", title: "Sleep", unit: "h", data: series((l) => l.sleepHours), color: "var(--sky)" },
-    mood: { key: "mood", title: "Mood", unit: "/ 5", decimals: 1, domain: [1, 5], data: series((l) => l.mood), color: "var(--lavender)" },
-    energy: { key: "energy", title: "Energy", unit: "/ 5", decimals: 1, domain: [1, 5], data: series((l) => l.energy), color: "var(--accent)" },
-    steps: { key: "steps", title: "Steps", decimals: 0, data: series((l) => l.steps) },
-    water: { key: "water", title: "Water", unit: waterUnit(units), decimals: 0, data: series((l) => (l.waterMl != null ? mlToDisplay(l.waterMl, units) : null)), color: "var(--sky)" },
+    weight: { key: "weight", title: "Weight", unit: weightUnit(units), summary: "latest", color: "var(--rose)", data: series((l) => (l.weightKg != null ? kgToDisplay(l.weightKg, units) : null)) },
+    sleep: { key: "sleep", title: "Sleep", unit: "h", data: series((l) => l.sleepHours), color: "var(--sapphire)" },
+    mood: { key: "mood", title: "Mood", unit: "/ 5", decimals: 1, domain: [1, 5], data: series((l) => l.mood), color: "var(--plum)" },
+    energy: { key: "energy", title: "Energy", unit: "/ 5", decimals: 1, domain: [1, 5], data: series((l) => l.energy), color: "var(--amber)" },
+    steps: { key: "steps", title: "Steps", decimals: 0, data: series((l) => l.steps), color: "var(--emerald)" },
+    water: { key: "water", title: "Water", unit: waterUnit(units), decimals: 0, data: series((l) => (l.waterMl != null ? mlToDisplay(l.waterMl, units) : null)), color: "var(--teal)" },
   };
   return which.map((k) => all[k]).filter(Boolean);
 }

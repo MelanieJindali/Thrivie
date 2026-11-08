@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CalendarDays, CircleCheck, Dumbbell, Sun, Target, Trophy } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import { addDays, formatDate, todayInTz } from "@/lib/dates";
@@ -57,9 +58,17 @@ export default async function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <p className="text-sm text-muted">{formatDate(today, { weekday: "long", month: "long", day: "numeric" })}</p>
-        <h1 className="h1 mt-0.5">{greeting(settings.name, settings.timezone)} 🌿</h1>
+      <header className="pt-1">
+        <p className="eyebrow">{formatDate(today, { weekday: "long", month: "long", day: "numeric" })}</p>
+        <h1 className="h1 mt-2">
+          {greeting(settings.name, settings.timezone)}
+          <span className="text-gold">.</span>
+        </h1>
+        {dueCount > 0 && (
+          <p className="mt-2 text-sm text-muted">
+            {doneCount === dueCount ? "Every habit done today — beautifully consistent." : `${dueCount - doneCount} habit${dueCount - doneCount === 1 ? "" : "s"} left today. You've got this.`}
+          </p>
+        )}
       </header>
 
       <DailyBrief initial={cached ? { brief: cached.brief, source: cached.source, createdAt: cached.createdAt.toISOString() } : null} hasData={hasAnyData} />
@@ -87,25 +96,25 @@ export default async function Dashboard() {
       <div className="grid gap-6 lg:grid-cols-2">
         {vis.includes("habits") && (
           <section className="card">
-            <div className="mb-3 flex items-baseline justify-between">
-              <h2 className="h2">Today&apos;s habits</h2>
-              {dueCount > 0 && <span className="text-xs text-muted">{doneCount}/{dueCount} done</span>}
+            <div className="mb-4 flex items-center justify-between">
+              <SectionTitle icon={<CircleCheck size={16} />} tone="bg-emerald-soft text-emerald">Today&apos;s habits</SectionTitle>
+              {dueCount > 0 && <Ring done={doneCount} total={dueCount} />}
             </div>
             <HabitCheckList habits={habits} />
           </section>
         )}
 
         <section className="card space-y-4">
-          <h2 className="h2">Today so far</h2>
+          <SectionTitle icon={<Sun size={16} />} tone="bg-gold-soft text-gold">Today so far</SectionTitle>
           {vis.includes("health") && (
             todayLog ? (
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <Stat label="Sleep" value={todayLog.sleepHours != null ? `${todayLog.sleepHours}h` : "—"} />
-                <Stat label="Mood" value={todayLog.mood ? MOOD_EMOJI[todayLog.mood - 1] : "—"} />
-                <Stat label="Energy" value={todayLog.energy ? ENERGY_EMOJI[todayLog.energy - 1] : "—"} />
-                <Stat label="Steps" value={todayLog.steps != null ? todayLog.steps.toLocaleString("en-US") : "—"} />
-                <Stat label={`Water`} value={todayLog.waterMl != null ? `${mlToDisplay(todayLog.waterMl, u)} ${waterUnit(u)}` : "—"} />
-                <Stat label="Weight" value={todayLog.weightKg != null ? `${kgToDisplay(todayLog.weightKg, u)} ${weightUnit(u)}` : "—"} />
+              <div className="grid grid-cols-3 gap-2.5 text-center">
+                <Stat tone="bg-sapphire-soft text-sapphire" label="Sleep" value={todayLog.sleepHours != null ? `${todayLog.sleepHours}h` : "—"} />
+                <Stat tone="bg-plum-soft text-plum" label="Mood" value={todayLog.mood ? MOOD_EMOJI[todayLog.mood - 1] : "—"} />
+                <Stat tone="bg-amber-soft text-amber" label="Energy" value={todayLog.energy ? ENERGY_EMOJI[todayLog.energy - 1] : "—"} />
+                <Stat tone="bg-emerald-soft text-emerald" label="Steps" value={todayLog.steps != null ? todayLog.steps.toLocaleString("en-US") : "—"} />
+                <Stat tone="bg-teal-soft text-teal" label="Water" value={todayLog.waterMl != null ? `${mlToDisplay(todayLog.waterMl, u)} ${waterUnit(u)}` : "—"} />
+                <Stat tone="bg-rose-soft text-rose" label="Weight" value={todayLog.weightKg != null ? `${kgToDisplay(todayLog.weightKg, u)} ${weightUnit(u)}` : "—"} />
               </div>
             ) : (
               <p className="text-sm text-muted">No health log yet today. Tap <b>Log health</b> above — it takes a few seconds.</p>
@@ -114,7 +123,11 @@ export default async function Dashboard() {
           {vis.includes("workouts") && (
             <div className="text-sm">
               {todaysWorkouts.length ? (
-                <ul className="space-y-1">{todaysWorkouts.map((w) => <li key={w.id}>{describeWorkout(w, u)}</li>)}</ul>
+                <ul className="space-y-2">
+                  {todaysWorkouts.map((w) => (
+                    <li key={w.id} className="rounded-2xl bg-sapphire-soft px-3.5 py-2.5 font-medium text-sapphire">{describeWorkout(w, u)}</li>
+                  ))}
+                </ul>
               ) : (
                 <p className="text-muted">No workout logged today — rest days count too.</p>
               )}
@@ -125,12 +138,12 @@ export default async function Dashboard() {
 
       {insights.length > 0 && (
         <section className="card">
-          <h2 className="h2 mb-3">Highlights</h2>
-          <ul className="grid gap-2 sm:grid-cols-2">
-            {insights.map((i) => (
-              <li key={i.id} className="flex items-start gap-3 rounded-xl bg-surface-2 px-3 py-2.5 text-sm">
-                <span aria-hidden className="text-lg leading-5">{i.emoji}</span>
-                <span>{phrased.get(i.id) ?? i.text}</span>
+          <div className="mb-4"><SectionTitle icon={<Trophy size={16} />} tone="bg-amber-soft text-amber">Highlights</SectionTitle></div>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {insights.map((i, idx) => (
+              <li key={i.id} className={`flex items-center gap-3.5 rounded-2xl px-4 py-3.5 text-sm font-medium ${HIGHLIGHT_TONES[idx % HIGHLIGHT_TONES.length]}`}>
+                <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface text-xl shadow-sm">{i.emoji}</span>
+                <span className="text-text">{phrased.get(i.id) ?? i.text}</span>
               </li>
             ))}
           </ul>
@@ -142,15 +155,15 @@ export default async function Dashboard() {
       <div className="grid gap-6 lg:grid-cols-2">
         {vis.includes("workouts") && (
           <section className="card">
-            <h2 className="h2 mb-3">Weekly workout minutes</h2>
+            <div className="mb-4"><SectionTitle icon={<Dumbbell size={16} />} tone="bg-sapphire-soft text-sapphire">Weekly workout minutes</SectionTitle></div>
             <WorkoutVolumeChart data={weeklyVolume(workouts, today, 8)} />
           </section>
         )}
         {vis.includes("habits") && habits.length > 0 && (
           <section className="card">
-            <div className="mb-3 flex items-baseline justify-between">
-              <h2 className="h2">Habit consistency</h2>
-              <Link href="/habits" className="text-xs text-primary">Details ›</Link>
+            <div className="mb-4 flex items-center justify-between">
+              <SectionTitle icon={<CalendarDays size={16} />} tone="bg-emerald-soft text-emerald">Habit consistency</SectionTitle>
+              <Link href="/habits" className="text-xs font-semibold text-primary">Details ›</Link>
             </div>
             <Heatmap values={heat} today={today} weeks={13} />
             <p className="mt-2 text-xs text-muted">Last 13 weeks · darker = more daily habits done</p>
@@ -160,9 +173,9 @@ export default async function Dashboard() {
 
       {vis.includes("goals") && goals.length > 0 && (
         <section className="card">
-          <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="h2">Goals</h2>
-            <Link href="/goals" className="text-xs text-primary">Manage ›</Link>
+          <div className="mb-4 flex items-center justify-between">
+            <SectionTitle icon={<Target size={16} />} tone="bg-amber-soft text-amber">Goals</SectionTitle>
+            <Link href="/goals" className="text-xs font-semibold text-primary">Manage ›</Link>
           </div>
           <div className="grid gap-5 sm:grid-cols-2">
             {goals.map((g) => <GoalSummary key={g.id} goal={g} units={u} />)}
@@ -173,11 +186,44 @@ export default async function Dashboard() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+const HIGHLIGHT_TONES = [
+  "bg-linear-to-br from-amber-soft to-gold-soft",
+  "bg-linear-to-br from-sapphire-soft to-teal-soft",
+  "bg-linear-to-br from-emerald-soft to-teal-soft",
+  "bg-linear-to-br from-plum-soft to-rose-soft",
+  "bg-linear-to-br from-rose-soft to-amber-soft",
+];
+
+function Stat({ label, value, tone }: { label: string; value: string; tone: string }) {
   return (
-    <div className="rounded-xl bg-surface-2 px-2 py-2.5">
-      <div className="text-base font-medium">{value}</div>
-      <div className="text-[11px] text-muted uppercase">{label}</div>
+    <div className={`rounded-2xl px-2 py-3 ${tone}`}>
+      <div className="font-display text-lg font-semibold text-text">{value}</div>
+      <div className="mt-0.5 text-[10px] font-bold tracking-[0.12em] uppercase opacity-90">{label}</div>
+    </div>
+  );
+}
+
+function SectionTitle({ icon, tone, children }: { icon: React.ReactNode; tone: string; children: React.ReactNode }) {
+  return (
+    <h2 className="h2 flex items-center gap-2.5">
+      <span className={`grid h-8 w-8 place-items-center rounded-xl ${tone}`}>{icon}</span>
+      {children}
+    </h2>
+  );
+}
+
+/** Small progress ring for "habits done today". */
+function Ring({ done, total }: { done: number; total: number }) {
+  const r = 16;
+  const c = 2 * Math.PI * r;
+  const pct = total ? done / total : 0;
+  return (
+    <div className="relative grid h-11 w-11 place-items-center" title={`${done} of ${total} done`}>
+      <svg viewBox="0 0 40 40" className="absolute inset-0 -rotate-90">
+        <circle cx="20" cy="20" r={r} fill="none" stroke="var(--surface-2)" strokeWidth="4" />
+        <circle cx="20" cy="20" r={r} fill="none" stroke="var(--emerald)" strokeWidth="4" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - pct)} style={{ transition: "stroke-dashoffset .6s" }} />
+      </svg>
+      <span className="text-[11px] font-bold">{done}/{total}</span>
     </div>
   );
 }

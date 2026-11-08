@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { CSV_TABLES } from "@/lib/backup";
 import { PageHeader } from "@/components/ui";
 import { SettingsForm, ThemePicker, BackupRestore, DangerZone } from "./SettingsClient";
+import { Settings as SettingsIcon } from "lucide-react";
 
 export default async function SettingsPage() {
   const settings = await getSettings();
@@ -13,7 +14,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Settings" />
+      <PageHeader theme="settings" icon={<SettingsIcon size={26} />} eyebrow="Preferences" title="Settings" />
 
       <section className="card">
         <h2 className="h2 mb-4">Profile & units</h2>

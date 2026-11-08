@@ -4,6 +4,8 @@ import { getHabitViews, habitCompletionByDay } from "@/lib/queries";
 import { HabitCheckList } from "@/components/HabitCheckList";
 import { Heatmap } from "@/components/Heatmap";
 import { HabitManager } from "./HabitManager";
+import { PageHeader } from "@/components/ui";
+import { CircleCheck } from "lucide-react";
 
 export default async function HabitsPage() {
   const settings = await getSettings();
@@ -14,10 +16,7 @@ export default async function HabitsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="h1">Habits</h1>
-        <p className="mt-1 text-sm text-muted">Tap to check off. Small and steady wins.</p>
-      </div>
+      <PageHeader theme="habits" icon={<CircleCheck size={26} />} eyebrow="Daily rituals" title="Habits" subtitle="Tap to check off. Small and steady wins." />
       <section className="card">
         <h2 className="h2 mb-3">Today</h2>
         <HabitCheckList habits={habits} showAll />

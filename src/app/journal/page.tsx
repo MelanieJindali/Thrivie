@@ -2,6 +2,8 @@ import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import { todayInTz } from "@/lib/dates";
 import { JournalComposer, JournalList } from "./JournalClient";
+import { PageHeader } from "@/components/ui";
+import { NotebookPen } from "lucide-react";
 
 export default async function JournalPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q = "" } = await searchParams;
@@ -15,10 +17,7 @@ export default async function JournalPage({ searchParams }: { searchParams: Prom
   });
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="h1">Journal</h1>
-        <p className="mt-1 text-sm text-muted">A few lines is plenty.</p>
-      </div>
+      <PageHeader theme="journal" icon={<NotebookPen size={26} />} eyebrow="Reflections" title="Journal" subtitle="A few lines is plenty." />
       <JournalComposer today={today} />
       <JournalList today={today} query={query} entries={entries.map(({ id, date, content, mood, prompt }) => ({ id, date, content, mood, prompt }))} />
     </div>

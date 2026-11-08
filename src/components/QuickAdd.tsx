@@ -18,37 +18,38 @@ export function QuickAdd({
 }) {
   const [open, setOpen] = useState<null | "health" | "journal">(null);
   const { run, pending, error, message } = useAction();
-  const btn = "flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-border bg-surface px-2 py-3 text-xs font-medium transition hover:bg-surface-2 active:scale-[0.97]";
+  const btn = "lift group flex flex-col items-center justify-center gap-2 rounded-3xl border border-border/70 bg-surface px-2 py-4 text-xs font-semibold shadow-soft active:scale-[0.97]";
+  const ico = (grad: string) => `grid h-11 w-11 place-items-center rounded-2xl bg-linear-to-br ${grad} text-white shadow-md transition group-hover:scale-110`;
   return (
     <>
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+      <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
         {visible.includes("health") && (
           <button className={btn} onClick={() => setOpen("health")}>
-            <HeartPulse size={20} className="text-danger" /> Log health
+            <span className={ico("from-rose to-amber")}><HeartPulse size={20} /></span> Log health
           </button>
         )}
         {visible.includes("workouts") && (
           <Link href="/workouts" className={btn}>
-            <Dumbbell size={20} className="text-sky" /> Workout
+            <span className={ico("from-sapphire to-teal")}><Dumbbell size={20} /></span> Workout
           </Link>
         )}
         {visible.includes("workouts") && lastWorkout && (
           <button className={btn} disabled={pending} title={lastWorkout} onClick={() => run(() => repeatLastWorkout(), { success: "Logged ✓" })}>
-            <Repeat size={20} className="text-sky" /> Repeat last
+            <span className={ico("from-teal to-emerald")}><Repeat size={20} /></span> Repeat last
           </button>
         )}
         {visible.includes("journal") && (
           <button className={btn} onClick={() => setOpen("journal")}>
-            <NotebookPen size={20} className="text-lavender" /> Journal
+            <span className={ico("from-plum to-sapphire")}><NotebookPen size={20} /></span> Journal
           </button>
         )}
         {visible.includes("goals") && (
           <Link href="/goals" className={btn}>
-            <Target size={20} className="text-accent" /> Goals
+            <span className={ico("from-amber to-rose")}><Target size={20} /></span> Goals
           </Link>
         )}
         <Link href="/import" className={btn}>
-          <Sparkles size={20} className="text-primary" /> AI import
+          <span className={ico("from-primary to-gold")}><Sparkles size={20} /></span> AI import
         </Link>
       </div>
       <div className="mt-2 min-h-5"><FormStatus error={error} message={message} /></div>

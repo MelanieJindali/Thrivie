@@ -10,22 +10,23 @@ export function Heatmap({ values, today, weeks = 13, label }: { values: Record<s
   const cols = Array.from({ length: weeks }, (_, w) => Array.from({ length: 7 }, (_, d) => addDays(first, w * 7 + d)));
   const shade = (v: number | undefined) => {
     if (!v) return "bg-surface-2";
-    if (v < 0.34) return "bg-primary/30";
-    if (v < 0.67) return "bg-primary/60";
-    return "bg-primary";
+    if (v < 0.34) return "bg-emerald/25";
+    if (v < 0.67) return "bg-emerald/55";
+    if (v < 1) return "bg-emerald/80";
+    return "bg-linear-to-br from-emerald to-teal";
   };
   return (
-    <div className="overflow-x-auto" aria-label={label ?? "Activity heatmap"}>
-      <div className="flex gap-[3px]">
+    <div aria-label={label ?? "Activity heatmap"}>
+      <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${weeks}, minmax(0, 1fr))`, maxWidth: weeks * 26 }}>
         {cols.map((col, i) => (
-          <div key={i} className="flex flex-col gap-[3px]">
+          <div key={i} className="flex flex-col gap-1">
             {col.map((d) => {
               const future = diffDays(today, d) > 0;
               return (
                 <div
                   key={d}
                   title={`${formatDate(d)}${values[d] ? ` · ${Math.round(values[d] * 100)}%` : ""}`}
-                  className={`h-3 w-3 rounded-[3px] sm:h-3.5 sm:w-3.5 ${future ? "bg-transparent" : shade(values[d])} ${d === today ? "ring-1 ring-text/40" : ""}`}
+                  className={`aspect-square w-full rounded-[4px] ${future ? "bg-transparent" : shade(values[d])} ${d === today ? "ring-1 ring-text/40" : ""}`}
                 />
               );
             })}

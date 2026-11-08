@@ -5,6 +5,7 @@ A calm, private, mobile-friendly wellness tracker for **health, workouts, habits
 - **Simple.** Most entries take a few taps: one-tap habit check-offs, "repeat last workout", and a quick-log sheet on the dashboard.
 - **Local-first and private.** Everything is stored in a local SQLite file. Data leaves your machine only when you use the AI features (see [Privacy](#privacy)).
 - **Installable.** Works as a PWA on phones and desktops, with light and dark mode.
+- **Calm, luxe design.** Warm ivory and deep emerald with champagne-gold accents, Fraunces serif headings, and a jewel tone for each area (rose for health, sapphire for workouts, emerald for habits, amber for goals, plum for the journal). Fonts are bundled locally, so the app makes no font requests.
 - **U.S. units by default** (lb, mi, fl oz). You can switch to metric in Settings at any time without losing data.
 
 > Thrivie is for personal tracking only. It isn't medical advice.
@@ -107,7 +108,8 @@ The AI prompts require encouraging, non-judgmental language: no shaming about we
 
 - **Next.js 15** (App Router, Server Components and Server Actions) + **TypeScript** + **Tailwind CSS 4**
 - **SQLite via Prisma 6**
-- **Recharts** for charts. The categorical chart palette was checked for color-blind separation.
+- **Recharts** for charts. The jewel-tone chart palette was checked for color-blind separation in both light and dark mode.
+- **Fraunces + Manrope** variable fonts, self-hosted via `@fontsource-variable`
 - **Anthropic TypeScript SDK** for AI. The model is configurable (default `claude-sonnet-5-5`).
 - **Zod** for validating every input and AI response
 - **Vitest** for tests

@@ -6,6 +6,8 @@ import { GoalSummary } from "@/components/GoalCard";
 import { Empty } from "@/components/ui";
 import { GoalForm, GoalActions } from "./GoalForm";
 import { goalDisplay } from "@/lib/goalDisplay";
+import { PageHeader } from "@/components/ui";
+import { Target } from "lucide-react";
 
 export default async function GoalsPage() {
   const settings = await getSettings();
@@ -17,10 +19,7 @@ export default async function GoalsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="h1">Goals</h1>
-        <p className="mt-1 text-sm text-muted">Link a goal to your logs and it updates itself. The thin line marks a steady pace.</p>
-      </div>
+      <PageHeader theme="goals" icon={<Target size={26} />} eyebrow="Ambitions" title="Goals" subtitle="Link a goal to your logs and it updates itself. The thin marker shows a steady pace." />
       <section className="space-y-3">
         {active.length ? (
           active.map((g) => {

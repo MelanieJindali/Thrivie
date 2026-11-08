@@ -7,6 +7,8 @@ import { kgToDisplay, kmToDisplay, paceToDisplay } from "@/lib/units";
 import { WorkoutVolumeChart } from "@/components/charts";
 import { WorkoutsView, type WorkoutRow } from "./WorkoutsView";
 import { describeWorkout } from "@/lib/format";
+import { PageHeader } from "@/components/ui";
+import { Dumbbell } from "lucide-react";
 
 export default async function WorkoutsPage() {
   const settings = await getSettings();
@@ -45,10 +47,7 @@ export default async function WorkoutsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="h1">Workouts</h1>
-        <p className="mt-1 text-sm text-muted">{weekMinutes ? `${weekMinutes} active minutes so far this week.` : "Every bit of movement counts."}</p>
-      </div>
+      <PageHeader theme="workouts" icon={<Dumbbell size={26} />} eyebrow="Movement" title="Workouts" subtitle={weekMinutes ? `${weekMinutes} active minutes so far this week.` : "Every bit of movement counts."} />
       <WorkoutsView today={today} units={u} rows={rows} exerciseNames={names.map((n) => n.name)} lastSummary={last ? describeWorkout(last, u) : null} />
       <section className="card">
         <h2 className="h2 mb-3">Weekly volume (minutes)</h2>

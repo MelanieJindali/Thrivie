@@ -8,6 +8,8 @@ import { TrendGroup } from "@/components/charts";
 import { HealthForm, type HealthPrefill } from "./HealthForm";
 import { HealthRowActions } from "./HealthRowActions";
 import { MOOD_EMOJI } from "@/lib/constants";
+import { PageHeader } from "@/components/ui";
+import { HeartPulse } from "lucide-react";
 
 export default async function HealthPage() {
   const settings = await getSettings();
@@ -38,10 +40,7 @@ export default async function HealthPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="h1">Health</h1>
-        <p className="mt-1 text-sm text-muted">Log just what you know — every field is optional.</p>
-      </div>
+      <PageHeader theme="health" icon={<HeartPulse size={26} />} eyebrow="Body & mind" title="Health" subtitle="Log just what you know — every field is optional." />
       <HealthForm
         today={today}
         units={u}

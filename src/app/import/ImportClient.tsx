@@ -91,7 +91,7 @@ export function ImportClient({ units, habits, goals, configured, model }: { unit
 
   return (
     <div className="space-y-5">
-      <PageHeader title="AI Notes Import" subtitle="Paste notes from any app. Review everything before it's saved." />
+      <PageHeader theme="import" icon={<Sparkles size={26} />} eyebrow="Powered by Claude" title="AI Notes Import" subtitle="Paste notes from any app. Review everything before it's saved." />
 
       <div className="flex items-start gap-3 rounded-2xl bg-lavender-soft px-4 py-3 text-sm">
         <Lock size={16} className="mt-0.5 shrink-0 text-lavender" />

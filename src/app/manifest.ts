@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Track health, workouts, habits, goals and a journal — privately.",
     start_url: "/",
     display: "standalone",
-    background_color: "#f7f6f2",
-    theme_color: "#5b8a72",
+    background_color: "#faf7f2",
+    theme_color: "#1f5c4a",
     orientation: "portrait",
     icons: [
       { src: "/icons/192", sizes: "192x192", type: "image/png" },
