@@ -86,8 +86,8 @@ export function HealthForm({
           mood,
           energy,
           steps: numOrNull(steps) != null ? Math.round(numOrNull(steps)!) : null,
-          custom: customObj,
-          notes,
+          custom: compact ? undefined : customObj,
+          notes: compact ? undefined : notes,
         }),
       { success: existing ? "Updated ✓" : "Saved ✓", onOk: onSaved },
     );

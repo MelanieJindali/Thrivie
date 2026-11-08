@@ -15,7 +15,7 @@ datasource db {
 model Settings {
   id             Int      @id @default(1)
   name           String   @default("")
-  units          String   @default("metric") // metric | imperial
+  units          String   @default("imperial") // imperial (U.S.) | metric
   timezone       String   @default("UTC")
   visibleModules String   @default("health,workouts,habits,goals,journal") // comma separated
   updatedAt      DateTime @updatedAt

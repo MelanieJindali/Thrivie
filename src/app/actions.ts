@@ -51,8 +51,9 @@ export async function saveHealthLog(input: z.input<typeof healthInput>): Promise
       mood: v.mood ?? null,
       energy: v.energy ?? null,
       steps: v.steps ?? null,
-      custom: v.custom && Object.keys(v.custom).length ? JSON.stringify(v.custom) : null,
-      notes: v.notes?.trim() || null,
+      // undefined = leave unchanged (the compact quick-log form doesn't show these)
+      custom: v.custom === undefined ? undefined : v.custom && Object.keys(v.custom).length ? JSON.stringify(v.custom) : null,
+      notes: v.notes === undefined ? undefined : v.notes?.trim() || null,
     };
     const row = await prisma.healthLog.upsert({ where: { date: v.date }, update: data, create: { date: v.date, ...data } });
     done();

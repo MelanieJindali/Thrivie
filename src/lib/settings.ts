@@ -17,7 +17,7 @@ export async function getSettings(): Promise<AppSettings> {
   const s = await prisma.settings.upsert({ where: { id: 1 }, update: {}, create: { id: 1 } });
   return {
     name: s.name,
-    units: s.units === "imperial" ? "imperial" : "metric",
+    units: s.units === "metric" ? "metric" : "imperial",
     timezone: s.timezone,
     visibleModules: s.visibleModules
       .split(",")

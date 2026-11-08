@@ -17,7 +17,9 @@ const chance = (p: number) => rand() < p;
 const r1 = (n: number) => Math.round(n * 10) / 10;
 
 async function main() {
-  const timezone = process.env.SEED_TZ || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  // Servers/containers often run in UTC; default to a U.S. zone in that case (change it in Settings).
+  const timezone = process.env.SEED_TZ || (detected && detected !== "UTC" ? detected : "America/New_York");
   const today = todayInTz(timezone);
   const DAYS = 30;
   const start = addDays(today, -(DAYS - 1));
@@ -36,7 +38,7 @@ async function main() {
   ]);
 
   await prisma.settings.create({
-    data: { id: 1, name: "Alex", units: "metric", timezone },
+    data: { id: 1, name: "Alex", units: "imperial", timezone },
   });
 
   // --- Habits -------------------------------------------------------------
@@ -160,9 +162,9 @@ async function main() {
   const yearEnd = `${today.slice(0, 4)}-12-31`;
   await prisma.goal.create({
     data: {
-      title: "Run 100 km",
-      target: 100,
-      unit: "km",
+      title: "Run 60 miles",
+      target: 60 * 1.609344, // stored in km
+      unit: "mi",
       startDate: start,
       deadline: yearEnd,
       linkType: "workout",
@@ -183,9 +185,9 @@ async function main() {
   });
   await prisma.goal.create({
     data: {
-      title: "Reach 76 kg",
-      target: 76,
-      unit: "kg",
+      title: "Reach 168 lb",
+      target: 168 * 0.45359237, // stored in kg
+      unit: "lb",
       startValue: 79.2,
       startDate: start,
       deadline: addDays(today, 60),

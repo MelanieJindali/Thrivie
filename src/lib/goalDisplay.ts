@@ -5,7 +5,7 @@ export function goalDisplay(g: GoalView, u: Units) {
   if (g.linkType === "metric" && g.linkMetric === "weight")
     return { current: kgToDisplay(g.current, u), target: kgToDisplay(g.target, u), start: g.startValue != null ? kgToDisplay(g.startValue, u) : null, unit: weightUnit(u) };
   if (g.linkType === "workout" && g.linkMeasure === "distance")
-    return { current: kmToDisplay(g.current, u), target: kmToDisplay(g.target, u), start: null, unit: distanceUnit(u) };
+    return { current: Math.round(kmToDisplay(g.current, u) * 10) / 10, target: Math.round(kmToDisplay(g.target, u) * 10) / 10, start: null, unit: distanceUnit(u) };
   const r = (n: number) => Math.round(n * 10) / 10;
   return { current: r(g.current), target: r(g.target), start: g.startValue, unit: g.unit };
 }

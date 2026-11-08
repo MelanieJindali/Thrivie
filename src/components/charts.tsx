@@ -88,7 +88,16 @@ export function TrendChart({ spec, days, height = 160 }: { spec: TrendSpec; days
                 minTickGap={24}
                 tickFormatter={(d: string) => formatDate(d, { month: "short", day: "numeric" })}
               />
-              <YAxis tick={axisTick} tickLine={false} axisLine={false} domain={spec.domain ?? ["auto", "auto"]} width={40} allowDecimals={(spec.decimals ?? 1) > 0} />
+              <YAxis
+                tick={axisTick}
+                tickLine={false}
+                axisLine={false}
+                domain={spec.domain ?? ["auto", "auto"]}
+                width={44}
+                tickCount={4}
+                allowDecimals={(spec.decimals ?? 1) > 0}
+                tickFormatter={(v: number) => (Math.abs(v) >= 1000 ? `${Math.round(v / 100) / 10}k` : String(Math.round(v * 10) / 10))}
+              />
               <Tooltip content={<ChartTooltip unit={spec.unit} decimals={spec.decimals} />} cursor={{ stroke: "var(--border)", strokeWidth: 1 }} />
               <Line
                 type="monotone"
