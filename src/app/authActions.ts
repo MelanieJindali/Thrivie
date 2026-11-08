@@ -8,7 +8,7 @@ import {
 } from "@/lib/auth";
 import { isValidTimezone } from "@/lib/dates";
 
-export type AuthState = { error?: string; ok?: string } | undefined;
+export type AuthState = { error?: string; ok?: string; email?: string; name?: string } | undefined;
 
 const email = z.string().trim().toLowerCase().email("Enter a valid email address.").max(200);
 const password = z.string().min(8, "Use at least 8 characters.").max(200);
@@ -33,11 +33,11 @@ export async function signUp(_: AuthState, form: FormData): Promise<AuthState> {
       code: form.get("code") ?? "",
       timezone: form.get("timezone") ?? "",
     });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return { error: parsed.error.issues[0].message, email: String(form.get("email") ?? ""), name: String(form.get("name") ?? "") };
   const v = parsed.data;
-  if (policy.code && v.code !== policy.code) return { error: "That invite code isn't right." };
+  if (policy.code && v.code !== policy.code) return { error: "That invite code isn't right.", email: v.email, name: v.name };
   if (await prisma.user.findUnique({ where: { email: v.email } })) {
-    return { error: "An account with that email already exists. Try signing in." };
+    return { error: "An account with that email already exists. Try signing in.", email: v.email, name: v.name };
   }
   const user = await prisma.user.create({
     data: {
@@ -52,14 +52,14 @@ export async function signUp(_: AuthState, form: FormData): Promise<AuthState> {
 
 export async function signIn(_: AuthState, form: FormData): Promise<AuthState> {
   const parsed = z.object({ email, password: z.string().min(1, "Enter your password.") }).safeParse({ email: form.get("email"), password: form.get("password") });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return { error: parsed.error.issues[0].message, email: String(form.get("email") ?? "") };
   const { email: e, password: pw } = parsed.data;
-  if (await tooManyAttempts(e)) return { error: "Too many attempts. Please wait 15 minutes and try again." };
+  if (await tooManyAttempts(e)) return { error: "Too many attempts. Please wait 15 minutes and try again.", email: e };
   const user = await prisma.user.findUnique({ where: { email: e } });
   // Same message whether the email exists or not.
   if (!user || !(await verifyPassword(pw, user.passwordHash))) {
     await recordFailedAttempt(e);
-    return { error: "Email or password is incorrect." };
+    return { error: "Email or password is incorrect.", email: e };
   }
   await clearAttempts(e);
   await createSession(user.id);

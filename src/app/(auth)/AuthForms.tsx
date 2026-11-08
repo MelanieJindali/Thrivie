@@ -18,7 +18,7 @@ export function LoginForm({ next, notice }: { next?: string; notice?: string }) 
       <input type="hidden" name="next" value={next ?? "/"} />
       <label className="block">
         <span className="label">Email</span>
-        <input className="input" name="email" type="email" autoComplete="email" inputMode="email" required />
+        <input className="input" name="email" type="email" autoComplete="email" inputMode="email" required defaultValue={state?.email} key={state?.email} />
       </label>
       <label className="block">
         <span className="label">Password</span>
@@ -50,11 +50,11 @@ export function SignupForm({ needsCode, closed }: { needsCode: boolean; closed: 
       <input type="hidden" name="timezone" value={tz} />
       <label className="block">
         <span className="label">First name (optional)</span>
-        <input className="input" name="name" autoComplete="given-name" />
+        <input className="input" name="name" autoComplete="given-name" defaultValue={state?.name} key={state?.name} />
       </label>
       <label className="block">
         <span className="label">Email</span>
-        <input className="input" name="email" type="email" autoComplete="email" inputMode="email" required />
+        <input className="input" name="email" type="email" autoComplete="email" inputMode="email" required defaultValue={state?.email} key={state?.email} />
       </label>
       <label className="block">
         <span className="label">Password</span>
