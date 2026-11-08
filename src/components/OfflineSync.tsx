@@ -75,6 +75,7 @@ export function OfflineSync({ owner, children }: { owner: string; children: Reac
 export async function clearDeviceData() {
   await clearQueue();
   try {
-    if ("caches" in window) for (const k of await caches.keys()) await caches.delete(k);
+    // Only Thrivie's page caches (personal pages); the on-device AI model isn't personal data.
+    if ("caches" in window) for (const k of await caches.keys()) if (k.startsWith("thrivie")) await caches.delete(k);
   } catch {}
 }

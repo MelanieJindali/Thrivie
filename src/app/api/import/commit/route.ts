@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 import { logError } from "@/lib/log";
 import { revalidatePath } from "next/cache";
-import { CommitBody, commitItems } from "@/lib/import/server";
-import { apiUser } from "@/lib/auth";
+import { CommitBody, commitItems, saveAliases } from "@/lib/import/server";
+import { apiUser, rateLimit } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   const auth = await apiUser();
   if (!auth) return NextResponse.json({ error: "Please sign in." }, { status: 401 });
+  if (!(await rateLimit(`write:${auth.user.id}`, 600, 600))) return NextResponse.json({ error: "Too many requests. Please wait a minute." }, { status: 429 });
   const body = CommitBody.safeParse(await req.json().catch(() => ({})));
   if (!body.success) {
     const issue = body.error.issues[0];
@@ -16,6 +17,7 @@ export async function POST(req: Request) {
   }
   try {
     const result = await commitItems(auth.db, auth.user.id, body.data.items);
+    await saveAliases(auth.db, auth.user.id, body.data.aliases);
     revalidatePath("/", "layout");
     return NextResponse.json(result);
   } catch (e) {

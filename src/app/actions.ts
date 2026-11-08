@@ -507,3 +507,25 @@ export async function setHabitCheck(habitId: string, date: string, checked: bool
   done();
   return { ok: true };
 }
+
+export async function setOnDeviceAi(on: boolean): Promise<ActionResult> {
+  const { db, user } = await requireUser();
+  await db.settings.update({ where: { userId: user.id }, data: { onDeviceAi: on } });
+  return { ok: true };
+}
+
+export async function updateAlias(id: string, target: string): Promise<ActionResult> {
+  const { db } = await requireUser();
+  const t = target.trim().slice(0, 60);
+  if (!t) return { ok: false, error: "Enter what it should mean." };
+  const r = await db.alias.updateMany({ where: { id }, data: { target: t } });
+  done();
+  return r.count ? { ok: true } : { ok: false, error: "Not found." };
+}
+
+export async function deleteAlias(id: string): Promise<ActionResult> {
+  const { db } = await requireUser();
+  await db.alias.deleteMany({ where: { id } });
+  done();
+  return { ok: true };
+}

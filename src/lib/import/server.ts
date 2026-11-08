@@ -2,98 +2,8 @@ import "server-only";
 import { z } from "zod";
 import type { ScopedDb } from "../db";
 import { isDateStr } from "../dates";
-import { kgToDisplay, mlToDisplay, waterUnit, weightUnit, type Units } from "../units";
-import type { ReviewItem } from "./normalize";
 
-export type Decision = "add" | "merge" | "overwrite" | "replace" | "skip";
-
-export type ReviewItemWithDup = ReviewItem & {
-  decision: Decision;
-  dup: { message: string; options: Decision[] } | null;
-};
-
-const similar = (a: string, b: string) => {
-  const n = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
-  const x = n(a);
-  const y = n(b);
-  return x === y || x.includes(y) || y.includes(x) || x.slice(0, 60) === y.slice(0, 60);
-};
-
-/** Flag likely duplicates of existing data and pick a safe default decision. */
-export async function detectDuplicates(db: ScopedDb, items: ReviewItem[], units: Units): Promise<ReviewItemWithDup[]> {
-  const dates = [...new Set(items.map((i) => i.date))];
-  const [health, workouts, checkins, journal, goals, progress] = await Promise.all([
-    db.healthLog.findMany({ where: { date: { in: dates } } }),
-    db.workout.findMany({ where: { date: { in: dates } } }),
-    db.habitCheckin.findMany({ where: { date: { in: dates } } }),
-    db.journalEntry.findMany({ where: { date: { in: dates } } }),
-    db.goal.findMany({ select: { id: true, title: true, linkType: true } }),
-    db.goalProgress.findMany({ where: { date: { in: dates } } }),
-  ]);
-
-  return items.map((item): ReviewItemWithDup => {
-    switch (item.kind) {
-      case "health": {
-        const ex = health.find((h) => h.date === item.date);
-        if (!ex) return { ...item, decision: "add", dup: null };
-        const conflicts: string[] = [];
-        const cmp = (label: string, a: number | null, b: number | null, fmt = (v: number) => String(v)) => {
-          if (a != null && b != null && fmt(a) !== fmt(b)) conflicts.push(`${label} ${fmt(b)} → ${fmt(a)}`);
-        };
-        cmp("weight", item.data.weightKg, ex.weightKg, (v) => `${kgToDisplay(v, units)} ${weightUnit(units)}`);
-        cmp("sleep", item.data.sleepHours, ex.sleepHours, (v) => `${v}h`);
-        cmp("sleep quality", item.data.sleepQuality, ex.sleepQuality);
-        cmp("water", item.data.waterMl, ex.waterMl, (v) => `${mlToDisplay(v, units)} ${waterUnit(units)}`);
-        cmp("mood", item.data.mood, ex.mood);
-        cmp("energy", item.data.energy, ex.energy);
-        cmp("steps", item.data.steps, ex.steps);
-        if (!conflicts.length) {
-          return { ...item, decision: "merge", dup: { message: "A health log already exists for this day. New values will be added to it.", options: ["merge", "skip"] } };
-        }
-        return {
-          ...item,
-          decision: "merge",
-          dup: {
-            message: `You already logged health for this day with different values (${conflicts.join(", ")}). Keep existing values, or overwrite them?`,
-            options: ["merge", "overwrite", "skip"],
-          },
-        };
-      }
-      case "workout": {
-        const ex = workouts.find((w) => w.date === item.date && w.type === item.data.type);
-        if (!ex) return { ...item, decision: "add", dup: null };
-        return {
-          ...item,
-          decision: "skip",
-          dup: {
-            message: `There's already a ${ex.type} workout on this day (${ex.title ?? ex.type}, ${ex.durationMin} min). Is this the same one?`,
-            options: ["skip", "add", "replace"],
-          },
-        };
-      }
-      case "habit": {
-        if (item.data.habitId && checkins.some((c) => c.habitId === item.data.habitId && c.date === item.date)) {
-          return { ...item, decision: "skip", dup: { message: "Already checked off for this day.", options: ["skip"] } };
-        }
-        return { ...item, decision: item.data.habitId ? "add" : "skip", dup: null };
-      }
-      case "goal_update": {
-        const goal = goals.find((g) => g.id === item.data.goalId);
-        if (goal && goal.linkType !== "manual") {
-          return { ...item, decision: "skip", dup: { message: `“${goal.title}” updates automatically from your logs, so this isn't needed.`, options: ["skip"] } };
-        }
-        const ex = progress.find((p) => p.goalId === item.data.goalId && p.date === item.date && Math.abs(p.value - item.data.value) < 1e-9);
-        if (ex) return { ...item, decision: "skip", dup: { message: "The same progress update already exists for this day.", options: ["skip", "add"] } };
-        return { ...item, decision: item.data.goalId ? "add" : "skip", dup: null };
-      }
-      case "journal": {
-        const ex = journal.find((j) => j.date === item.date && similar(j.content, item.data.content));
-        if (ex) return { ...item, decision: "skip", dup: { message: "A very similar journal entry already exists for this day.", options: ["skip", "add"] } };
-        return { ...item, decision: "add", dup: null };
-      }
-    }
-  });
-}
+export type { Decision, ReviewItemWithDup } from "./duplicates";
 
 // ---------------------------------------------------------------------------
 // Commit
@@ -134,7 +44,8 @@ export const CommitItem = z.discriminatedUnion("kind", [
     data: z.object({ content: z.string().min(1).max(20000), mood: r5 }),
   }),
 ]);
-export const CommitBody = z.object({ items: z.array(CommitItem).max(500) });
+export const AliasInput = z.object({ kind: z.enum(["exercise", "habit", "workout", "metric"]), alias: z.string().trim().toLowerCase().min(1).max(40), target: z.string().trim().min(1).max(60) });
+export const CommitBody = z.object({ items: z.array(CommitItem).max(500), aliases: z.array(AliasInput).max(50).default([]) });
 export type CommitItem = z.infer<typeof CommitItem>;
 
 export type CommitResult = { saved: Record<string, number>; skipped: number; createdHabits: string[] };
@@ -220,4 +131,16 @@ export async function commitItems(db: ScopedDb, userId: string, items: CommitIte
   });
 
   return { saved, skipped, createdHabits: [...createdHabits.keys()] };
+}
+
+/** Remember corrections as personal shorthand for future imports. */
+export async function saveAliases(db: ScopedDb, userId: string, aliases: z.infer<typeof AliasInput>[]) {
+  for (const a of aliases) {
+    if (a.alias === a.target.toLowerCase()) continue;
+    await db.alias.upsert({
+      where: { userId_kind_alias: { userId, kind: a.kind, alias: a.alias } },
+      update: { target: a.target },
+      create: { userId, kind: a.kind, alias: a.alias, target: a.target },
+    });
+  }
 }

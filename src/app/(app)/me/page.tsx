@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/ui";
 import { SettingsForm, ThemePicker, BackupRestore, DangerZone } from "./SettingsClient";
 import { AccountSection } from "./AccountClient";
 import { TwoFactorCard } from "./TwoFactorCard";
+import { SmartImportCard } from "./SmartImportCard";
 import { ReminderCard } from "./ReminderCard";
 import { getVapidKeys } from "@/lib/push";
 import { HealthSyncCard } from "./HealthSyncCard";
@@ -29,6 +30,8 @@ export default async function SettingsPage() {
       <ReminderCard on={settings.remindersOn} hour={settings.reminderHour} publicKey={(await getVapidKeys()).publicKey} />
 
       <HealthSyncCard tokens={(await db.apiToken.findMany({ orderBy: { createdAt: "desc" } })).map((t) => ({ id: t.id, name: t.name, prefix: t.prefix, lastUsedAt: t.lastUsedAt?.toISOString() ?? null }))} />
+
+      <SmartImportCard aliases={await db.alias.findMany({ orderBy: { alias: "asc" }, select: { id: true, kind: true, alias: true, target: true } })} onDeviceAi={settings.onDeviceAi} />
 
       <section className="card space-y-3">
         <h2 className="h2">Appearance</h2>
