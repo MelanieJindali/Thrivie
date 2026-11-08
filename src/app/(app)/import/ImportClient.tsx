@@ -6,7 +6,7 @@ import Link from "next/link";
 import { AlertTriangle, Check, ClipboardPaste, Lock, RotateCcw, Trash2, X } from "lucide-react";
 import { PageHeader, numOrNull } from "@/components/ui";
 import { formatDate } from "@/lib/dates";
-import { ENERGY_EMOJI, MOOD_EMOJI, WORKOUT_LABELS, WORKOUT_TYPES } from "@/lib/constants";
+import { ENERGY_EMOJI, MEAL_LABELS, MEAL_SLOTS, MOOD_EMOJI, WORKOUT_LABELS, WORKOUT_TYPES } from "@/lib/constants";
 import {
   displayToKg, displayToKm, displayToMl, distanceUnit, kgToDisplay, kmToDisplay, mlToDisplay, waterUnit, weightUnit, type Units,
 } from "@/lib/units";
@@ -22,9 +22,10 @@ type Item = ReviewItemWithDup & { approved: boolean };
 type Opt = { id: string; name: string };
 
 const EXAMPLE = `Mon - ran 5k 28min, slept 6h felt tired. pushups 3x15. no sugar ✅ meditated ✅. weight 172.
+lunch: chicken salad 520 cal, 40g protein
 Tues: rest day, 8h sleep, journaled about work stress`;
 
-const KIND_LABEL: Record<Item["kind"], string> = { health: "Health", workout: "Workout", habit: "Habit", goal_update: "Goal progress", journal: "Journal" };
+const KIND_LABEL: Record<Item["kind"], string> = { health: "Health", workout: "Workout", meal: "Meal", habit: "Habit", goal_update: "Goal progress", journal: "Journal" };
 const DECISION_LABEL: Record<Decision, string> = { add: "Add anyway", merge: "Keep existing, fill gaps", overwrite: "Overwrite existing", replace: "Replace existing", skip: "Skip" };
 
 export function ImportClient({ today, units, habits, goals, aliases, tipsSeen, onDeviceAi }: {
@@ -47,7 +48,7 @@ export function ImportClient({ today, units, habits, goals, aliases, tipsSeen, o
   const preview = useMemo(() => {
     const items = normalizeEntries(entries, { today, units, habits, goals });
     const count = (k: ReviewItem["kind"]) => items.filter((i) => i.kind === k).length;
-    return { items, days: new Set(items.map((i) => i.date)).size, health: count("health"), workout: count("workout"), habit: count("habit"), goal: count("goal_update"), journal: count("journal"), low: items.filter((i) => i.confidence < LOW_CONFIDENCE || i.lowFields.length).length };
+    return { items, days: new Set(items.map((i) => i.date)).size, health: count("health"), workout: count("workout"), meal: count("meal"), habit: count("habit"), goal: count("goal_update"), journal: count("journal"), low: items.filter((i) => i.confidence < LOW_CONFIDENCE || i.lowFields.length).length };
   }, [entries, today, units, habits, goals]);
   useEffect(() => setEnhanced(null), [text]);
 
@@ -188,6 +189,7 @@ export function ImportClient({ today, units, habits, goals, aliases, tipsSeen, o
                 <ul className="mt-2 flex flex-wrap gap-2 text-xs font-semibold">
                   {preview.health > 0 && <li className="rounded-full bg-terracotta-soft px-3 py-1 text-terracotta-ink">{preview.health} check-in{preview.health === 1 ? "" : "s"}</li>}
                   {preview.workout > 0 && <li className="rounded-full bg-ocean-soft px-3 py-1 text-ocean">{preview.workout} workout{preview.workout === 1 ? "" : "s"}</li>}
+                  {preview.meal > 0 && <li className="rounded-full bg-clay-soft px-3 py-1 text-clay-ink">{preview.meal} meal{preview.meal === 1 ? "" : "s"}</li>}
                   {preview.habit > 0 && <li className="rounded-full bg-sage-soft px-3 py-1 text-sage-ink">{preview.habit} habit{preview.habit === 1 ? "" : "s"}</li>}
                   {preview.goal > 0 && <li className="rounded-full bg-gold-soft px-3 py-1 text-gold-ink">{preview.goal} goal update{preview.goal === 1 ? "" : "s"}</li>}
                   {preview.journal > 0 && <li className="rounded-full bg-iris-soft px-3 py-1 text-iris">{preview.journal} journal</li>}
@@ -387,6 +389,27 @@ function ReviewCard({
           <input className={`${fieldCls("value")} w-24`} inputMode="decimal" value={item.data.value} onChange={(e) => setData({ value: numOrNull(e.target.value) ?? 0 })} aria-label="Progress value" />
           <span className="text-muted">{goals.find((g) => g.id === item.data.goalId)?.unit}</span>
           {item.data.note && <span className="text-xs text-muted">· {item.data.note}</span>}
+        </div>
+      )}
+
+      {item.kind === "meal" && (
+        <div className="space-y-2">
+          <div className="grid grid-cols-[auto_1fr] gap-2">
+            <Mini label="Meal">
+              <select className={fieldCls("slot")} value={item.data.slot} onChange={(e) => setData({ slot: e.target.value })}>
+                {MEAL_SLOTS.map((s) => <option key={s} value={s}>{MEAL_LABELS[s]}</option>)}
+              </select>
+            </Mini>
+            <Mini label="What you had">
+              <input className={fieldCls("name")} value={item.data.name} maxLength={200} onChange={(e) => setData({ name: e.target.value })} />
+            </Mini>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <Mini label="Calories"><input className={fieldCls("calories")} inputMode="numeric" value={item.data.calories ?? ""} onChange={(e) => { const v = numOrNull(e.target.value); setData({ calories: v != null ? Math.round(v) : null }); }} /></Mini>
+            <Mini label="Protein (g)"><input className={fieldCls("protein_g")} inputMode="decimal" value={item.data.proteinG ?? ""} onChange={(e) => setData({ proteinG: numOrNull(e.target.value) })} /></Mini>
+            <Mini label="Carbs (g)"><input className={fieldCls("carbs_g")} inputMode="decimal" value={item.data.carbsG ?? ""} onChange={(e) => setData({ carbsG: numOrNull(e.target.value) })} /></Mini>
+            <Mini label="Fat (g)"><input className={fieldCls("fat_g")} inputMode="decimal" value={item.data.fatG ?? ""} onChange={(e) => setData({ fatG: numOrNull(e.target.value) })} /></Mini>
+          </div>
         </div>
       )}
 

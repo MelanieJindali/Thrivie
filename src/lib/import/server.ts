@@ -32,6 +32,17 @@ export const CommitItem = z.discriminatedUnion("kind", [
     }),
   }),
   z.object({
+    kind: z.literal("meal"), date, decision,
+    data: z.object({
+      slot: z.enum(["breakfast", "lunch", "dinner", "snack"]),
+      name: z.string().trim().min(1).max(200),
+      calories: z.number().int().min(0).max(10000).nullable(),
+      proteinG: z.number().finite().min(0).max(2000).nullable(),
+      carbsG: z.number().finite().min(0).max(2000).nullable(),
+      fatG: z.number().finite().min(0).max(2000).nullable(),
+    }),
+  }),
+  z.object({
     kind: z.literal("habit"), date, decision,
     data: z.object({ habitName: z.string().min(1).max(60), habitId: z.string().nullable(), createNew: z.boolean(), frequency: z.enum(["daily", "weekly"]) }),
   }),
@@ -51,7 +62,7 @@ export type CommitItem = z.infer<typeof CommitItem>;
 export type CommitResult = { saved: Record<string, number>; skipped: number; createdHabits: string[] };
 
 export async function commitItems(db: ScopedDb, userId: string, items: CommitItem[]): Promise<CommitResult> {
-  const saved: Record<string, number> = { health: 0, workout: 0, habit: 0, goal_update: 0, journal: 0 };
+  const saved: Record<string, number> = { health: 0, workout: 0, meal: 0, habit: 0, goal_update: 0, journal: 0 };
   let skipped = 0;
   const createdHabits = new Map<string, string>(); // normalized name → id (avoid duplicates within one import)
 
@@ -89,6 +100,11 @@ export async function commitItems(db: ScopedDb, userId: string, items: CommitIte
             data: { userId, date: it.date, ...w, exercises: { create: exercises.map((e, i) => ({ ...e, sets: e.sets != null ? Math.round(e.sets) : null, reps: e.reps != null ? Math.round(e.reps) : null, order: i })) } },
           });
           saved.workout++;
+          break;
+        }
+        case "meal": {
+          await tx.meal.create({ data: { userId, date: it.date, ...it.data } });
+          saved.meal++;
           break;
         }
         case "habit": {

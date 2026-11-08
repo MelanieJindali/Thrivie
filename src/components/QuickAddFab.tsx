@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, HeartPulse, Dumbbell, CircleCheck, NotebookPen, Target, ClipboardPaste } from "lucide-react";
+import { Plus, HeartPulse, Dumbbell, CircleCheck, NotebookPen, Target, ClipboardPaste, Utensils } from "lucide-react";
 import { Sheet } from "./Sheet";
 
 const ITEMS = [
   { href: "/health#log", label: "Check-in", sub: "Mood, sleep, water…", icon: HeartPulse, tone: "bg-terracotta-soft text-terracotta-ink" },
   { href: "/habits#today", label: "Habits", sub: "Tick off today", icon: CircleCheck, tone: "bg-sage-soft text-sage-ink" },
   { href: "/workouts#log", label: "Workout", sub: "Or repeat last", icon: Dumbbell, tone: "bg-ocean-soft text-ocean" },
+  { href: "/nutrition#log", label: "Meal", sub: "What you ate", icon: Utensils, tone: "bg-clay-soft text-clay-ink" },
   { href: "/journal#new", label: "Journal", sub: "A few lines", icon: NotebookPen, tone: "bg-iris-soft text-iris" },
   { href: "/goals#progress", label: "Goal progress", sub: "Add an update", icon: Target, tone: "bg-gold-soft text-gold-ink" },
   { href: "/import", label: "Paste notes", sub: "Smart Import", icon: ClipboardPaste, tone: "bg-seaglass-soft text-primary" },
@@ -23,7 +24,7 @@ export function QuickAddFab() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Quick add"
-        className="fixed right-4 bottom-[calc(6.25rem+env(safe-area-inset-bottom))] z-40 grid h-15 w-15 place-items-center rounded-[22px] text-[#0E1B24] shadow-lift transition active:scale-95 md:hidden"
+        className="fixed right-4 bottom-[calc(6.25rem+env(safe-area-inset-bottom))] z-40 grid h-15 w-15 place-items-center rounded-[22px] text-[#0B1727] shadow-lift transition active:scale-95 md:hidden"
         style={{ width: 60, height: 60, background: "linear-gradient(135deg, #2EF2E0, #B9A6F7 55%, #FF8A73)", boxShadow: "0 12px 28px -10px var(--glow), 0 0 0 4px var(--bg)" }}
       >
         <Plus size={26} strokeWidth={2.4} aria-hidden />

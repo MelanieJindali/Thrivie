@@ -5,8 +5,9 @@ import { todayInTz } from "./dates";
 import type { ScopedDb } from "./db";
 import type { Units } from "./units";
 
-export const ALL_MODULES = ["health", "workouts", "habits", "goals", "journal"] as const;
-export type ModuleKey = (typeof ALL_MODULES)[number];
+import { ALL_MODULES, type ModuleKey } from "./constants";
+
+export { ALL_MODULES, type ModuleKey };
 
 export type AppSettings = {
   name: string;
@@ -18,6 +19,8 @@ export type AppSettings = {
   onboarded: boolean;
   tipsSeen: string[];
   onDeviceAi: boolean;
+  calorieTarget: number | null;
+  proteinTargetG: number | null;
 };
 
 export async function loadSettings(db: ScopedDb, userId: string): Promise<AppSettings> {
@@ -35,6 +38,8 @@ export async function loadSettings(db: ScopedDb, userId: string): Promise<AppSet
     onboarded: s.onboarded,
     tipsSeen: s.tipsSeen.split(",").filter(Boolean),
     onDeviceAi: s.onDeviceAi,
+    calorieTarget: s.calorieTarget,
+    proteinTargetG: s.proteinTargetG,
   };
 }
 

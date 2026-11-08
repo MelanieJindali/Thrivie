@@ -7,7 +7,7 @@ import { ServiceWorker } from "@/components/ServiceWorker";
 
 export const metadata: Metadata = {
   title: "Thrivie",
-  description: "A calm, private wellness tracker for health, workouts, habits, goals and journaling.",
+  description: "A calm, private wellness tracker for health, workouts, nutrition, habits, goals and journaling.",
   applicationName: "Thrivie",
   appleWebApp: { capable: true, title: "Thrivie", statusBarStyle: "default" },
   icons: { icon: "/icon.svg" },

@@ -42,6 +42,7 @@ model User {
   habits        Habit[]
   goals         Goal[]
   journal       JournalEntry[]
+  meals         Meal[]
   attachments   Attachment[]
   pushSubs      PushSubscription[]
   apiTokens     ApiToken[]
@@ -84,7 +85,7 @@ model Settings {
   name           String   @default("")
   units          String   @default("imperial") // imperial (U.S.) | metric
   timezone       String   @default("America/New_York")
-  visibleModules String   @default("health,workouts,habits,goals,journal")
+  visibleModules String   @default("health,workouts,nutrition,habits,goals,journal")
   // Reminders (web push)
   remindersOn    Boolean  @default(false)
   reminderHour   Int      @default(20) // local hour 0-23
@@ -92,6 +93,9 @@ model Settings {
   onboarded      Boolean  @default(false)
   tipsSeen       String   @default("") // comma-separated tip ids already shown
   onDeviceAi     Boolean  @default(false)
+  // Optional daily nutrition targets (never set by default).
+  calorieTarget  Int?
+  proteinTargetG Int?
   updatedAt      DateTime @updatedAt
 }
 
@@ -145,6 +149,26 @@ model Exercise {
   reps      Int?
   weightKg  Float?
   order     Int     @default(0)
+}
+
+// --------------------------------------------------------------- nutrition --
+
+/// A meal or snack. Name and notes are encrypted; every number is optional.
+model Meal {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      String
+  slot      String // breakfast | lunch | dinner | snack
+  name      String
+  calories  Int?
+  proteinG  Float?
+  carbsG    Float?
+  fatG      Float?
+  notes     String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
 }
 
 // ------------------------------------------------------------------ habits --

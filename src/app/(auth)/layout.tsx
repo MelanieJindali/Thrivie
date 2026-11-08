@@ -5,7 +5,7 @@ import { MEDICAL_NOTE } from "@/lib/constants";
 
 export const metadata = {
   title: "Sign in · Thrivie",
-  description: "Thrivie is a calm, private wellness tracker for health, workouts, habits, goals and a journal.",
+  description: "Thrivie is a calm, private wellness tracker for health, workouts, nutrition, habits, goals and a journal.",
 };
 
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {

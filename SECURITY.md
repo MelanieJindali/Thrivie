@@ -16,7 +16,7 @@ Two independent layers mean one user can never read or change another user's dat
    - Child rows (exercises, check-ins, goal progress) are reachable only through a parent the user owns.
    - Goals can only link to the same user's habit, and attachments to the same user's journal entry.
    - With no user set, user tables return nothing (fail closed).
-   - The narrow *system* context used by sign-in, the reminders job and token lookup can read only the tables those jobs need. It can never read health, workout, habit, goal or journal data.
+   - The narrow *system* context used by sign-in, the reminders job and token lookup can read only the tables those jobs need. It can never read health, workout, meal, habit, goal or journal data.
 2. **Application: a scoped data client** (`src/lib/db.ts`). The same queries are also rewritten to filter by the user and to stamp the user on new rows. Changing a row's owner is rejected. Raw SQL and the unscoped client aren't exposed to app code.
 
 `tests/isolation.test.ts` proves both layers against a real Postgres database. The database-alone checks use raw SQL that skips every application check, with the connecting role deliberately allowed to bypass RLS.
@@ -24,7 +24,7 @@ Two independent layers mean one user can never read or change another user's dat
 ## Encryption
 
 - **In transit:** HTTPS only, with HSTS (`max-age=2 years; includeSubDomains; preload`). Use `upgrade-insecure-requests`.
-- **At rest (application level):** journal text, health/workout notes, goal-progress notes, photos and voice notes are encrypted with **AES-256-GCM** before they reach the database (`src/lib/crypto.ts`).
+- **At rest (application level):** journal text, meal names, health/workout/meal notes, goal-progress notes, photos and voice notes are encrypted with **AES-256-GCM** before they reach the database (`src/lib/crypto.ts`).
   - Each value gets a random IV.
   - The user id is bound as authenticated data, so a ciphertext copied into another user's row won't decrypt. Tampering is detected.
   - Keys live only in environment secrets (`ENCRYPTION_KEY`, plus `ENCRYPTION_KEY_PREVIOUS` for rotation). Production refuses to start without one.

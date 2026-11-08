@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Thrivie · Fitness & Nutrition",
     short_name: "Thrivie",
-    description: "Track health, workouts, habits, goals and a journal — privately.",
+    description: "Track health, workouts, nutrition, habits, goals and a journal — privately.",
     start_url: "/",
     display: "standalone",
     background_color: "#F6F1E9",

@@ -21,9 +21,13 @@ export const JOURNAL_PROMPTS = [
 export const MOOD_EMOJI = ["😞", "😕", "😐", "🙂", "😄"];
 export const ENERGY_EMOJI = ["🪫", "😴", "🙂", "⚡", "🚀"];
 
+export const ALL_MODULES = ["health", "workouts", "nutrition", "habits", "goals", "journal"] as const;
+export type ModuleKey = (typeof ALL_MODULES)[number];
+
 export const MODULE_INFO = {
   health: { label: "Health", href: "/health" },
   workouts: { label: "Workouts", href: "/workouts" },
+  nutrition: { label: "Nutrition", href: "/nutrition" },
   habits: { label: "Habits", href: "/habits" },
   goals: { label: "Goals", href: "/goals" },
   journal: { label: "Journal", href: "/journal" },
@@ -35,6 +39,7 @@ export const MEDICAL_NOTE = "Thrivie is for personal tracking only and isn't med
 export const THEME = {
   today: { hover: "group-hover:text-gold-ink", text: "text-gold-ink", soft: "bg-gold-soft", grad: "from-gold-ink to-gold-ink", ring: "ring-gold-ink/30" },
   health: { hover: "group-hover:text-terracotta-ink", text: "text-terracotta-ink", soft: "bg-terracotta-soft", grad: "from-terracotta-ink to-gold-ink", ring: "ring-terracotta-ink/30" },
+  nutrition: { hover: "group-hover:text-clay-ink", text: "text-clay-ink", soft: "bg-clay-soft", grad: "from-clay-ink to-gold-ink", ring: "ring-clay-ink/30" },
   workouts: { hover: "group-hover:text-ocean", text: "text-ocean", soft: "bg-ocean-soft", grad: "from-ocean to-primary", ring: "ring-ocean/30" },
   habits: { hover: "group-hover:text-sage-ink", text: "text-sage-ink", soft: "bg-sage-soft", grad: "from-sage-ink to-primary", ring: "ring-sage-ink/30" },
   goals: { hover: "group-hover:text-gold-ink", text: "text-gold-ink", soft: "bg-gold-soft", grad: "from-gold-ink to-terracotta-ink", ring: "ring-gold-ink/30" },
@@ -43,3 +48,8 @@ export const THEME = {
   settings: { hover: "group-hover:text-text", text: "text-muted", soft: "bg-surface-2", grad: "from-muted to-text", ring: "ring-border" },
 } as const;
 export type ThemeKey = keyof typeof THEME;
+
+export const MEAL_SLOTS = ["breakfast", "lunch", "dinner", "snack"] as const;
+export type MealSlot = (typeof MEAL_SLOTS)[number];
+export const MEAL_LABELS: Record<MealSlot, string> = { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snack" };
+export const MEAL_EMOJI: Record<MealSlot, string> = { breakfast: "🥣", lunch: "🥗", dinner: "🍽️", snack: "🍎" };

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { deleteAllData, saveSettings } from "@/app/actions";
 import { Field, FormStatus, useAction } from "@/components/ui";
-import { ALL_MODULES_CLIENT, type ModuleKey } from "./modules";
+import { ALL_MODULES, type ModuleKey } from "@/lib/constants";
 import { MODULE_INFO } from "@/lib/constants";
 
 type S = { name: string; units: "metric" | "imperial"; timezone: string; visibleModules: ModuleKey[] };
@@ -50,7 +50,7 @@ export function SettingsForm({ initial, timezones }: { initial: S; timezones: st
       <div>
         <span className="label">Visible modules</span>
         <div className="flex flex-wrap gap-2">
-          {ALL_MODULES_CLIENT.map((m) => (
+          {ALL_MODULES.map((m) => (
             <button type="button" key={m} className={`chip ${s.visibleModules.includes(m) ? "chip-on" : ""}`} onClick={() => toggle(m)} aria-pressed={s.visibleModules.includes(m)}>
               {s.visibleModules.includes(m) ? "✓ " : ""}{MODULE_INFO[m].label}
             </button>

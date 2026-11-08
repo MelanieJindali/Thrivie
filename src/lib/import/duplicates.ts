@@ -10,6 +10,7 @@ export type ReviewItemWithDup = ReviewItem & { decision: Decision; dup: { messag
 export type Existing = {
   health: { date: string; weightKg: number | null; sleepHours: number | null; sleepQuality: number | null; waterMl: number | null; mood: number | null; energy: number | null; steps: number | null }[];
   workouts: { date: string; type: string; title: string | null; durationMin: number }[];
+  meals: { date: string; slot: string; name: string }[];
   checkins: { habitId: string; date: string }[];
   journal: { date: string; start: string }[];
   progress: { goalId: string; date: string; value: number }[];
@@ -46,6 +47,11 @@ export function flagDuplicates(items: ReviewItem[], ex: Existing, units: Units):
         const e = ex.workouts.find((w) => w.date === item.date && w.type === item.data.type);
         if (!e) return { ...item, decision: "add", dup: null };
         return { ...item, decision: "skip", dup: { message: `There's already a ${e.type} workout this day (${e.title ?? e.type}, ${e.durationMin} min). Same one?`, options: ["skip", "add", "replace"] } };
+      }
+      case "meal": {
+        const e = ex.meals.find((m) => m.date === item.date && m.slot === item.data.slot && similar(m.name, item.data.name));
+        if (!e) return { ...item, decision: "add", dup: null };
+        return { ...item, decision: "skip", dup: { message: `You already logged “${e.name}” for this ${e.slot}. Same one?`, options: ["skip", "add"] } };
       }
       case "habit":
         if (item.data.habitId && ex.checkins.some((c) => c.habitId === item.data.habitId && c.date === item.date)) {

@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sun, SquarePlus, ClipboardPaste, ChartNoAxesColumn, CircleUserRound, HeartPulse, Dumbbell, CircleCheck, Target, NotebookPen, CalendarHeart, LogOut } from "lucide-react";
-import type { ModuleKey } from "@/lib/settings";
+import { Sun, SquarePlus, ClipboardPaste, ChartNoAxesColumn, CircleUserRound, HeartPulse, Dumbbell, CircleCheck, Target, NotebookPen, CalendarHeart, LogOut, Utensils } from "lucide-react";
+import type { ModuleKey } from "@/lib/constants";
 import { BrandMark, Wordmark } from "./Brand";
 import { signOut } from "@/app/authActions";
 import { clearDeviceData } from "./OfflineSync";
@@ -13,7 +13,7 @@ import { clearDeviceData } from "./OfflineSync";
 // modules listed under Log, so the extra space is used instead of stretched.
 const MAIN = [
   { href: "/", label: "Today", icon: Sun, match: (p: string) => p === "/" },
-  { href: "/log", label: "Log", icon: SquarePlus, match: (p: string) => ["/log", "/health", "/workouts", "/habits", "/goals", "/journal"].some((x) => p.startsWith(x)) },
+  { href: "/log", label: "Log", icon: SquarePlus, match: (p: string) => ["/log", "/health", "/workouts", "/nutrition", "/habits", "/goals", "/journal"].some((x) => p.startsWith(x)) },
   { href: "/import", label: "Import", icon: ClipboardPaste, match: (p: string) => p.startsWith("/import") },
   { href: "/insights", label: "Insights", icon: ChartNoAxesColumn, match: (p: string) => p.startsWith("/insights") || p.startsWith("/review") },
   { href: "/me", label: "Me", icon: CircleUserRound, match: (p: string) => p.startsWith("/me") || p.startsWith("/privacy") },
@@ -22,6 +22,7 @@ const MAIN = [
 const MODULES = [
   { href: "/health", label: "Health", icon: HeartPulse, module: "health" },
   { href: "/workouts", label: "Workouts", icon: Dumbbell, module: "workouts" },
+  { href: "/nutrition", label: "Nutrition", icon: Utensils, module: "nutrition" },
   { href: "/habits", label: "Habits", icon: CircleCheck, module: "habits" },
   { href: "/goals", label: "Goals", icon: Target, module: "goals" },
   { href: "/journal", label: "Journal", icon: NotebookPen, module: "journal" },

@@ -47,9 +47,10 @@ export function loadEngine(onProgress: (pct: number, text: string) => void): Pro
 }
 
 const SYSTEM = `You extract wellness log entries from short note snippets. Reply with JSON only: {"entries":[...]}.
-Each entry has "kind" (one of: health, workout, habit, journal), "date" (copy the snippet's date), "confidence" (0-1).
+Each entry has "kind" (one of: health, workout, meal, habit, journal), "date" (copy the snippet's date), "confidence" (0-1).
 health: sleep_hours, sleep_quality (1-5), mood (1-5), energy (1-5), steps, weight {value, unit}, water {value, unit}.
 workout: type (strength|cardio|mobility|sport|other), title, duration_min, distance {value, unit}.
+meal: slot (breakfast|lunch|dinner|snack), name (what was eaten), calories, protein_g, carbs_g, fat_g.
 habit: habit_name, completed (true/false).
 journal: content (the person's words, lightly cleaned).
 Only include facts that are written in the snippet. Never invent numbers.`;
