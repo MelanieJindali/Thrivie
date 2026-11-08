@@ -54,22 +54,21 @@ Sign in with **demo@thrivie.app / thrivie-demo**, or create your own account. A 
 
 ## Free hosting: Vercel + Turso (recommended)
 
-Both have free plans that need no credit card. Vercel runs the app. Turso is a hosted SQLite database, so the code is the same as running locally.
+Both have free plans with no credit card, and the whole setup can be done in a web browser, even on an iPad. Vercel runs the app. Turso is a hosted SQLite database. The database tables are created automatically on every deploy, and the push-notification keys are generated automatically on first use.
 
-1. **Database.** Sign up at [turso.tech](https://turso.tech) and create a database. Copy its URL (`libsql://…`) and create an auth token.
-2. **Create the tables.** On your computer, run:
-   ```bash
-   TURSO_DATABASE_URL="libsql://…" TURSO_AUTH_TOKEN="…" npm run db:migrate
-   ```
-   Run this again whenever a new migration is added.
-3. **Push keys.** Run `npm run vapid` and keep the two keys it prints.
-4. **Deploy.** Push this repo to GitHub, then on [vercel.com](https://vercel.com) choose **Add New → Project** and import it. Add these environment variables:
-   `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `SIGNUP_CODE`, `ANTHROPIC_API_KEY` (optional), `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, and `CRON_SECRET` (any long random string). Then deploy. You get an `https://….vercel.app` URL.
-5. **Reminders schedule.** Vercel's free plan only runs scheduled jobs once a day, so use [cron-job.org](https://cron-job.org) (free). Create a job that calls
-   `https://<your-app>.vercel.app/api/cron/reminders?secret=<CRON_SECRET>` **every hour**. Each user gets at most one reminder a day, at the hour they choose.
-6. Open the URL on your phone, create your account, and add it to your Home Screen.
+1. **Database (Turso).** Sign up at [turso.tech](https://turso.tech) (GitHub sign-in works), create a database, then copy its **URL** (`libsql://…`) and create a **token**.
+2. **Deploy (Vercel).** Sign up at [vercel.com](https://vercel.com) with GitHub, choose **Add New → Project**, import this repository, and add these **Environment Variables** before deploying:
+   - `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`: from step 1
+   - `SIGNUP_CODE`: a code you give to the people you want to join
+   - `CRON_SECRET`: any long random string
+   - `ANTHROPIC_API_KEY`: optional, turns on the AI features
+3. **Reminders schedule (optional).** On [cron-job.org](https://cron-job.org), create a job that calls
+   `https://<your-app>.vercel.app/api/cron/reminders?secret=<CRON_SECRET>` **every hour**.
+4. Open your `https://….vercel.app` URL, create your account with the signup code, and add it to your Home Screen.
 
-> Why not keep the SQLite file on the server? Free serverless hosts don't keep files between requests, so a local database file would be wiped. Turso keeps the data. If you'd rather self-host on a small always-on machine (a home server, or a VPS with a disk), plain `npm run build && npm start` with the SQLite file works too. Put it behind HTTPS, for example with Caddy.
+Vercel deploys the repository's production branch (`main` by default). Merge the app branch into `main`, or change the production branch under Vercel → Project → Settings → Git. Every later push redeploys automatically and applies any new database migrations.
+
+> Running locally instead? `npm run db:migrate` with `TURSO_*` set also migrates Turso by hand. To self-host on an always-on machine, `npm run build && npm start` with the SQLite file works. Put it behind HTTPS (for example Caddy) so it can be installed and send reminders.
 
 ### On your phone
 - **iPhone (iOS 16.4+)**: open the URL in Safari, tap **Share → Add to Home Screen**, then open Thrivie from the Home Screen. On iPhone, push reminders only work from the Home Screen app.

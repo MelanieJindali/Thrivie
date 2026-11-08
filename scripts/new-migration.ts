@@ -13,10 +13,16 @@ if (!cfg.url.startsWith("file:")) throw new Error("Run this against a local data
 const dir = path.join(process.cwd(), "prisma", "migrations");
 const next = String(fs.readdirSync(dir).filter((f) => f.endsWith(".sql")).length + 1).padStart(4, "0");
 const sql = execSync(`npx prisma migrate diff --from-url "${cfg.url}" --to-schema-datamodel prisma/schema.prisma --script`, { encoding: "utf8" });
-if (/empty migration/i.test(sql) || !sql.trim()) {
+// Ignore our own migration-tracking table, which isn't in the Prisma schema.
+const cleaned = sql
+  .split(/\n(?=-- )/)
+  .filter((block) => !block.includes("_thrivie_migrations"))
+  .join("\n")
+  .trim();
+if (/empty migration/i.test(cleaned) || !cleaned) {
   console.log("No schema changes.");
 } else {
   const file = path.join(dir, `${next}_${name}.sql`);
-  fs.writeFileSync(file, sql);
+  fs.writeFileSync(file, cleaned + "\n");
   console.log(`Wrote ${path.relative(process.cwd(), file)} — apply it with npm run db:migrate`);
 }

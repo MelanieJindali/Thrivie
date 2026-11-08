@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
+import { getVapidKeys } from "@/lib/push";
 
 export const runtime = "nodejs";
 
 const Sub = z.object({ endpoint: z.string().url().max(1000), keys: z.object({ p256dh: z.string().max(200), auth: z.string().max(100) }) });
 
 export async function GET() {
-  return NextResponse.json({ publicKey: process.env.VAPID_PUBLIC_KEY ?? null });
+  return NextResponse.json({ publicKey: (await getVapidKeys()).publicKey });
 }
 
 /** Save this device's push subscription for the signed-in user. */

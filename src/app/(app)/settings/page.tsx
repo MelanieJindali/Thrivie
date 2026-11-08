@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/ui";
 import { SettingsForm, ThemePicker, BackupRestore, DangerZone } from "./SettingsClient";
 import { AccountSection } from "./AccountClient";
 import { ReminderCard } from "./ReminderCard";
+import { getVapidKeys } from "@/lib/push";
 import { HealthSyncCard } from "./HealthSyncCard";
 import { Settings as SettingsIcon } from "lucide-react";
 
@@ -25,7 +26,7 @@ export default async function SettingsPage() {
         <SettingsForm initial={settings} timezones={timezones} />
       </section>
 
-      <ReminderCard on={settings.remindersOn} hour={settings.reminderHour} publicKey={process.env.VAPID_PUBLIC_KEY ?? null} />
+      <ReminderCard on={settings.remindersOn} hour={settings.reminderHour} publicKey={(await getVapidKeys()).publicKey} />
 
       <HealthSyncCard tokens={(await db.apiToken.findMany({ orderBy: { createdAt: "desc" } })).map((t) => ({ id: t.id, name: t.name, prefix: t.prefix, lastUsedAt: t.lastUsedAt?.toISOString() ?? null }))} />
 

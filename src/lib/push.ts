@@ -4,14 +4,44 @@ import { prisma, scopedDb } from "./db";
 import { todayInTz } from "./dates";
 import { getHabitViews } from "./queries";
 
+/**
+ * Push (VAPID) keys: taken from env if set, otherwise generated once and kept
+ * in the database, so no setup step is needed when deploying.
+ */
+let keys: { publicKey: string; privateKey: string } | null = null;
+export async function getVapidKeys() {
+  if (keys) return keys;
+  if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+    keys = { publicKey: process.env.VAPID_PUBLIC_KEY, privateKey: process.env.VAPID_PRIVATE_KEY };
+    return keys;
+  }
+  const read = async () => {
+    const rows = await prisma.appConfig.findMany({ where: { key: { in: ["vapidPublic", "vapidPrivate"] } } });
+    const m = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+    return m.vapidPublic && m.vapidPrivate ? { publicKey: m.vapidPublic, privateKey: m.vapidPrivate } : null;
+  };
+  keys = await read();
+  if (!keys) {
+    const k = webpush.generateVAPIDKeys();
+    // Insert both in one transaction; if another instance won the race, use theirs.
+    await prisma.$transaction([
+      prisma.appConfig.create({ data: { key: "vapidPublic", value: k.publicKey } }),
+      prisma.appConfig.create({ data: { key: "vapidPrivate", value: k.privateKey } }),
+    ]).catch(() => null);
+    keys = await read();
+  }
+  return keys!;
+}
+
 export function pushConfigured() {
-  return !!(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
+  return true;
 }
 
 let ready = false;
-function setup() {
-  if (ready || !pushConfigured()) return;
-  webpush.setVapidDetails(process.env.VAPID_SUBJECT || "mailto:admin@example.com", process.env.VAPID_PUBLIC_KEY!, process.env.VAPID_PRIVATE_KEY!);
+async function setup() {
+  if (ready) return;
+  const k = await getVapidKeys();
+  webpush.setVapidDetails(process.env.VAPID_SUBJECT || "mailto:admin@example.com", k.publicKey, k.privateKey);
   ready = true;
 }
 
@@ -19,8 +49,7 @@ export type PushPayload = { title: string; body: string; url?: string };
 
 /** Send to every device the user subscribed. Expired subscriptions are removed. */
 export async function sendToUser(userId: string, payload: PushPayload): Promise<number> {
-  setup();
-  if (!ready) return 0;
+  await setup();
   const db = scopedDb(userId);
   const subs = await db.pushSubscription.findMany();
   let sent = 0;

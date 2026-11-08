@@ -9,6 +9,10 @@ import { createClient } from "@libsql/client";
 import { libsqlConfig } from "../src/lib/dbConfig";
 
 async function main() {
+  if (process.env.VERCEL && !process.env.TURSO_DATABASE_URL) {
+    console.error("TURSO_DATABASE_URL is not set. Add TURSO_DATABASE_URL and TURSO_AUTH_TOKEN in Vercel → Settings → Environment Variables, then redeploy.");
+    process.exit(1);
+  }
   const cfg = libsqlConfig();
   const db = createClient(cfg);
   console.log(`Migrating ${cfg.url.startsWith("file:") ? cfg.url : cfg.url.replace(/\/\/([^.]+)/, "//***")}`);
