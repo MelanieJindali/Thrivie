@@ -3,7 +3,7 @@
 // - Pages: network-first; the last copy is shown offline (falls back to /offline).
 // - API calls and auth pages are never cached.
 // Cached pages are deleted on sign-out (see OfflineSync.clearDeviceData).
-const CACHE = "thrivie-v4";
+const CACHE = "thrivie-v5";
 const NO_CACHE = ["/api/", "/login", "/signup", "/welcome"];
 
 self.addEventListener("install", (event) => {
@@ -21,7 +21,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (req.method !== "GET" || url.origin !== self.location.origin || NO_CACHE.some((p) => url.pathname.startsWith(p))) return;
 
-  if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/")) {
+  if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/") || url.pathname.startsWith("/brand/")) {
     event.respondWith(
       caches.match(req).then((hit) => hit || fetch(req).then((res) => {
         if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
@@ -47,7 +47,7 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("push", (event) => {
   let data = { title: "Thrivie", body: "Time for a quick check-in.", url: "/" };
   try { data = { ...data, ...event.data.json() }; } catch {}
-  event.waitUntil(self.registration.showNotification(data.title, { body: data.body, icon: "/icons/192", badge: "/icons/192", data: { url: data.url }, tag: "thrivie-reminder" }));
+  event.waitUntil(self.registration.showNotification(data.title, { body: data.body, icon: "/icons/icon-192.png", badge: "/icons/icon-192.png", data: { url: data.url }, tag: "thrivie-reminder" }));
 });
 
 self.addEventListener("notificationclick", (event) => {

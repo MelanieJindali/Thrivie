@@ -18,7 +18,7 @@ A simple, beautiful, mobile-first wellness app where people track **health, work
 
 Desktop: <img src="docs/screens/today-desktop-light.png" width="49%" alt="Today on desktop"> <img src="docs/screens/insights-desktop-dark.png" width="49%" alt="Insights on desktop, dark mode">
 
-The visual system pairs the Thrivie brand navy from the logo with Coastal Earth accents (sand, terracotta, sage, gold). It is documented in [`design/style-guide.html`](design/style-guide.html), including every WCAG AA contrast check. The logo glyph lives in one place, `src/components/Brand.tsx`, and drives the in-app mark, the PWA icons and `public/icon.svg`. The original artwork is in `design/brand/`.
+The visual system pairs the Thrivie brand navy (#1E3A64) with Coastal Earth accents. It is documented in [`design/style-guide.html`](design/style-guide.html), including every WCAG AA contrast check. The logo is built from the approved artwork (designer vector mark, plus the wordmark traced from the approved card at 99.77% overlap) and shown everywhere through one `<Logo>` component. See [`design/brand/README.md`](design/brand/README.md).
 
 ---
 
@@ -70,7 +70,7 @@ Demo logins: **demo@thrivie.app** and **demo2@thrivie.app**, both with the passw
 | `npm audit --omit=dev` | Dependency check (0 known vulnerabilities at release) |
 
 Latest results:
-- **Tests:** 124 passing.
+- **Tests:** 132 passing.
 - **Responsive and accessibility matrix:** 103/103 checks clean.
 - **Lighthouse (mobile):**
   - Sign-in: Performance 100 · Accessibility 100 · Best Practices 100 · SEO 91

@@ -10,6 +10,12 @@
    carry text.
    --------------------------------------------------------------------------- */
 :root {
+  /* Brand (sampled from the approved card). */
+  --brand-navy: #1E3A64;
+  --brand-navy-deep: #0C1B30;
+  --brand-navy-glow: #355A8F;
+  /* Logo heights. Keep in sync with LOGO_SIZES in src/components/Logo.tsx. */
+  --logo-xs: 16px; --logo-sm: 22px; --logo-md: 32px; --logo-lg: 64px; --logo-xl: 120px; --logo-2xl: 200px;
   --bg: #F6F1E9;            /* Sand */
   --surface: #FFFDF9;       /* Shell */
   --surface-2: #EFE8DC;
@@ -18,8 +24,8 @@
   --driftwood: #B8A992;     /* decorative */
   --text: #17304F;          /* Brand Navy ink */
   --muted: #6F6250;         /* Driftwood Ink */
-  --primary: #1E3F6E;       /* Brand Navy */
-  --primary-2: #16325A;
+  --primary: #1E3A64;       /* Brand Navy */
+  --primary-2: #162E50;
   --primary-soft: #E3EAF5;
   --primary-text: #FFFFFF;
   --seaglass: #A9D3C7;
@@ -110,6 +116,7 @@
   --color-gold-ink: var(--gold-ink);
   --color-gold-soft: var(--gold-soft);
   --color-aqua: var(--aqua);
+  --color-brand-navy: var(--brand-navy);
   --font-sans: "Manrope Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-display: "Fraunces Variable", ui-serif, Georgia, "Times New Roman", serif;
   --shadow-soft: var(--shadow);
@@ -209,11 +216,16 @@ input, select, textarea { font-size: 16px; } /* no iOS zoom on focus */
   *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }
 }
 
-/* Logo wordmark: light, wide-tracked capitals, as in the brand logo. */
-@utility wordmark {
-  font-family: var(--font-sans);
-  font-weight: 300;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  margin-right: -0.24em; /* keep optical centring despite trailing tracking */
+
+/* Brand background for the sign-in / splash screens only: the card's navy
+   gradient with the faded ghost mark, as on the approved business card. */
+@utility brand-bg {
+  background-color: var(--brand-navy);
+  background-image:
+    url("/brand/thrivie-mark-ghost.svg"),
+    radial-gradient(120% 90% at 65% 18%, var(--brand-navy-glow) 0%, var(--brand-navy) 48%, var(--brand-navy-deep) 100%);
+  background-repeat: no-repeat, no-repeat;
+  background-size: min(140vh, 150vw) auto, cover;
+  background-position: -38vh 8vh, center;
+  background-attachment: fixed, fixed;
 }

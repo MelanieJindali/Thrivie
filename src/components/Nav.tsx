@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sun, SquarePlus, ClipboardPaste, ChartNoAxesColumn, CircleUserRound, HeartPulse, Dumbbell, CircleCheck, Target, NotebookPen, CalendarHeart, LogOut, Utensils } from "lucide-react";
 import type { ModuleKey } from "@/lib/constants";
-import { BrandMark, Wordmark } from "./Brand";
+import { Logo } from "./Logo";
 import { signOut } from "@/app/authActions";
 import { clearDeviceData } from "./OfflineSync";
 
@@ -33,9 +33,8 @@ export function Nav({ visible, email }: { visible: ModuleKey[]; email: string })
   return (
     <>
       <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col px-4 py-7 md:flex" aria-label="Main navigation">
-        <Link href="/" className="mb-8 flex items-center gap-3 px-2">
-          <BrandMark />
-          <Wordmark className="text-xl text-text" />
+        <Link href="/" className="mb-4 self-start" aria-label="Thrivie home">
+          <Logo variant="wordmark" size="sm" decorative />
         </Link>
         <nav className="flex flex-col gap-1">
           {MAIN.map(({ href, label, icon: Icon, match }) => {
