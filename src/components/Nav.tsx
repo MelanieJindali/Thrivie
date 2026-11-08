@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sun, SquarePlus, ClipboardPaste, ChartNoAxesColumn, CircleUserRound, HeartPulse, Dumbbell, CircleCheck, Target, NotebookPen, CalendarHeart, LogOut } from "lucide-react";
 import type { ModuleKey } from "@/lib/settings";
-import { BrandMark } from "./Brand";
+import { BrandMark, Wordmark } from "./Brand";
 import { signOut } from "@/app/authActions";
 import { clearDeviceData } from "./OfflineSync";
 
@@ -16,7 +16,7 @@ const MAIN = [
   { href: "/log", label: "Log", icon: SquarePlus, match: (p: string) => ["/log", "/health", "/workouts", "/habits", "/goals", "/journal"].some((x) => p.startsWith(x)) },
   { href: "/import", label: "Import", icon: ClipboardPaste, match: (p: string) => p.startsWith("/import") },
   { href: "/insights", label: "Insights", icon: ChartNoAxesColumn, match: (p: string) => p.startsWith("/insights") || p.startsWith("/review") },
-  { href: "/me", label: "Me", icon: CircleUserRound, match: (p: string) => p.startsWith("/me") || p.startsWith("/me") || p.startsWith("/privacy") },
+  { href: "/me", label: "Me", icon: CircleUserRound, match: (p: string) => p.startsWith("/me") || p.startsWith("/privacy") },
 ] as const;
 
 const MODULES = [
@@ -34,7 +34,7 @@ export function Nav({ visible, email }: { visible: ModuleKey[]; email: string })
       <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col px-4 py-7 md:flex" aria-label="Main navigation">
         <Link href="/" className="mb-8 flex items-center gap-3 px-2">
           <BrandMark />
-          <span className="font-display text-2xl font-semibold tracking-tight">Thrivie</span>
+          <Wordmark className="text-xl text-text" />
         </Link>
         <nav className="flex flex-col gap-1">
           {MAIN.map(({ href, label, icon: Icon, match }) => {

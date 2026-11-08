@@ -249,17 +249,17 @@ function ReviewCard({
   const lowField = (f: string) => item.lowFields.some((x) => x === f || x.startsWith(f));
   const setData = (patch: Record<string, unknown>) => onChange((i) => ({ ...i, approved: false, data: { ...i.data, ...patch } }) as Item);
   const skipped = item.decision === "skip";
-  const fieldCls = (f: string) => `input py-1.5 text-sm ${lowField(f) ? "border-warn bg-warn-soft" : ""}`;
+  const fieldCls = (f: string) => `input py-1.5 text-sm ${lowField(f) ? "border-terracotta-ink bg-terracotta-soft" : ""}`;
 
   return (
     <div className={`card space-y-3 transition ${item.approved && !skipped ? "border-primary/50" : ""} ${skipped ? "opacity-70" : ""} ${low ? "border-l-4 border-l-warn" : ""}`}>
       <div className="flex flex-wrap items-center gap-2">
         <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-medium">{KIND_LABEL[item.kind]}</span>
-        {low && <span className="rounded-full bg-warn-soft px-2 py-0.5 text-[11px] text-warn" title="The AI wasn't sure about this one">⚠ Low confidence ({Math.round(item.confidence * 100)}%)</span>}
+        {low && <span className="rounded-full bg-terracotta-soft px-2 py-0.5 text-[11px] text-terracotta-ink" title="The AI wasn't sure about this one">⚠ Low confidence ({Math.round(item.confidence * 100)}%)</span>}
         {item.dateText && <span className="text-[11px] text-muted">“{item.dateText}”</span>}
         <input
           type="date"
-          className={`input ml-auto w-36 px-2 py-1 text-xs ${lowField("date") ? "border-warn bg-warn-soft" : ""}`}
+          className={`input ml-auto w-36 px-2 py-1 text-xs ${lowField("date") ? "border-terracotta-ink bg-terracotta-soft" : ""}`}
           value={item.date}
           onChange={(e) => e.target.value && onChange((i) => ({ ...i, date: e.target.value, approved: false }))}
           aria-label="Entry date"
@@ -335,7 +335,7 @@ function ReviewCard({
               )}
             </div>
           ) : (
-            <div className="space-y-2 rounded-xl bg-accent-soft p-3">
+            <div className="space-y-2 rounded-xl bg-clay-soft p-3">
               <p><b>New habit?</b> “{item.data.habitName}” doesn&apos;t match any of your habits.</p>
               <div className="flex flex-wrap items-center gap-2">
                 <button
@@ -398,9 +398,9 @@ function ReviewCard({
       )}
 
       {item.dup && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl bg-warn-soft px-3 py-2 text-xs">
+        <div className="flex flex-wrap items-center gap-2 rounded-xl bg-terracotta-soft px-3 py-2 text-xs">
           <span className="flex min-w-0 basis-full items-start gap-2 sm:basis-0 sm:flex-1">
-            <AlertTriangle size={14} className="mt-0.5 shrink-0 text-warn" />
+            <AlertTriangle size={14} className="mt-0.5 shrink-0 text-terracotta-ink" />
             <span>{item.dup.message}</span>
           </span>
           {item.dup.options.length > 1 && (

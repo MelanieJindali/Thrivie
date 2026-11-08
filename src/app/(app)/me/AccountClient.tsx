@@ -24,19 +24,19 @@ export function AccountSection({ email }: { email: string }) {
           <input className="input" type="password" name="next" placeholder="New password (10+ characters)" autoComplete="new-password" aria-label="New password" />
           <button className="btn-primary" disabled={pwPending}>Update</button>
         </div>
-        {pwState?.error && <p className="text-sm text-danger">{pwState.error}</p>}
+        {pwState?.error && <p className="text-sm text-terracotta-ink">{pwState.error}</p>}
         {pwState?.ok && <p className="text-sm text-primary">{pwState.ok}</p>}
       </form>
 
-      <form action={delAction} onSubmit={() => { void clearDeviceData(); }} className="space-y-2 rounded-2xl bg-danger-soft/60 p-4">
-        <span className="label text-danger">Delete account</span>
+      <form action={delAction} onSubmit={() => { void clearDeviceData(); }} className="space-y-2 rounded-2xl bg-terracotta-soft/60 p-4">
+        <span className="label text-terracotta-ink">Delete account</span>
         <p className="text-sm text-muted">Permanently deletes your account and <b>all</b> of its data from this server. This can&apos;t be undone.</p>
         <div className="flex flex-wrap gap-2">
           <input className="input max-w-xs bg-surface" name="confirm" placeholder={`Type ${email} to confirm`} aria-label="Type your email to confirm" autoComplete="off" />
           <input className="input max-w-xs bg-surface" type="password" name="password" placeholder="Your password" aria-label="Your password" autoComplete="current-password" />
           <button className="btn-danger" disabled={delPending}>Delete my account</button>
         </div>
-        {delState?.error && <p className="text-sm text-danger">{delState.error}</p>}
+        {delState?.error && <p className="text-sm text-terracotta-ink">{delState.error}</p>}
       </form>
     </section>
   );

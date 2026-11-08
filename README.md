@@ -1,4 +1,6 @@
-# 🌱 Thrivie
+<p align="center"><img src="public/icon.svg" width="88" alt="Thrivie logo"></p>
+
+# Thrivie · Fitness & Nutrition
 
 A simple, beautiful, mobile-first wellness app where people track **health, workouts, habits, goals and a journal**, with a calm dashboard, highlights, a daily brief, and a **free Smart Import** that turns notes-app text into entries on your own device.
 
@@ -16,7 +18,7 @@ A simple, beautiful, mobile-first wellness app where people track **health, work
 
 Desktop: <img src="docs/screens/today-desktop-light.png" width="49%" alt="Today on desktop"> <img src="docs/screens/insights-desktop-dark.png" width="49%" alt="Insights on desktop, dark mode">
 
-The visual system (Coastal Earth, Futuristic Luxe) is documented in [`design/style-guide.html`](design/style-guide.html), including every WCAG AA contrast adjustment.
+The visual system pairs the Thrivie brand navy from the logo with Coastal Earth accents (sand, terracotta, sage, gold). It is documented in [`design/style-guide.html`](design/style-guide.html), including every WCAG AA contrast check. The logo glyph lives in one place, `src/components/Brand.tsx`, and drives the in-app mark, the PWA icons and `public/icon.svg`. The original artwork is in `design/brand/`.
 
 ---
 
@@ -68,7 +70,7 @@ Demo logins: **demo@thrivie.app** and **demo2@thrivie.app**, both with the passw
 | `npm audit --omit=dev` | Dependency check (0 known vulnerabilities at release) |
 
 Latest results:
-- **Tests:** 114 passing.
+- **Tests:** 113 passing.
 - **Responsive and accessibility matrix:** 89/89 checks clean.
 - **Lighthouse (mobile):**
   - Sign-in: Performance 100 · Accessibility 100 · Best Practices 100 · SEO 91

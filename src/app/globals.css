@@ -16,11 +16,11 @@
   --border: #E7DFD2;        /* decorative hairline */
   --line: #968670;          /* Driftwood Line: input borders (3.5:1) */
   --driftwood: #B8A992;     /* decorative */
-  --text: #1F3B4D;          /* Deep Tide */
+  --text: #17304F;          /* Brand Navy ink */
   --muted: #6F6250;         /* Driftwood Ink */
-  --primary: #2E6E6A;       /* Deep Teal */
-  --primary-2: #245A57;
-  --primary-soft: #DCEEE8;
+  --primary: #1E3F6E;       /* Brand Navy */
+  --primary-2: #16325A;
+  --primary-soft: #E3EAF5;
   --primary-text: #FFFFFF;
   --seaglass: #A9D3C7;
   --seaglass-soft: #DCEEE8;
@@ -31,7 +31,7 @@
   --iris: #6A55C9;   --iris-soft: #ECE8F8;
   --gold-bright: #D4B26A;  --gold-ink: #81631F;  --gold-soft: #F6ECD8;
   --aqua: #2EF2E0;
-  --ring-1: #0B8A80;  --ring-2: #7461D6;  --ring-3: #D2553A;
+  --ring-1: #2F6DB5;  --ring-2: #7461D6;  --ring-3: #D2553A;
   --glow: rgb(46 242 224 / 0.45);
   --glass: rgb(255 253 249 / 0.84);
   --glass-edge: rgb(255 255 255 / 0.75);
@@ -39,41 +39,41 @@
   --series-1: #00897B; --series-2: #D2553A; --series-3: #6A55C9; --series-4: #B8820E; --series-5: #3D7AB8;
   --shadow: 0 1px 2px rgb(31 59 77 / 0.05), 0 14px 34px -18px rgb(31 59 77 / 0.25);
   --shadow-lg: 0 2px 4px rgb(31 59 77 / 0.06), 0 24px 48px -20px rgb(31 59 77 / 0.3);
-  --scene-1: rgb(169 211 199 / 0.35);
+  --scene-1: rgb(43 82 141 / 0.16);
   --scene-2: rgb(217 166 138 / 0.22);
   color-scheme: light;
 }
 
 .dark {
-  --bg: #0E1B24;            /* Midnight Ocean */
-  --surface: #16262F;       /* Deep Current */
-  --surface-2: #1E313B;
-  --border: #24363F;
-  --line: #62777F;
+  --bg: #0B1727;            /* Midnight Navy */
+  --surface: #132239;       /* Deep Navy */
+  --surface-2: #1A2C46;
+  --border: #23395A;
+  --line: #62789A;
   --driftwood: #7E7465;
   --text: #EDE6DA;          /* Foam */
-  --muted: #A39785;
-  --primary: #5FB7B0;
-  --primary-2: #4FA39C;
-  --primary-soft: #1B3A3C;
-  --primary-text: #0E1B24;
-  --seaglass: #2C5B57;
-  --seaglass-soft: #1B3A3C;
+  --muted: #A9A08F;
+  --primary: #8DB5EA;
+  --primary-2: #7AA6E0;
+  --primary-soft: #1A3050;
+  --primary-text: #0B1727;
+  --seaglass: #2C4F78;
+  --seaglass-soft: #183150;
   --sage: #7F946B;  --sage-ink: #B4C79E;  --sage-soft: #22352C;
   --terracotta: #D9805F;  --terracotta-ink: #E38A6C;  --terracotta-soft: #3A2620;
   --clay: #C48E72;  --clay-ink: #E6BFA6;  --clay-soft: #362922;
-  --ocean: #8FC3DD;  --ocean-soft: #1A3242;
+  --ocean: #8FC3DD;  --ocean-soft: #16304A;
   --iris: #B9A6F7;   --iris-soft: #2A2742;
   --gold-bright: #D4B26A;  --gold-ink: #D4B26A;  --gold-soft: #352D1C;
   --ring-1: #2EF2E0;  --ring-2: #B9A6F7;  --ring-3: #FF8A73;
   --glow: rgb(46 242 224 / 0.55);
-  --glass: rgb(22 38 47 / 0.88);
+  --glass: rgb(19 34 57 / 0.88);
   --glass-edge: rgb(237 230 218 / 0.12);
-  --chart-grid: #22343D;
+  --chart-grid: #22354F;
   --series-1: #1FA898; --series-2: #E0603F; --series-3: #8C78E8; --series-4: #B88A1C; --series-5: #4F8FD0;
   --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 14px 34px -18px rgb(0 0 0 / 0.7);
   --shadow-lg: 0 2px 4px rgb(0 0 0 / 0.35), 0 24px 48px -20px rgb(0 0 0 / 0.8);
-  --scene-1: rgb(46 242 224 / 0.07);
+  --scene-1: rgb(91 140 220 / 0.10);
   --scene-2: rgb(185 166 247 / 0.07);
   color-scheme: dark;
 }
@@ -110,30 +110,6 @@
   --color-gold-ink: var(--gold-ink);
   --color-gold-soft: var(--gold-soft);
   --color-aqua: var(--aqua);
-  /* legacy names used by existing components → coastal equivalents */
-  --color-gold: var(--gold-ink);
-  --color-rose: var(--terracotta-ink);
-  --color-rose-soft: var(--terracotta-soft);
-  --color-sapphire: var(--ocean);
-  --color-sapphire-soft: var(--ocean-soft);
-  --color-emerald: var(--sage-ink);
-  --color-emerald-soft: var(--sage-soft);
-  --color-amber: var(--gold-ink);
-  --color-amber-soft: var(--gold-soft);
-  --color-plum: var(--iris);
-  --color-plum-soft: var(--iris-soft);
-  --color-teal: var(--primary);
-  --color-teal-soft: var(--seaglass-soft);
-  --color-accent: var(--clay-ink);
-  --color-accent-soft: var(--clay-soft);
-  --color-lavender: var(--iris);
-  --color-lavender-soft: var(--iris-soft);
-  --color-sky: var(--ocean);
-  --color-sky-soft: var(--ocean-soft);
-  --color-warn: var(--terracotta-ink);
-  --color-warn-soft: var(--terracotta-soft);
-  --color-danger: var(--terracotta-ink);
-  --color-danger-soft: var(--terracotta-soft);
   --font-sans: "Manrope Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-display: "Fraunces Variable", ui-serif, Georgia, "Times New Roman", serif;
   --shadow-soft: var(--shadow);
@@ -231,4 +207,13 @@ input, select, textarea { font-size: 16px; } /* no iOS zoom on focus */
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }
+}
+
+/* Logo wordmark: light, wide-tracked capitals, as in the brand logo. */
+@utility wordmark {
+  font-family: var(--font-sans);
+  font-weight: 300;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  margin-right: -0.24em; /* keep optical centring despite trailing tracking */
 }

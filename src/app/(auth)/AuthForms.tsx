@@ -6,7 +6,7 @@ import { consumeMagicLink, requestMagicLink, signIn, signUp, verifyMfa, type Aut
 
 function Err({ state }: { state: AuthState }) {
   if (!state?.error) return null;
-  return <p className="rounded-2xl bg-danger-soft px-4 py-2.5 text-sm text-danger" role="alert">{state.error}</p>;
+  return <p className="rounded-2xl bg-terracotta-soft px-4 py-2.5 text-sm text-terracotta-ink" role="alert">{state.error}</p>;
 }
 
 export function LoginForm({ next, notice, magic }: { next?: string; notice?: string; magic?: boolean }) {

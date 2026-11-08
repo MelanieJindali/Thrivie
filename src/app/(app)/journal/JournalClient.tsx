@@ -88,7 +88,7 @@ export function JournalComposer({ today, initial, onDone, compact = false }: { t
 function highlight(text: string, q: string) {
   if (!q) return text;
   const parts = text.split(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "ig"));
-  return parts.map((p, i) => (p.toLowerCase() === q.toLowerCase() ? <mark key={i} className="rounded bg-warn-soft px-0.5 text-text">{p}</mark> : p));
+  return parts.map((p, i) => (p.toLowerCase() === q.toLowerCase() ? <mark key={i} className="rounded bg-terracotta-soft px-0.5 text-text">{p}</mark> : p));
 }
 
 export function JournalList({ entries, today, query }: { entries: Entry[]; today: string; query: string }) {

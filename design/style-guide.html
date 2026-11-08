@@ -13,8 +13,8 @@
   --muted: #6F6250;         /* Driftwood Ink: muted text, 5.8:1 on Shell */
   --line: #968670;          /* Driftwood Line: input borders, 3.5:1 */
   --hairline: #E7DFD2;      /* decorative dividers */
-  --fg: #1F3B4D;            /* Deep Tide */
-  --primary: #2E6E6A;       /* Deep Teal */
+  --fg: #17304F;            /* Navy Ink */
+  --primary: #1E3F6E;       /* Brand Navy */
   --primary-hover: #265C59;
   --on-primary: #FFFFFF;
   --seaglass: #A9D3C7;      /* selected states */
@@ -38,8 +38,8 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0E1B24; --surface: #16262F; --surface-2: #1E313B; --driftwood: #7E7465; --muted: #A39785; --line: #62777F; --hairline: #24363F;
-    --fg: #EDE6DA; --primary: #5FB7B0; --primary-hover: #73C6BF; --on-primary: #0E1B24; --seaglass: #2C5B57; --seaglass-soft: #1B3A3C;
+    --bg: #0B1727; --surface: #132239; --surface-2: #1A2C46; --driftwood: #7E7465; --muted: #A39785; --line: #62777F; --hairline: #24363F;
+    --fg: #EDE6DA; --primary: #8DB5EA; --primary-hover: #73C6BF; --on-primary: #0B1727; --seaglass: #2C5B57; --seaglass-soft: #1B3A3C;
     --sage: #7F946B; --sage-soft: #22352C; --sage-ink: #B4C79E; --terracotta: #D9805F; --terracotta-soft: #3A2620; --terracotta-ink: #E38A6C;
     --clay: #C48E72; --clay-ink: #E6BFA6; --gold-soft: #352D1C; --gold-ink: #D4B26A;
     --ring-1: #2EF2E0; --ring-2: #B9A6F7; --ring-3: #FF8A73; --glow: rgb(46 242 224 / 0.55);
@@ -50,8 +50,8 @@
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0E1B24; --surface: #16262F; --surface-2: #1E313B; --driftwood: #7E7465; --muted: #A39785; --line: #62777F; --hairline: #24363F;
-  --fg: #EDE6DA; --primary: #5FB7B0; --primary-hover: #73C6BF; --on-primary: #0E1B24; --seaglass: #2C5B57; --seaglass-soft: #1B3A3C;
+  --bg: #0B1727; --surface: #132239; --surface-2: #1A2C46; --driftwood: #7E7465; --muted: #A39785; --line: #62777F; --hairline: #24363F;
+  --fg: #EDE6DA; --primary: #8DB5EA; --primary-hover: #73C6BF; --on-primary: #0B1727; --seaglass: #2C5B57; --seaglass-soft: #1B3A3C;
   --sage: #7F946B; --sage-soft: #22352C; --sage-ink: #B4C79E; --terracotta: #D9805F; --terracotta-soft: #3A2620; --terracotta-ink: #E38A6C;
   --clay: #C48E72; --clay-ink: #E6BFA6; --gold-soft: #352D1C; --gold-ink: #D4B26A;
   --ring-1: #2EF2E0; --ring-2: #B9A6F7; --ring-3: #FF8A73; --glow: rgb(46 242 224 / 0.55);
@@ -79,7 +79,7 @@ p { margin: 0; }
 .top .wrap { display: flex; align-items: center; gap: 12px; padding-block: 12px; flex-wrap: wrap; }
 .brand { display: flex; align-items: center; gap: 10px; margin-right: auto; }
 .brand b { font-family: var(--font-display); font-size: 1.35rem; font-weight: 600; }
-.mark { width: 36px; height: 36px; border-radius: 12px; background: linear-gradient(140deg, var(--primary), #1F3B4D); display: grid; place-items: center; box-shadow: var(--shadow); }
+.mark { width: 36px; height: 36px; border-radius: 12px; background: linear-gradient(140deg, var(--primary), #17304F); display: grid; place-items: center; box-shadow: var(--shadow); }
 .seg { display: inline-flex; padding: 4px; border-radius: var(--r-pill); background: var(--surface-2); }
 .seg button { min-height: 36px; min-width: 64px; border: 0; background: transparent; color: var(--muted); font: 600 0.82rem var(--font-body); border-radius: var(--r-pill); cursor: pointer; }
 .seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: var(--shadow); }
@@ -130,7 +130,7 @@ tr:last-child td { border-bottom: 0; }
 .btn-danger { background: var(--terracotta-ink); color: var(--on-primary); }
 .btn[disabled] { opacity: 0.45; cursor: not-allowed; }
 .btn-icon { width: 48px; padding: 0; }
-.fab { width: 60px; height: 60px; border-radius: 22px; border: 0; color: #0E1B24; cursor: pointer; background: linear-gradient(135deg, #2EF2E0, #B9A6F7 55%, #FF8A73); box-shadow: 0 12px 28px -10px var(--glow), 0 0 0 4px var(--surface); display: grid; place-items: center; }
+.fab { width: 60px; height: 60px; border-radius: 22px; border: 0; color: #0B1727; cursor: pointer; background: linear-gradient(135deg, #2EF2E0, #B9A6F7 55%, #FF8A73); box-shadow: 0 12px 28px -10px var(--glow), 0 0 0 4px var(--surface); display: grid; place-items: center; }
 
 /* chips, mood, stepper, inputs */
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -198,7 +198,7 @@ tr:last-child td { border-bottom: 0; }
 
 /* toast */
 .toast { display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 18px; border-radius: var(--r-pill); background: var(--fg); color: var(--bg); width: fit-content; max-width: 100%; box-shadow: var(--shadow); font-weight: 600; font-size: 0.92rem; }
-.toast button { min-height: 40px; padding: 0 16px; border-radius: var(--r-pill); border: 0; background: var(--aqua); color: #0E1B24; font: 700 0.85rem var(--font-body); cursor: pointer; }
+.toast button { min-height: 40px; padding: 0 16px; border-radius: var(--r-pill); border: 0; background: var(--aqua); color: #0B1727; font: 700 0.85rem var(--font-body); cursor: pointer; }
 
 /* empty state */
 .empty { text-align: center; justify-items: center; padding: 28px 20px; border: 1.5px dashed var(--driftwood); background: transparent; box-shadow: none; }
@@ -276,9 +276,9 @@ tr:last-child td { border-bottom: 0; }
           <tr><td><span class="dot" style="background:#D9A68A"></span>Clay #D9A68A</td><td>2.1:1 as text</td><td>Clay Ink <b>#8E5A3F</b> when needed for text; Clay for fills</td><td><span class="badge ok">5.6:1</span></td></tr>
           <tr><td><span class="dot" style="background:#D4B26A"></span>Champagne Gold #D4B26A</td><td>2.0:1 as text in light mode</td><td>Gold Ink <b>#81631F</b> for labels in light mode; the original gold is used as-is in dark mode (7.7:1) and for the milestone medal</td><td><span class="badge ok">5.5:1</span></td></tr>
           <tr><td><span class="dot" style="background:#2EF2E0"></span>Electric Aqua #2EF2E0</td><td>1.4:1, invisible as a line on light cards</td><td>Never used for text. Light-mode rings use a deepened iridescent trio <b>#0B8A80 → #7461D6 → #D2553A</b> (all ≥ 4:1); dark mode uses your original trio. Aqua stays for glows, the active-tab light, and buttons with dark text (12.4:1)</td><td><span class="badge ok">≥ 4.0:1</span></td></tr>
-          <tr><td><span class="dot" style="background:#5FB7B0"></span>Dark-mode Deep Teal</td><td>#2E6E6A is too dark to read on Deep Current</td><td>Dark mode uses <b>#5FB7B0</b> for primary buttons (with Midnight text) and links</td><td><span class="badge ok">7.4:1 · 6.6:1</span></td></tr>
+          <tr><td><span class="dot" style="background:#8DB5EA"></span>Dark-mode Brand Navy</td><td>#1E3F6E is too dark to read on Deep Navy</td><td>Dark mode uses <b>#8DB5EA</b> for primary buttons (with Midnight text) and links</td><td><span class="badge ok">7.4:1 · 6.6:1</span></td></tr>
           <tr><td><span class="dot" style="background:#62777F"></span>Dark-mode borders</td><td>Needed a value</td><td>Input borders <b>#62777F</b>; muted text <b>#A39785</b>; Sage/Terracotta/Clay inks lightened (#B4C79E, #E38A6C, #E6BFA6)</td><td><span class="badge ok">3.3:1 · 5.4:1+</span></td></tr>
-          <tr><td><span class="dot" style="background:#1F3B4D"></span>Deep Tide, Deep Teal, Foam</td><td>None</td><td>Kept exactly</td><td><span class="badge ok">5.8–14:1</span></td></tr>
+          <tr><td><span class="dot" style="background:#17304F"></span>Navy Ink, Brand Navy, Foam</td><td>None</td><td>Kept exactly</td><td><span class="badge ok">5.8–14:1</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -385,7 +385,7 @@ tr:last-child td { border-bottom: 0; }
         <p class="num" style="font-size:2.6rem;font-weight:600;line-height:1">7.4 <span style="font-size:1rem;color:var(--muted)">hours</span></p>
         <p class="muted" style="font-size:0.9rem">About an hour more than your workout-free nights.</p>
         <svg viewBox="0 0 220 60" role="img" aria-label="Sleep over the last 7 nights: 6.2, 6.8, 7.9, 6.5, 7.1, 8.0 and 7.4 hours" style="width:100%;height:60px">
-          <defs><linearGradient id="spark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2E6E6A" stop-opacity=".28"/><stop offset="1" stop-color="#2E6E6A" stop-opacity="0"/></linearGradient></defs>
+          <defs><linearGradient id="spark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1E3F6E" stop-opacity=".28"/><stop offset="1" stop-color="#1E3F6E" stop-opacity="0"/></linearGradient></defs>
           <path d="M4 44 L39 34 L74 14 L109 39 L144 28 L179 10 L214 22 L214 58 L4 58Z" fill="url(#spark)"/>
           <path d="M4 44 L39 34 L74 14 L109 39 L144 28 L179 10 L214 22" fill="none" style="stroke:var(--primary)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
           <circle cx="214" cy="22" r="4.5" style="fill:var(--primary);stroke:var(--surface)" stroke-width="2"/>
@@ -450,7 +450,7 @@ tr:last-child td { border-bottom: 0; }
         <h3>Motion</h3>
         <p class="muted" style="font-size:0.92rem">Presses: 150ms scale. Selections: 200ms. Rings fill over 900ms with a gentle ease-out. Celebrations last under a second and appear only for streak milestones and completed goals. With reduced motion, every animation becomes an instant change.</p>
         <h3>Shape</h3>
-        <p class="muted" style="font-size:0.92rem">Cards 20px, signature surfaces 24–28px, buttons and chips fully rounded. Shadows are soft and tinted with Deep Tide instead of grey.</p>
+        <p class="muted" style="font-size:0.92rem">Cards 20px, signature surfaces 24–28px, buttons and chips fully rounded. Shadows are soft and tinted with Navy Ink instead of grey.</p>
       </div>
     </div>
   </section>
@@ -480,8 +480,8 @@ tr:last-child td { border-bottom: 0; }
     ['Sand', '--bg', 'Background', 'surface'],
     ['Shell', '--surface', 'Cards and surfaces', 'surface'],
     ['Driftwood', '--driftwood', 'Dividers, dashed outlines', 'deco'],
-    ['Deep Tide', '--fg', 'Primary text', 'text'],
-    ['Deep Teal', '--primary', 'Primary actions', 'text'],
+    ['Navy Ink', '--fg', 'Primary text', 'text'],
+    ['Brand Navy', '--primary', 'Primary actions', 'text'],
     ['Sea Glass', '--seaglass', 'Selected states, tints', 'surface'],
     ['Sage', '--sage', 'Habit fills', 'deco'],
     ['Terracotta', '--terracotta', 'Attention fills', 'deco'],

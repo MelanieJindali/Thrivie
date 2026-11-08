@@ -154,7 +154,7 @@ export function TrendGroup({ specs, title = "Trends", initial = 30 }: { specs: T
     <section className="card">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h2 className="h2 flex items-center gap-2.5">
-          <span className="grid h-8 w-8 place-items-center rounded-xl bg-rose-soft text-rose"><LineIcon size={16} /></span>
+          <span className="grid h-8 w-8 place-items-center rounded-xl bg-terracotta-soft text-terracotta-ink"><LineIcon size={16} /></span>
           {title}
         </h2>
         <RangeToggle value={days} onChange={setDays} />

@@ -2,13 +2,13 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Thrivie — wellness tracker",
+    name: "Thrivie · Fitness & Nutrition",
     short_name: "Thrivie",
     description: "Track health, workouts, habits, goals and a journal — privately.",
     start_url: "/",
     display: "standalone",
-    background_color: "#faf7f2",
-    theme_color: "#1f5c4a",
+    background_color: "#F6F1E9",
+    theme_color: "#1B375E",
     orientation: "portrait",
     icons: [
       { src: "/icons/192", sizes: "192x192", type: "image/png" },
@@ -17,7 +17,7 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icon.svg", sizes: "any", type: "image/svg+xml" },
     ],
     shortcuts: [
-      { name: "AI Notes Import", url: "/import" },
+      { name: "Smart Import", url: "/import" },
       { name: "Habits", url: "/habits" },
       { name: "Journal", url: "/journal" },
     ],

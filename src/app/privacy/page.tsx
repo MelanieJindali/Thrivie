@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BrandMark } from "@/components/Brand";
+import { BrandMark, Wordmark } from "@/components/Brand";
 import { MEDICAL_NOTE } from "@/lib/constants";
 
 export const metadata = { title: "Privacy · Thrivie", description: "How Thrivie protects your health data, in plain language." };
@@ -14,7 +14,7 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 export default function PrivacyPage() {
   return (
     <main className="mx-auto max-w-2xl space-y-8 px-4 py-10">
-      <Link href="/" className="flex items-center gap-3"><BrandMark /><span className="font-display text-2xl font-semibold">Thrivie</span></Link>
+      <Link href="/" className="flex items-center gap-3"><BrandMark /><Wordmark className="text-xl" /></Link>
       <header>
         <p className="eyebrow">Privacy</p>
         <h1 className="h1 mt-2">Your data is yours</h1>

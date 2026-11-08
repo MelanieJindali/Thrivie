@@ -13,7 +13,7 @@ export function goalDisplay(g: GoalView, u: Units) {
 export const STATUS_LABEL: Record<string, { label: string; cls: string; icon: string }> = {
   done: { label: "Complete", cls: "bg-primary-soft text-primary", icon: "✓" },
   "on-track": { label: "On track", cls: "bg-primary-soft text-primary", icon: "●" },
-  behind: { label: "A bit behind", cls: "bg-warn-soft text-warn", icon: "◐" },
+  behind: { label: "A bit behind", cls: "bg-terracotta-soft text-terracotta-ink", icon: "◐" },
   "not-started": { label: "Just started", cls: "bg-surface-2 text-muted", icon: "○" },
   overdue: { label: "Past deadline", cls: "bg-surface-2 text-muted", icon: "◷" },
 };
