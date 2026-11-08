@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
+import { systemDb } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
 import { getVapidKeys } from "@/lib/push";
 
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   const sub = Sub.safeParse(await req.json().catch(() => null));
   if (!sub.success) return NextResponse.json({ error: "Invalid subscription." }, { status: 400 });
   // A device that switches accounts should only notify the current account.
-  await prisma.pushSubscription.deleteMany({ where: { endpoint: sub.data.endpoint } });
+  await systemDb().pushSubscription.deleteMany({ where: { endpoint: sub.data.endpoint } });
   await auth.db.pushSubscription.create({ data: { userId: auth.user.id, endpoint: sub.data.endpoint, p256dh: sub.data.keys.p256dh, auth: sub.data.keys.auth } });
   return NextResponse.json({ ok: true });
 }

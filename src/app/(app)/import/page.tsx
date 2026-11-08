@@ -1,6 +1,5 @@
 import { getSettings } from "@/lib/settings";
 import { requireUser } from "@/lib/auth";
-import { aiConfigured, AI_MODEL } from "@/lib/ai";
 import { ImportClient } from "./ImportClient";
 
 export default async function ImportPage() {
@@ -15,8 +14,8 @@ export default async function ImportPage() {
       units={settings.units}
       habits={habits}
       goals={goals.map((g) => ({ id: g.id, name: g.title, unit: g.unit }))}
-      configured={aiConfigured()}
-      model={AI_MODEL}
+      configured={false}
+      model="on-device"
     />
   );
 }

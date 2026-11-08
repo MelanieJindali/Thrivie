@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { prisma, scopedDb } from "@/lib/db";
-import { sha256 } from "@/lib/auth";
+import { scopedDb, systemDb } from "@/lib/db";
+import { rateLimit, sha256 } from "@/lib/auth";
 import { loadSettings } from "@/lib/settings";
 import { todayInTz } from "@/lib/dates";
 import { IngestSchema, normalizeIngest } from "@/lib/ingest";
@@ -13,9 +13,10 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
   if (!token?.startsWith("thr_")) return NextResponse.json({ error: "Missing or invalid token." }, { status: 401 });
-  const row = await prisma.apiToken.findUnique({ where: { tokenHash: sha256(token) } });
+  const row = await systemDb().apiToken.findUnique({ where: { tokenHash: sha256(token) } });
   if (!row) return NextResponse.json({ error: "Missing or invalid token." }, { status: 401 });
 
+  if (!(await rateLimit(`ingest:${row.id}`, 120, 3600))) return NextResponse.json({ error: "Too many requests. Try again later." }, { status: 429 });
   const body = IngestSchema.safeParse(await req.json().catch(() => null));
   if (!body.success) {
     const i = body.error.issues[0];
@@ -42,7 +43,7 @@ export async function POST(req: Request) {
     await db.workout.create({ data: { userId: row.userId, date, ...w, source: "sync" } });
     added++;
   }
-  await prisma.apiToken.update({ where: { id: row.id }, data: { lastUsedAt: new Date() } });
+  await systemDb().apiToken.update({ where: { id: row.id }, data: { lastUsedAt: new Date() } });
   revalidatePath("/", "layout");
   return NextResponse.json({ ok: true, date, healthUpdated, fields: Object.keys(health), workoutsAdded: added });
 }

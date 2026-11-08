@@ -1,13 +1,10 @@
 import "server-only";
-import { z } from "zod";
 import type { ScopedDb } from "./db";
 import { addDays, formatDate, startOfWeek, todayInTz, type DateStr } from "./dates";
 import { loadSettings } from "./settings";
 import { getGoalViews, getHabitViews } from "./queries";
 import { mean, round } from "./stats";
 import { goalDisplay } from "./goalDisplay";
-import { aiConfigured, complete } from "./ai";
-import { extractJson } from "./import/schema";
 import { kmToDisplay, distanceUnit } from "./units";
 
 export type WeekStats = Awaited<ReturnType<typeof weekStats>>;
@@ -68,16 +65,7 @@ export async function weekStats(db: ScopedDb, userId: string, weekStart: DateStr
   };
 }
 
-const REVIEW_PROMPT = `You write a short weekly review for a personal wellness tracking app.
-You get a JSON summary of one week, computed by the app. Return ONLY JSON:
-{"summary": string, "wins": [string, string, string], "focus": string}
-- summary: 2-3 warm sentences reflecting on the week as a whole.
-- wins: 2-4 specific wins drawn from the numbers (consistency counts as a win).
-- focus: one gentle, optional, concrete idea for next week ("You could…").
-Rules: encouraging and non-judgmental; never shame about weight, food, or missed days; no medical advice;
-mention weight only as progress toward a goal the user set; use only the numbers provided.`;
-
-function fallbackReview(s: WeekStats): ReviewContent {
+export function fallbackReview(s: WeekStats): ReviewContent {
   const wins: string[] = [];
   const best = [...s.habits].sort((a, b) => b.pct - a.pct)[0];
   if (best && best.done) wins.push(`${best.name}: ${best.done} of ${best.target} this week.`);
@@ -93,36 +81,10 @@ function fallbackReview(s: WeekStats): ReviewContent {
   };
 }
 
-const ReviewSchema = z.object({ summary: z.string().min(10).max(1200), wins: z.array(z.string().min(1).max(300)).min(1).max(5), focus: z.string().min(5).max(400) });
-
-export async function getReview(db: ScopedDb, userId: string, weekStart: DateStr, generate: boolean) {
+/** Weekly review: numbers computed in code, prose from templates (no AI service). */
+export async function getReview(db: ScopedDb, userId: string, weekStart: DateStr) {
   const stats = await weekStats(db, userId, weekStart);
-  const cached = await db.weeklyReview.findUnique({ where: { userId_weekStart: { userId, weekStart } } });
-  if (cached && !generate) return { stats, review: JSON.parse(cached.content) as ReviewContent, source: cached.source, error: null as string | null };
-  if (!generate) return { stats, review: null, source: null, error: null };
-
-  let review = fallbackReview(stats);
-  let source = "fallback";
-  let error: string | null = null;
-  if (aiConfigured()) {
-    try {
-      const { habits, goals, ...rest } = stats;
-      const text = await complete({ system: REVIEW_PROMPT, user: JSON.stringify({ ...rest, habits, goals }), maxTokens: 3000, effort: "low" });
-      const parsed = ReviewSchema.safeParse(JSON.parse(extractJson(text) ?? "null"));
-      if (parsed.success) {
-        review = parsed.data;
-        source = "ai";
-      } else error = "The AI response couldn't be read, so a simple review is shown.";
-    } catch (e) {
-      error = (e as Error).message;
-    }
-  }
-  await db.weeklyReview.upsert({
-    where: { userId_weekStart: { userId, weekStart } },
-    update: { content: JSON.stringify(review), source, createdAt: new Date() },
-    create: { userId, weekStart, content: JSON.stringify(review), source },
-  });
-  return { stats, review, source, error };
+  return { stats, review: fallbackReview(stats) };
 }
 
 export function weekFromParam(param: string | undefined, today: DateStr): DateStr {

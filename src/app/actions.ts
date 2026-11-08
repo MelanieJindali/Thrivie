@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireUser, sha256 } from "@/lib/auth";
+import { rateLimit, requireUser, sha256 } from "@/lib/auth";
+import { logError } from "@/lib/log";
 import crypto from "node:crypto";
 import { loadSampleData } from "@/lib/sampleData";
-import { getReview } from "@/lib/review";
 import { getSettings, getToday, ALL_MODULES } from "@/lib/settings";
 import { isDateStr, isValidTimezone } from "@/lib/dates";
 import { WORKOUT_TYPES } from "@/lib/constants";
@@ -23,7 +23,7 @@ export type ActionResult = { ok: true; id?: string } | { ok: false; error: strin
 
 function fail(e: unknown): ActionResult {
   if (e instanceof z.ZodError) return { ok: false, error: e.issues.map((i) => i.message).join(", ") };
-  console.error(e);
+  logError("action", e);
   return { ok: false, error: "Something went wrong. Please try again." };
 }
 
@@ -44,6 +44,7 @@ const healthInput = z.object({
 
 export async function saveHealthLog(input: z.input<typeof healthInput>): Promise<ActionResult> {
   const { db, user } = await requireUser();
+  if (!(await rateLimit(`write:${user.id}`, 600, 600))) return { ok: false, error: "You're going a little fast. Please wait a minute and try again." } as never;
   try {
     const v = healthInput.parse(input);
     const { units } = await getSettings();
@@ -69,6 +70,7 @@ export async function saveHealthLog(input: z.input<typeof healthInput>): Promise
 
 export async function deleteHealthLog(id: string): Promise<ActionResult> {
   const { db, user } = await requireUser();
+  if (!(await rateLimit(`write:${user.id}`, 600, 600))) return { ok: false, error: "You're going a little fast. Please wait a minute and try again." } as never;
   await db.healthLog.delete({ where: { id } }).catch(() => null);
   done();
   return { ok: true };
@@ -100,6 +102,7 @@ const workoutInput = z.object({
 
 export async function saveWorkout(input: z.input<typeof workoutInput>): Promise<ActionResult> {
   const { db, user } = await requireUser();
+  if (!(await rateLimit(`write:${user.id}`, 600, 600))) return { ok: false, error: "You're going a little fast. Please wait a minute and try again." } as never;
   try {
     const v = workoutInput.parse(input);
     const { units } = await getSettings();
@@ -140,6 +143,7 @@ export async function saveWorkout(input: z.input<typeof workoutInput>): Promise<
 /** Copy the most recent workout to today. */
 export async function repeatLastWorkout(type?: string): Promise<ActionResult> {
   const { db, user } = await requireUser();
+  if (!(await rateLimit(`write:${user.id}`, 600, 600))) return { ok: false, error: "You're going a little fast. Please wait a minute and try again." } as never;
   const last = await db.workout.findFirst({
     where: type ? { type } : {},
     orderBy: [{ date: "desc" }, { createdAt: "desc" }],
@@ -168,6 +172,7 @@ export async function repeatLastWorkout(type?: string): Promise<ActionResult> {
 
 export async function deleteWorkout(id: string): Promise<ActionResult> {
   const { db, user } = await requireUser();
+  if (!(await rateLimit(`write:${user.id}`, 600, 600))) return { ok: false, error: "You're going a little fast. Please wait a minute and try again." } as never;
   await db.workout.delete({ where: { id } }).catch(() => null);
   done();
   return { ok: true };
@@ -185,6 +190,7 @@ const habitInput = z.object({
 
 export async function saveHabit(input: z.input<typeof habitInput>): Promise<ActionResult> {
   const { db, user } = await requireUser();
+  if (!(await rateLimit(`write:${user.id}`, 600, 600))) return { ok: false, error: "You're going a little fast. Please wait a minute and try again." } as never;
   try {
     const v = habitInput.parse(input);
     const data = {
@@ -205,6 +211,7 @@ export async function saveHabit(input: z.input<typeof habitInput>): Promise<Acti
 
 export async function toggleHabit(habitId: string, date?: string): Promise<ActionResult> {
   const { db, user } = await requireUser();
+  if (!(await rateLimit(`write:${user.id}`, 600, 600))) return { ok: false, error: "You're going a little fast. Please wait a minute and try again." } as never;
   const d = date && isDateStr(date) ? date : await getToday();
   const existing = await db.habitCheckin.findUnique({ where: { habitId_date: { habitId, date: d } } });
   if (existing) await db.habitCheckin.delete({ where: { id: existing.id } });
@@ -215,6 +222,7 @@ export async function toggleHabit(habitId: string, date?: string): Promise<Actio
 
 export async function archiveHabit(id: string, archived: boolean): Promise<ActionResult> {
   const { db, user } = await requireUser();
+  if (!(await rateLimit(`write:${user.id}`, 600, 600))) return { ok: false, error: "You're going a little fast. Please wait a minute and try again." } as never;
   await db.habit.update({ where: { id }, data: { archived } });
   done();
   return { ok: true };
@@ -222,6 +230,7 @@ export async function archiveHabit(id: string, archived: boolean): Promise<Actio
 
 export async function deleteHabit(id: string): Promise<ActionResult> {
   const { db, user } = await requireUser();
+  if (!(await rateLimit(`write:${user.id}`, 600, 600))) return { ok: false, error: "You're going a little fast. Please wait a minute and try again." } as never;
   await db.habit.delete({ where: { id } }).catch(() => null);
   done();
   return { ok: true };
@@ -246,6 +255,7 @@ const goalInput = z.object({
 
 export async function saveGoal(input: z.input<typeof goalInput>): Promise<ActionResult> {
   const { db, user } = await requireUser();
+  if (!(await rateLimit(`write:${user.id}`, 600, 600))) return { ok: false, error: "You're going a little fast. Please wait a minute and try again." } as never;
   try {
     const v = goalInput.parse(input);
     if (v.deadline < v.startDate) return { ok: false, error: "Deadline must be after the start date." };
@@ -284,6 +294,7 @@ export async function saveGoal(input: z.input<typeof goalInput>): Promise<Action
 
 export async function addGoalProgress(goalId: string, value: number, note?: string, date?: string): Promise<ActionResult> {
   const { db, user } = await requireUser();
+  if (!(await rateLimit(`write:${user.id}`, 600, 600))) return { ok: false, error: "You're going a little fast. Please wait a minute and try again." } as never;
   if (!Number.isFinite(value)) return { ok: false, error: "Enter a number." };
   const d = date && isDateStr(date) ? date : await getToday();
   await db.goalProgress.create({ data: { goalId, value, note: note?.trim() || null, date: d } });
@@ -293,6 +304,7 @@ export async function addGoalProgress(goalId: string, value: number, note?: stri
 
 export async function archiveGoal(id: string, archived: boolean): Promise<ActionResult> {
   const { db, user } = await requireUser();
+  if (!(await rateLimit(`write:${user.id}`, 600, 600))) return { ok: false, error: "You're going a little fast. Please wait a minute and try again." } as never;
   await db.goal.update({ where: { id }, data: { archived } });
   done();
   return { ok: true };
@@ -300,6 +312,7 @@ export async function archiveGoal(id: string, archived: boolean): Promise<Action
 
 export async function deleteGoal(id: string): Promise<ActionResult> {
   const { db, user } = await requireUser();
+  if (!(await rateLimit(`write:${user.id}`, 600, 600))) return { ok: false, error: "You're going a little fast. Please wait a minute and try again." } as never;
   await db.goal.delete({ where: { id } }).catch(() => null);
   done();
   return { ok: true };
@@ -317,6 +330,7 @@ const journalInput = z.object({
 
 export async function saveJournal(input: z.input<typeof journalInput>): Promise<ActionResult> {
   const { db, user } = await requireUser();
+  if (!(await rateLimit(`write:${user.id}`, 600, 600))) return { ok: false, error: "You're going a little fast. Please wait a minute and try again." } as never;
   try {
     const v = journalInput.parse(input);
     const data = { date: v.date, content: v.content, mood: v.mood ?? null, prompt: v.prompt || null };
@@ -332,6 +346,7 @@ export async function saveJournal(input: z.input<typeof journalInput>): Promise<
 
 export async function deleteJournal(id: string): Promise<ActionResult> {
   const { db, user } = await requireUser();
+  if (!(await rateLimit(`write:${user.id}`, 600, 600))) return { ok: false, error: "You're going a little fast. Please wait a minute and try again." } as never;
   await db.journalEntry.delete({ where: { id } }).catch(() => null);
   done();
   return { ok: true };
@@ -348,6 +363,7 @@ const settingsInput = z.object({
 
 export async function saveSettings(input: z.input<typeof settingsInput>): Promise<ActionResult> {
   const { db, user } = await requireUser();
+  if (!(await rateLimit(`write:${user.id}`, 600, 600))) return { ok: false, error: "You're going a little fast. Please wait a minute and try again." } as never;
   try {
     const v = settingsInput.parse(input);
     await db.settings.upsert({
@@ -364,34 +380,29 @@ export async function saveSettings(input: z.input<typeof settingsInput>): Promis
 
 export async function deleteAllData(confirm: string): Promise<ActionResult> {
   const { db, user } = await requireUser();
+  if (!(await rateLimit(`write:${user.id}`, 600, 600))) return { ok: false, error: "You're going a little fast. Please wait a minute and try again." } as never;
   if (confirm !== "DELETE") return { ok: false, error: 'Type "DELETE" to confirm.' };
-  await db.$transaction([
-    db.dailyBrief.deleteMany(),
-    db.weeklyReview.deleteMany(),
-    db.attachment.deleteMany(),
-    db.goalProgress.deleteMany(),
-    db.goal.deleteMany(),
-    db.habitCheckin.deleteMany(),
-    db.habit.deleteMany(),
-    db.exercise.deleteMany(),
-    db.workout.deleteMany(),
-    db.healthLog.deleteMany(),
-    db.journalEntry.deleteMany(),
-  ]);
+  await db.$transaction(async (tx) => {
+    await tx.attachment.deleteMany();
+    await tx.goalProgress.deleteMany();
+    await tx.goal.deleteMany();
+    await tx.habitCheckin.deleteMany();
+    await tx.habit.deleteMany();
+    await tx.exercise.deleteMany();
+    await tx.workout.deleteMany();
+    await tx.healthLog.deleteMany();
+    await tx.journalEntry.deleteMany();
+    await tx.alias.deleteMany();
+  });
   done();
   return { ok: true };
 }
 
-export async function clearBriefCache(): Promise<ActionResult> {
-  const { db, user } = await requireUser();
-  await db.dailyBrief.deleteMany();
-  done();
-  return { ok: true };
-}
 
 /** Fill a brand-new account with ~30 days of example data (only if it's empty). */
 export async function loadSampleDataAction(): Promise<ActionResult> {
   const { db, user } = await requireUser();
+  if (!(await rateLimit(`write:${user.id}`, 600, 600))) return { ok: false, error: "You're going a little fast. Please wait a minute and try again." } as never;
   const existing = (await db.healthLog.count()) + (await db.workout.count()) + (await db.habit.count()) + (await db.journalEntry.count());
   if (existing > 0) return { ok: false, error: "Your account already has data, so sample data wasn't added." };
   const { timezone } = await getSettings();
@@ -400,17 +411,10 @@ export async function loadSampleDataAction(): Promise<ActionResult> {
   return { ok: true };
 }
 
-/** Write (or rewrite) the weekly review for the week starting `weekStart`. */
-export async function generateReview(weekStart: string): Promise<ActionResult> {
-  const { db, user } = await requireUser();
-  if (!isDateStr(weekStart)) return { ok: false, error: "Invalid week." };
-  const r = await getReview(db, user.id, weekStart, true);
-  done();
-  return r.error ? { ok: false, error: r.error } : { ok: true };
-}
 
 export async function saveReminders(on: boolean, hour: number): Promise<ActionResult> {
   const { db, user } = await requireUser();
+  if (!(await rateLimit(`write:${user.id}`, 600, 600))) return { ok: false, error: "You're going a little fast. Please wait a minute and try again." } as never;
   const h = Math.max(0, Math.min(23, Math.round(hour)));
   await db.settings.update({ where: { userId: user.id }, data: { remindersOn: on, reminderHour: h, lastReminded: null } });
   done();
@@ -421,6 +425,7 @@ export async function saveReminders(on: boolean, hour: number): Promise<ActionRe
 
 export async function createApiToken(name: string): Promise<{ ok: true; token: string } | { ok: false; error: string }> {
   const { db, user } = await requireUser();
+  if (!(await rateLimit(`write:${user.id}`, 600, 600))) return { ok: false, error: "You're going a little fast. Please wait a minute and try again." } as never;
   const label = name.trim().slice(0, 40) || "My phone";
   if ((await db.apiToken.count()) >= 10) return { ok: false, error: "You can have up to 10 tokens. Revoke one first." };
   const token = `thr_${crypto.randomBytes(24).toString("base64url")}`;
@@ -430,7 +435,8 @@ export async function createApiToken(name: string): Promise<{ ok: true; token: s
 }
 
 export async function revokeApiToken(id: string): Promise<ActionResult> {
-  const { db } = await requireUser();
+  const { db, user } = await requireUser();
+  if (!(await rateLimit(`write:${user.id}`, 600, 600))) return { ok: false, error: "You're going a little fast. Please wait a minute and try again." } as never;
   await db.apiToken.deleteMany({ where: { id } });
   done();
   return { ok: true };

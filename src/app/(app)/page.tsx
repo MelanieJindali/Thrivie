@@ -15,6 +15,7 @@ import { TrendGroup, WorkoutVolumeChart } from "@/components/charts";
 import { Heatmap } from "@/components/Heatmap";
 import { GoalSummary } from "@/components/GoalCard";
 import { DailyBrief } from "@/components/DailyBrief";
+import { buildBrief } from "@/lib/brief";
 
 function greeting(name: string, timeZone: string) {
   let h = new Date().getHours();
@@ -31,13 +32,13 @@ export default async function Dashboard() {
   const { units: u, visibleModules: vis } = settings;
   const today = todayInTz(settings.timezone);
 
-  const [health, workouts, habits, goals, journal, cached] = await Promise.all([
+  const [health, workouts, habits, goals, journal, brief] = await Promise.all([
     getHealthRange(db, today, 90),
     getWorkoutsRange(db, today, 90),
     getHabitViews(db, today),
     getGoalViews(db, today),
     db.journalEntry.findMany({ where: { date: { gte: addDays(today, -60) } }, select: { date: true } }),
-    db.dailyBrief.findUnique({ where: { userId_date: { userId: user.id, date: today } } }),
+    buildBrief(db, user.id),
   ]);
 
   const todayLog = health.find((h) => h.date === today) ?? null;
@@ -51,11 +52,6 @@ export default async function Dashboard() {
   const dueCount = habits.filter((h) => h.dueToday).length;
   const hasAnyData = health.length + workouts.length + habits.length + goals.length > 0;
 
-  // AI-phrased highlight text (cached with the brief), keyed by insight id.
-  const phrased = new Map<string, string>();
-  try {
-    for (const h of cached ? (JSON.parse(cached.highlights) as { id: string; text: string }[]) : []) phrased.set(h.id, h.text);
-  } catch {}
 
   return (
     <div className="space-y-6">
@@ -72,7 +68,7 @@ export default async function Dashboard() {
         )}
       </header>
 
-      <DailyBrief initial={cached ? { brief: cached.brief, source: cached.source, createdAt: cached.createdAt.toISOString() } : null} hasData={hasAnyData} />
+      <DailyBrief brief={brief.brief} hasData={hasAnyData} />
 
       <section>
         <QuickAdd
@@ -144,7 +140,7 @@ export default async function Dashboard() {
             {insights.map((i, idx) => (
               <li key={i.id} className={`flex items-center gap-3.5 rounded-2xl px-4 py-3.5 text-sm font-medium ${HIGHLIGHT_TONES[idx % HIGHLIGHT_TONES.length]}`}>
                 <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface text-xl shadow-sm">{i.emoji}</span>
-                <span className="text-text">{phrased.get(i.id) ?? i.text}</span>
+                <span className="text-text">{i.text}</span>
               </li>
             ))}
           </ul>

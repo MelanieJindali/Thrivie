@@ -1,8 +1,9 @@
 import "server-only";
 import * as webpush from "web-push";
-import { prisma, scopedDb } from "./db";
+import { scopedDb, systemDb } from "./db";
 import { todayInTz } from "./dates";
 import { getHabitViews } from "./queries";
+import { logError } from "./log";
 
 /**
  * Push (VAPID) keys: taken from env if set, otherwise generated once and kept
@@ -16,18 +17,18 @@ export async function getVapidKeys() {
     return keys;
   }
   const read = async () => {
-    const rows = await prisma.appConfig.findMany({ where: { key: { in: ["vapidPublic", "vapidPrivate"] } } });
-    const m = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+    const rows = await systemDb().appConfig.findMany({ where: { key: { in: ["vapidPublic", "vapidPrivate"] } } });
+    const m = Object.fromEntries(rows.map((r: { key: string; value: string }) => [r.key, r.value]));
     return m.vapidPublic && m.vapidPrivate ? { publicKey: m.vapidPublic, privateKey: m.vapidPrivate } : null;
   };
   keys = await read();
   if (!keys) {
     const k = webpush.generateVAPIDKeys();
     // Insert both in one transaction; if another instance won the race, use theirs.
-    await prisma.$transaction([
-      prisma.appConfig.create({ data: { key: "vapidPublic", value: k.publicKey } }),
-      prisma.appConfig.create({ data: { key: "vapidPrivate", value: k.privateKey } }),
-    ]).catch(() => null);
+    await systemDb().$transaction(async (tx) => {
+      await tx.appConfig.create({ data: { key: "vapidPublic", value: k.publicKey } });
+      await tx.appConfig.create({ data: { key: "vapidPrivate", value: k.privateKey } });
+    }).catch(() => null);
     keys = await read();
   }
   return keys!;
@@ -61,7 +62,7 @@ export async function sendToUser(userId: string, payload: PushPayload): Promise<
       } catch (e) {
         const code = (e as { statusCode?: number }).statusCode;
         if (code === 404 || code === 410) await db.pushSubscription.deleteMany({ where: { id: s.id } });
-        else console.error("push failed", code ?? "", (e as Error).message);
+        else logError("push", e);
       }
     }),
   );
@@ -86,7 +87,7 @@ export async function reminderFor(userId: string, timezone: string, name: string
 
 /** Called by the scheduler (hourly). Sends at most one reminder per user per day. */
 export async function runReminders(now = new Date()) {
-  const due = await prisma.settings.findMany({ where: { remindersOn: true }, select: { userId: true, timezone: true, reminderHour: true, lastReminded: true, name: true } });
+  const due = await systemDb().settings.findMany({ where: { remindersOn: true }, select: { userId: true, timezone: true, reminderHour: true, lastReminded: true, name: true } });
   let sent = 0;
   for (const s of due) {
     const today = todayInTz(s.timezone, now);
@@ -97,7 +98,7 @@ export async function runReminders(now = new Date()) {
     if (hour < s.reminderHour || s.lastReminded === today) continue;
     const msg = await reminderFor(s.userId, s.timezone, s.name);
     if (msg) sent += await sendToUser(s.userId, msg);
-    await prisma.settings.update({ where: { userId: s.userId }, data: { lastReminded: today } });
+    await systemDb().settings.update({ where: { userId: s.userId }, data: { lastReminded: today } });
   }
   return { checked: due.length, sent };
 }

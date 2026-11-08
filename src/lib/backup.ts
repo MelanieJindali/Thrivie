@@ -132,8 +132,6 @@ export async function restoreBackup(db: ScopedDb, userId: string, raw: unknown) 
   const b = BackupSchema.parse(raw);
   const int = (v: number | null | undefined) => (v == null ? null : Math.round(v));
   await db.$transaction(async (tx) => {
-    await tx.dailyBrief.deleteMany();
-    await tx.weeklyReview.deleteMany();
     await tx.attachment.deleteMany();
     await tx.goalProgress.deleteMany();
     await tx.goal.deleteMany();

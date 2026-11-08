@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { getSettings } from "@/lib/settings";
 import { requireUser } from "@/lib/auth";
-import { aiConfigured, AI_MODEL } from "@/lib/ai";
 import { CSV_TABLES } from "@/lib/backup";
 import { PageHeader } from "@/components/ui";
 import { SettingsForm, ThemePicker, BackupRestore, DangerZone } from "./SettingsClient";
 import { AccountSection } from "./AccountClient";
+import { TwoFactorCard } from "./TwoFactorCard";
 import { ReminderCard } from "./ReminderCard";
 import { getVapidKeys } from "@/lib/push";
 import { HealthSyncCard } from "./HealthSyncCard";
@@ -43,17 +43,10 @@ export default async function SettingsPage() {
         <Link href="/habits#manage" className="btn-soft">Manage habits</Link>
       </section>
 
-      <section className="card space-y-3 text-sm">
-        <h2 className="h2">Privacy & AI</h2>
-        <p>Your data is stored in this Thrivie server&apos;s database and is tied to your account. Other people with accounts on this server can never see it. It isn&apos;t shared with anyone else, except:</p>
-        <ul className="list-disc space-y-1 pl-5 text-muted">
-          <li><b className="text-text">AI Notes Import</b> sends the text you paste (plus your habit and goal names) to Anthropic&apos;s Claude API.</li>
-          <li><b className="text-text">Daily brief & highlights</b> send a summary of the last 7 days (averages, counts, habit and goal names — never journal text) to Anthropic&apos;s Claude API, at most once a day unless you tap refresh.</li>
-        </ul>
-        <p className="text-muted">
-          AI status:{" "}
-          {aiConfigured() ? <span className="text-primary">connected · {AI_MODEL}</span> : <span className="text-warn">no API key set (AI features off)</span>}
-        </p>
+      <section className="card space-y-2 text-sm">
+        <h2 className="h2">Privacy</h2>
+        <p>Your entries are private to your account and protected by the database itself. Journal text, notes and attachments are encrypted before they are stored. Smart Import reads your notes on this device; the pasted text is never sent to our server.</p>
+        <a href="/privacy" className="font-semibold text-primary underline">Read the privacy page</a>
       </section>
 
       <section className="card space-y-4">
@@ -76,6 +69,8 @@ export default async function SettingsPage() {
       </section>
 
       <DangerZone />
+
+      <TwoFactorCard enabled={user.totpEnabled} />
 
       <AccountSection email={user.email} />
     </div>

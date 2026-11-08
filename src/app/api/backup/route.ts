@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logError } from "@/lib/log";
 import { revalidatePath } from "next/cache";
 import { ZodError } from "zod";
 import { restoreBackup } from "@/lib/backup";
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
       const i = e.issues[0];
       return NextResponse.json({ error: `This doesn't look like a Thrivie backup (${i.path.join(".") || "root"}: ${i.message}). Nothing was changed.` }, { status: 400 });
     }
-    console.error(e);
+    logError("backup-restore", e);
     return NextResponse.json({ error: "Restore failed — nothing was changed." }, { status: 500 });
   }
 }

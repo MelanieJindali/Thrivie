@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logError } from "@/lib/log";
 import { revalidatePath } from "next/cache";
 import { CommitBody, commitItems } from "@/lib/import/server";
 import { apiUser } from "@/lib/auth";
@@ -18,7 +19,7 @@ export async function POST(req: Request) {
     revalidatePath("/", "layout");
     return NextResponse.json(result);
   } catch (e) {
-    console.error(e);
+    logError("import-commit", e);
     return NextResponse.json({ error: "Saving failed — nothing was changed. Please try again." }, { status: 500 });
   }
 }
