@@ -15,12 +15,13 @@ export default async function JournalPage({ searchParams }: { searchParams: Prom
     where: query ? { OR: [{ content: { contains: query } }, { prompt: { contains: query } }] } : {},
     orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     take: query ? 200 : 60,
+    include: { attachments: { select: { id: true, kind: true, durationS: true }, orderBy: { createdAt: "asc" } } },
   });
   return (
     <div className="space-y-6">
       <PageHeader theme="journal" icon={<NotebookPen size={26} />} eyebrow="Reflections" title="Journal" subtitle="A few lines is plenty." />
       <JournalComposer today={today} />
-      <JournalList today={today} query={query} entries={entries.map(({ id, date, content, mood, prompt }) => ({ id, date, content, mood, prompt }))} />
+      <JournalList today={today} query={query} entries={entries.map(({ id, date, content, mood, prompt, attachments }) => ({ id, date, content, mood, prompt, attachments }))} />
     </div>
   );
 }

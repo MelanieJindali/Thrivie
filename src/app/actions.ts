@@ -2,8 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireUser } from "@/lib/auth";
+import { requireUser, sha256 } from "@/lib/auth";
+import crypto from "node:crypto";
 import { loadSampleData } from "@/lib/sampleData";
+import { getReview } from "@/lib/review";
 import { getSettings, getToday, ALL_MODULES } from "@/lib/settings";
 import { isDateStr, isValidTimezone } from "@/lib/dates";
 import { WORKOUT_TYPES } from "@/lib/constants";
@@ -394,6 +396,42 @@ export async function loadSampleDataAction(): Promise<ActionResult> {
   if (existing > 0) return { ok: false, error: "Your account already has data, so sample data wasn't added." };
   const { timezone } = await getSettings();
   await loadSampleData(db, user.id, timezone);
+  done();
+  return { ok: true };
+}
+
+/** Write (or rewrite) the weekly review for the week starting `weekStart`. */
+export async function generateReview(weekStart: string): Promise<ActionResult> {
+  const { db, user } = await requireUser();
+  if (!isDateStr(weekStart)) return { ok: false, error: "Invalid week." };
+  const r = await getReview(db, user.id, weekStart, true);
+  done();
+  return r.error ? { ok: false, error: r.error } : { ok: true };
+}
+
+export async function saveReminders(on: boolean, hour: number): Promise<ActionResult> {
+  const { db, user } = await requireUser();
+  const h = Math.max(0, Math.min(23, Math.round(hour)));
+  await db.settings.update({ where: { userId: user.id }, data: { remindersOn: on, reminderHour: h, lastReminded: null } });
+  done();
+  return { ok: true };
+}
+
+// ------------------------------------------------------- health-sync tokens --
+
+export async function createApiToken(name: string): Promise<{ ok: true; token: string } | { ok: false; error: string }> {
+  const { db, user } = await requireUser();
+  const label = name.trim().slice(0, 40) || "My phone";
+  if ((await db.apiToken.count()) >= 10) return { ok: false, error: "You can have up to 10 tokens. Revoke one first." };
+  const token = `thr_${crypto.randomBytes(24).toString("base64url")}`;
+  await db.apiToken.create({ data: { userId: user.id, name: label, tokenHash: sha256(token), prefix: token.slice(0, 8) } });
+  done();
+  return { ok: true, token };
+}
+
+export async function revokeApiToken(id: string): Promise<ActionResult> {
+  const { db } = await requireUser();
+  await db.apiToken.deleteMany({ where: { id } });
   done();
   return { ok: true };
 }

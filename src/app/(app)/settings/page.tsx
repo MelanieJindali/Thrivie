@@ -6,6 +6,8 @@ import { CSV_TABLES } from "@/lib/backup";
 import { PageHeader } from "@/components/ui";
 import { SettingsForm, ThemePicker, BackupRestore, DangerZone } from "./SettingsClient";
 import { AccountSection } from "./AccountClient";
+import { ReminderCard } from "./ReminderCard";
+import { HealthSyncCard } from "./HealthSyncCard";
 import { Settings as SettingsIcon } from "lucide-react";
 
 export default async function SettingsPage() {
@@ -22,6 +24,10 @@ export default async function SettingsPage() {
         <h2 className="h2 mb-4">Profile & units</h2>
         <SettingsForm initial={settings} timezones={timezones} />
       </section>
+
+      <ReminderCard on={settings.remindersOn} hour={settings.reminderHour} publicKey={process.env.VAPID_PUBLIC_KEY ?? null} />
+
+      <HealthSyncCard tokens={(await db.apiToken.findMany({ orderBy: { createdAt: "desc" } })).map((t) => ({ id: t.id, name: t.name, prefix: t.prefix, lastUsedAt: t.lastUsedAt?.toISOString() ?? null }))} />
 
       <section className="card space-y-3">
         <h2 className="h2">Appearance</h2>

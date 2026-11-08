@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Home, HeartPulse, LogOut, Dumbbell, CircleCheck, Target, NotebookPen, Sparkles, Settings, LayoutGrid,
+  Home, HeartPulse, LogOut, CalendarHeart, Dumbbell, CircleCheck, Target, NotebookPen, Sparkles, Settings, LayoutGrid,
 } from "lucide-react";
 import type { ModuleKey } from "@/lib/settings";
 import { THEME, type ThemeKey } from "@/lib/constants";
@@ -17,6 +17,7 @@ const ITEMS = [
   { href: "/habits", label: "Habits", icon: CircleCheck, module: "habits", theme: "habits" },
   { href: "/goals", label: "Goals", icon: Target, module: "goals", theme: "goals" },
   { href: "/journal", label: "Journal", icon: NotebookPen, module: "journal", theme: "journal" },
+  { href: "/review", label: "Weekly review", icon: CalendarHeart, theme: "today" },
   { href: "/import", label: "AI Import", icon: Sparkles, theme: "import" },
   { href: "/settings", label: "Settings", icon: Settings, theme: "settings" },
 ] as const;

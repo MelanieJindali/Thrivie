@@ -1,6 +1,6 @@
 // Thrivie service worker: makes the app installable and gives an offline
 // fallback for pages you've already visited. API calls are never cached.
-const CACHE = "thrivie-v1";
+const CACHE = "thrivie-v2";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(["/", "/icon.svg"])).then(() => self.skipWaiting()));
@@ -41,4 +41,26 @@ self.addEventListener("fetch", (event) => {
         .catch(() => caches.match(req).then((hit) => hit || caches.match("/"))),
     );
   }
+});
+
+// --- Push reminders --------------------------------------------------------
+self.addEventListener("push", (event) => {
+  let data = { title: "Thrivie", body: "Time for a quick check-in.", url: "/" };
+  try {
+    data = { ...data, ...event.data.json() };
+  } catch {}
+  event.waitUntil(
+    self.registration.showNotification(data.title, { body: data.body, icon: "/icons/192", badge: "/icons/192", data: { url: data.url }, tag: "thrivie-reminder" }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || "/";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+      for (const c of list) if ("focus" in c) { c.navigate(url); return c.focus(); }
+      return self.clients.openWindow(url);
+    }),
+  );
 });

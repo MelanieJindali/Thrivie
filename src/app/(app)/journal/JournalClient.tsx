@@ -7,24 +7,45 @@ import { deleteJournal, saveJournal } from "@/app/actions";
 import { ConfirmButton, Empty, FormStatus, RatingPicker, useAction } from "@/components/ui";
 import { JOURNAL_PROMPTS, MOOD_EMOJI } from "@/lib/constants";
 import { relativeLabel } from "@/lib/dates";
+import { AttachmentGallery, MediaBar, PendingList, uploadMedia, type PendingMedia, type SavedAttachment } from "./media";
 
-type Entry = { id: string; date: string; content: string; mood: number | null; prompt: string | null };
+type Entry = { id: string; date: string; content: string; mood: number | null; prompt: string | null; attachments?: SavedAttachment[] };
 
 export function JournalComposer({ today, initial, onDone, compact = false }: { today: string; initial?: Entry; onDone?: () => void; compact?: boolean }) {
   const [date, setDate] = useState(initial?.date ?? today);
   const [prompt, setPrompt] = useState<string | null>(initial?.prompt ?? null);
   const [content, setContent] = useState(initial?.content ?? "");
   const [mood, setMood] = useState<number | null>(initial?.mood ?? null);
+  const [media, setMedia] = useState<PendingMedia[]>([]);
   const { pending, error, message, run } = useAction();
+  const fallbackText = media.some((m) => m.kind === "photo") ? "📷 Photo entry" : media.length ? "🎙️ Voice note" : "";
   return (
     <form
       className={compact || initial ? "space-y-3" : "card space-y-3"}
       onSubmit={(e) => {
         e.preventDefault();
-        run(() => saveJournal({ id: initial?.id, date, content, mood, prompt }), {
-          success: "Saved ✓",
-          onOk: () => { if (!initial) { setContent(""); setPrompt(null); setMood(null); } onDone?.(); },
-        });
+        run(
+          async () => {
+            const r = await saveJournal({ id: initial?.id, date, content: content.trim() || fallbackText, mood, prompt });
+            if (r.ok && r.id && media.length) {
+              try {
+                await uploadMedia(r.id, media);
+              } catch (err) {
+                return { ok: false as const, error: `Entry saved, but a file didn't upload: ${(err as Error).message}` };
+              }
+            }
+            return r;
+          },
+          {
+            success: "Saved ✓",
+            onOk: () => {
+              media.forEach((m) => URL.revokeObjectURL(m.url));
+              setMedia([]);
+              if (!initial) { setContent(""); setPrompt(null); setMood(null); }
+              onDone?.();
+            },
+          },
+        );
       }}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -45,12 +66,14 @@ export function JournalComposer({ today, initial, onDone, compact = false }: { t
         onChange={(e) => setContent(e.target.value)}
         aria-label="Journal entry"
       />
+      <MediaBar onAdd={(m) => setMedia((xs) => [...xs, m])} onDictate={(t) => setContent((c) => (c.trim() ? `${c.trimEnd()} ${t}` : t))} />
+      <PendingList items={media} onRemove={(k) => setMedia((xs) => xs.filter((x) => x.key !== k))} />
       <div>
         <span className="label">Mood (optional)</span>
         <RatingPicker name="Mood" value={mood} onChange={setMood} labels={MOOD_EMOJI} />
       </div>
       <div className="flex items-center gap-3">
-        <button className="btn-primary" disabled={pending || !content.trim()}>{pending ? "Saving…" : "Save entry"}</button>
+        <button className="btn-primary" disabled={pending || (!content.trim() && !media.length)}>{pending ? "Saving…" : "Save entry"}</button>
         {initial && <button type="button" className="btn-ghost" onClick={onDone}>Cancel</button>}
         <FormStatus error={error} message={message} />
       </div>
@@ -106,6 +129,10 @@ export function JournalList({ entries, today, query }: { entries: Entry[]; today
                     </span>
                   </div>
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">{highlight(e.content, query)}</p>
+                  <AttachmentGallery
+                    items={e.attachments ?? []}
+                    onDelete={(id) => run(async () => { await fetch(`/api/attachments/${id}`, { method: "DELETE" }); return { ok: true }; })}
+                  />
                 </>
               )}
             </li>
