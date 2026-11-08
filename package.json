@@ -4,24 +4,25 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "tsc --noEmit",
     "test": "vitest run",
-    "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
-    "db:reset": "prisma db push --force-reset && tsx prisma/seed.ts",
-    "setup": "prisma db push && tsx prisma/seed.ts",
-    "postinstall": "prisma generate"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "db:reset": "rm -f prisma/thrivie.db && tsx scripts/migrate.ts && tsx prisma/seed.ts",
+    "setup": "tsx scripts/migrate.ts && tsx prisma/seed.ts",
+    "postinstall": "prisma generate",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:new-migration": "tsx scripts/new-migration.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.6.0",
     "@fontsource-variable/fraunces": "^5.3.0",
     "@fontsource-variable/manrope": "^5.3.0",
+    "@libsql/client": "^0.18.0",
+    "@prisma/adapter-libsql": "^6.19.3",
     "@prisma/client": "^6.19.3",
+    "dotenv": "^18.0.9",
     "lucide-react": "^1.70.0",
     "next": "^15.5.29",
     "react": "^19.1.10",

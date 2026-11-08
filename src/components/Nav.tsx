@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Home, HeartPulse, Dumbbell, CircleCheck, Target, NotebookPen, Sparkles, Settings, LayoutGrid,
+  Home, HeartPulse, LogOut, Dumbbell, CircleCheck, Target, NotebookPen, Sparkles, Settings, LayoutGrid,
 } from "lucide-react";
 import type { ModuleKey } from "@/lib/settings";
 import { THEME, type ThemeKey } from "@/lib/constants";
 import { BrandMark } from "./Brand";
+import { signOut } from "@/app/authActions";
 
 const ITEMS = [
   { href: "/", label: "Today", icon: Home, theme: "today" },
@@ -20,7 +21,7 @@ const ITEMS = [
   { href: "/settings", label: "Settings", icon: Settings, theme: "settings" },
 ] as const;
 
-export function Nav({ visible }: { visible: ModuleKey[] }) {
+export function Nav({ visible, email }: { visible: ModuleKey[]; email: string }) {
   const path = usePathname();
   const items = ITEMS.filter((i) => !("module" in i) || visible.includes(i.module));
   const isActive = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
@@ -56,8 +57,13 @@ export function Nav({ visible }: { visible: ModuleKey[] }) {
           })}
         </nav>
         <div className="mt-auto rounded-2xl bg-linear-to-br from-gold-soft to-surface p-4 text-xs text-muted">
-          <p className="font-display text-sm font-semibold text-text">Private by design</p>
-          <p className="mt-1">Your data stays on this device.</p>
+          <p className="font-display text-sm font-semibold text-text">Private to you</p>
+          <p className="mt-1 truncate" title={email}>{email}</p>
+          <form action={signOut} className="mt-2">
+            <button className="inline-flex items-center gap-1.5 font-semibold text-primary hover:underline">
+              <LogOut size={13} /> Sign out
+            </button>
+          </form>
         </div>
       </aside>
 

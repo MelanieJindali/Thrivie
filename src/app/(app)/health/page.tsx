@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
+import { requireUser } from "@/lib/auth";
 import { todayInTz, formatDate, relativeLabel } from "@/lib/dates";
 import { getHealthRange } from "@/lib/queries";
 import { healthTrendSpecs } from "@/lib/trends";
@@ -13,8 +13,9 @@ import { HeartPulse } from "lucide-react";
 
 export default async function HealthPage() {
   const settings = await getSettings();
+  const { db, user } = await requireUser();
   const today = todayInTz(settings.timezone);
-  const logs = await getHealthRange(today, 90);
+  const logs = await getHealthRange(db, today, 90);
   const u = settings.units;
 
   const prefill: Record<string, HealthPrefill> = {};
@@ -36,7 +37,7 @@ export default async function HealthPage() {
   }
   // Fall back to the most recent weight so it's quick to re-log.
   const lastWeight = [...logs].reverse().find((l) => l.weightKg != null);
-  const total = await prisma.healthLog.count();
+  const total = await db.healthLog.count();
 
   return (
     <div className="space-y-6">

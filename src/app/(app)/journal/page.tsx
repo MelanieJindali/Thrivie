@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
+import { requireUser } from "@/lib/auth";
 import { todayInTz } from "@/lib/dates";
 import { JournalComposer, JournalList } from "./JournalClient";
 import { PageHeader } from "@/components/ui";
@@ -8,9 +8,10 @@ import { NotebookPen } from "lucide-react";
 export default async function JournalPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q = "" } = await searchParams;
   const settings = await getSettings();
+  const { db, user } = await requireUser();
   const today = todayInTz(settings.timezone);
   const query = q.trim();
-  const entries = await prisma.journalEntry.findMany({
+  const entries = await db.journalEntry.findMany({
     where: query ? { OR: [{ content: { contains: query } }, { prompt: { contains: query } }] } : {},
     orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     take: query ? 200 : 60,

@@ -1,4 +1,5 @@
 import { getSettings } from "@/lib/settings";
+import { requireUser } from "@/lib/auth";
 import { todayInTz } from "@/lib/dates";
 import { getHabitViews, habitCompletionByDay } from "@/lib/queries";
 import { HabitCheckList } from "@/components/HabitCheckList";
@@ -9,9 +10,10 @@ import { CircleCheck } from "lucide-react";
 
 export default async function HabitsPage() {
   const settings = await getSettings();
+  const { db, user } = await requireUser();
   const today = todayInTz(settings.timezone);
-  const habits = await getHabitViews(today);
-  const archived = (await getHabitViews(today, true)).filter((h) => !habits.some((x) => x.id === h.id));
+  const habits = await getHabitViews(db, today);
+  const archived = (await getHabitViews(db, today, true)).filter((h) => !habits.some((x) => x.id === h.id));
   const overall = Object.fromEntries(habitCompletionByDay(habits, today, 182).map((d) => [d.date, d.value]));
 
   return (

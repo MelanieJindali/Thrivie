@@ -1,6 +1,6 @@
 import "server-only";
 import { z } from "zod";
-import { prisma } from "../db";
+import type { ScopedDb } from "../db";
 import { isDateStr } from "../dates";
 import { kgToDisplay, mlToDisplay, waterUnit, weightUnit, type Units } from "../units";
 import type { ReviewItem } from "./normalize";
@@ -20,15 +20,15 @@ const similar = (a: string, b: string) => {
 };
 
 /** Flag likely duplicates of existing data and pick a safe default decision. */
-export async function detectDuplicates(items: ReviewItem[], units: Units): Promise<ReviewItemWithDup[]> {
+export async function detectDuplicates(db: ScopedDb, items: ReviewItem[], units: Units): Promise<ReviewItemWithDup[]> {
   const dates = [...new Set(items.map((i) => i.date))];
   const [health, workouts, checkins, journal, goals, progress] = await Promise.all([
-    prisma.healthLog.findMany({ where: { date: { in: dates } } }),
-    prisma.workout.findMany({ where: { date: { in: dates } } }),
-    prisma.habitCheckin.findMany({ where: { date: { in: dates } } }),
-    prisma.journalEntry.findMany({ where: { date: { in: dates } } }),
-    prisma.goal.findMany({ select: { id: true, title: true, linkType: true } }),
-    prisma.goalProgress.findMany({ where: { date: { in: dates } } }),
+    db.healthLog.findMany({ where: { date: { in: dates } } }),
+    db.workout.findMany({ where: { date: { in: dates } } }),
+    db.habitCheckin.findMany({ where: { date: { in: dates } } }),
+    db.journalEntry.findMany({ where: { date: { in: dates } } }),
+    db.goal.findMany({ select: { id: true, title: true, linkType: true } }),
+    db.goalProgress.findMany({ where: { date: { in: dates } } }),
   ]);
 
   return items.map((item): ReviewItemWithDup => {
@@ -139,12 +139,12 @@ export type CommitItem = z.infer<typeof CommitItem>;
 
 export type CommitResult = { saved: Record<string, number>; skipped: number; createdHabits: string[] };
 
-export async function commitItems(items: CommitItem[]): Promise<CommitResult> {
+export async function commitItems(db: ScopedDb, userId: string, items: CommitItem[]): Promise<CommitResult> {
   const saved: Record<string, number> = { health: 0, workout: 0, habit: 0, goal_update: 0, journal: 0 };
   let skipped = 0;
   const createdHabits = new Map<string, string>(); // normalized name → id (avoid duplicates within one import)
 
-  await prisma.$transaction(async (tx) => {
+  await db.$transaction(async (tx) => {
     for (const it of items) {
       if (it.decision === "skip") {
         skipped++;
@@ -153,9 +153,9 @@ export async function commitItems(items: CommitItem[]): Promise<CommitResult> {
       switch (it.kind) {
         case "health": {
           const { custom, ...fields } = it.data;
-          const ex = await tx.healthLog.findUnique({ where: { date: it.date } });
+          const ex = await tx.healthLog.findUnique({ where: { userId_date: { userId, date: it.date } } });
           if (!ex) {
-            await tx.healthLog.create({ data: { date: it.date, ...fields, custom: Object.keys(custom).length ? JSON.stringify(custom) : null } });
+            await tx.healthLog.create({ data: { userId, date: it.date, ...fields, custom: Object.keys(custom).length ? JSON.stringify(custom) : null } });
           } else {
             const update: Record<string, unknown> = {};
             for (const [k, v] of Object.entries(fields)) {
@@ -175,7 +175,7 @@ export async function commitItems(items: CommitItem[]): Promise<CommitResult> {
           if (it.decision === "replace") await tx.workout.deleteMany({ where: { date: it.date, type: it.data.type } });
           const { exercises, ...w } = it.data;
           await tx.workout.create({
-            data: { date: it.date, ...w, exercises: { create: exercises.map((e, i) => ({ ...e, sets: e.sets != null ? Math.round(e.sets) : null, reps: e.reps != null ? Math.round(e.reps) : null, order: i })) } },
+            data: { userId, date: it.date, ...w, exercises: { create: exercises.map((e, i) => ({ ...e, sets: e.sets != null ? Math.round(e.sets) : null, reps: e.reps != null ? Math.round(e.reps) : null, order: i })) } },
           });
           saved.workout++;
           break;
@@ -187,7 +187,7 @@ export async function commitItems(items: CommitItem[]): Promise<CommitResult> {
             habitId = createdHabits.get(key) ?? null;
             if (!habitId) {
               const h = await tx.habit.create({
-                data: { name: it.data.habitName.trim(), frequency: it.data.frequency, timesPerWeek: it.data.frequency === "daily" ? 7 : 3, order: await tx.habit.count() },
+                data: { userId, name: it.data.habitName.trim(), frequency: it.data.frequency, timesPerWeek: it.data.frequency === "daily" ? 7 : 3, order: await tx.habit.count() },
               });
               habitId = h.id;
               createdHabits.set(key, h.id);
@@ -211,7 +211,7 @@ export async function commitItems(items: CommitItem[]): Promise<CommitResult> {
           break;
         }
         case "journal": {
-          await tx.journalEntry.create({ data: { date: it.date, content: it.data.content, mood: it.data.mood } });
+          await tx.journalEntry.create({ data: { userId, date: it.date, content: it.data.content, mood: it.data.mood } });
           saved.journal++;
           break;
         }

@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
+import { requireUser } from "@/lib/auth";
 import { todayInTz } from "@/lib/dates";
 import { getGoalViews } from "@/lib/queries";
 import { GoalSummary } from "@/components/GoalCard";
@@ -11,9 +11,10 @@ import { Target } from "lucide-react";
 
 export default async function GoalsPage() {
   const settings = await getSettings();
+  const { db, user } = await requireUser();
   const today = todayInTz(settings.timezone);
-  const goals = await getGoalViews(today, true);
-  const habits = await prisma.habit.findMany({ where: { archived: false }, select: { id: true, name: true } });
+  const goals = await getGoalViews(db, today, true);
+  const habits = await db.habit.findMany({ where: { archived: false }, select: { id: true, name: true } });
   const active = goals.filter((g) => !g.archived);
   const archived = goals.filter((g) => g.archived);
 

@@ -1,5 +1,5 @@
 import "server-only";
-import { prisma } from "./db";
+import type { ScopedDb } from "./db";
 import { addDays, lastNDays, startOfWeek, type DateStr } from "./dates";
 import {
   computeGoal,
@@ -27,8 +27,8 @@ export type HabitView = {
   dates: string[]; // all check-in dates
 };
 
-export async function getHabitViews(today: DateStr, includeArchived = false): Promise<HabitView[]> {
-  const habits = await prisma.habit.findMany({
+export async function getHabitViews(db: ScopedDb, today: DateStr, includeArchived = false): Promise<HabitView[]> {
+  const habits = await db.habit.findMany({
     where: includeArchived ? {} : { archived: false },
     include: { checkins: { select: { date: true } } },
     orderBy: [{ order: "asc" }, { createdAt: "asc" }],
@@ -53,22 +53,22 @@ export async function getHabitViews(today: DateStr, includeArchived = false): Pr
 }
 
 /** Current value of a goal based on its link. */
-export async function goalCurrentValue(goal: Goal, today: DateStr): Promise<number> {
+export async function goalCurrentValue(db: ScopedDb, goal: Goal, today: DateStr): Promise<number> {
   const range = { gte: goal.startDate, lte: today };
   switch (goal.linkType) {
     case "metric": {
       if (goal.linkMetric === "weight") {
-        const latest = await prisma.healthLog.findFirst({
+        const latest = await db.healthLog.findFirst({
           where: { weightKg: { not: null }, date: { lte: today } },
           orderBy: { date: "desc" },
         });
         return latest?.weightKg ?? goal.startValue ?? 0;
       }
       if (goal.linkMetric === "sleep") {
-        const agg = await prisma.healthLog.aggregate({ where: { date: range }, _avg: { sleepHours: true } });
+        const agg = await db.healthLog.aggregate({ where: { date: range }, _avg: { sleepHours: true } });
         return agg._avg.sleepHours ?? 0;
       }
-      const agg = await prisma.healthLog.aggregate({
+      const agg = await db.healthLog.aggregate({
         where: { date: range },
         _sum: { steps: true, waterMl: true },
       });
@@ -79,16 +79,16 @@ export async function goalCurrentValue(goal: Goal, today: DateStr): Promise<numb
         date: range,
         ...(goal.linkWorkoutType && goal.linkWorkoutType !== "any" ? { type: goal.linkWorkoutType } : {}),
       };
-      if (goal.linkMeasure === "count") return prisma.workout.count({ where });
-      const agg = await prisma.workout.aggregate({ where, _sum: { distanceKm: true, durationMin: true } });
+      if (goal.linkMeasure === "count") return db.workout.count({ where });
+      const agg = await db.workout.aggregate({ where, _sum: { distanceKm: true, durationMin: true } });
       return goal.linkMeasure === "minutes" ? agg._sum.durationMin ?? 0 : Math.round((agg._sum.distanceKm ?? 0) * 10) / 10;
     }
     case "habit": {
       if (!goal.linkHabitId) return 0;
-      return prisma.habitCheckin.count({ where: { habitId: goal.linkHabitId, date: range } });
+      return db.habitCheckin.count({ where: { habitId: goal.linkHabitId, date: range } });
     }
     default: {
-      const agg = await prisma.goalProgress.aggregate({ where: { goalId: goal.id }, _sum: { value: true } });
+      const agg = await db.goalProgress.aggregate({ where: { goalId: goal.id }, _sum: { value: true } });
       return agg._sum.value ?? 0;
     }
   }
@@ -96,29 +96,29 @@ export async function goalCurrentValue(goal: Goal, today: DateStr): Promise<numb
 
 export type GoalView = Goal & GoalComputed & { habitName: string | null };
 
-export async function getGoalViews(today: DateStr, includeArchived = false): Promise<GoalView[]> {
-  const goals = await prisma.goal.findMany({
+export async function getGoalViews(db: ScopedDb, today: DateStr, includeArchived = false): Promise<GoalView[]> {
+  const goals = await db.goal.findMany({
     where: includeArchived ? {} : { archived: false },
     include: { habit: { select: { name: true } } },
     orderBy: { deadline: "asc" },
   });
   return Promise.all(
     goals.map(async ({ habit, ...g }) => {
-      const current = await goalCurrentValue(g, today);
+      const current = await goalCurrentValue(db, g, today);
       return { ...g, ...computeGoal(g, current, today), habitName: habit?.name ?? null };
     }),
   );
 }
 
-export async function getHealthRange(today: DateStr, days: number) {
-  return prisma.healthLog.findMany({
+export async function getHealthRange(db: ScopedDb, today: DateStr, days: number) {
+  return db.healthLog.findMany({
     where: { date: { gte: addDays(today, -(days - 1)), lte: today } },
     orderBy: { date: "asc" },
   });
 }
 
-export async function getWorkoutsRange(today: DateStr, days: number) {
-  return prisma.workout.findMany({
+export async function getWorkoutsRange(db: ScopedDb, today: DateStr, days: number) {
+  return db.workout.findMany({
     where: { date: { gte: addDays(today, -(days - 1)), lte: today } },
     include: { exercises: { orderBy: { order: "asc" } } },
     orderBy: [{ date: "asc" }, { createdAt: "asc" }],

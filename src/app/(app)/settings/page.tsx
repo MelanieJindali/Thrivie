@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { getSettings } from "@/lib/settings";
+import { requireUser } from "@/lib/auth";
 import { aiConfigured, AI_MODEL } from "@/lib/ai";
-import { prisma } from "@/lib/db";
 import { CSV_TABLES } from "@/lib/backup";
 import { PageHeader } from "@/components/ui";
 import { SettingsForm, ThemePicker, BackupRestore, DangerZone } from "./SettingsClient";
+import { AccountSection } from "./AccountClient";
 import { Settings as SettingsIcon } from "lucide-react";
 
 export default async function SettingsPage() {
   const settings = await getSettings();
-  const habitCount = await prisma.habit.count({ where: { archived: false } });
+  const { db, user } = await requireUser();
+  const habitCount = await db.habit.count({ where: { archived: false } });
   const timezones = Intl.supportedValuesOf("timeZone");
 
   return (
@@ -36,7 +38,7 @@ export default async function SettingsPage() {
 
       <section className="card space-y-3 text-sm">
         <h2 className="h2">Privacy & AI</h2>
-        <p>Your data is stored locally in a SQLite file on the machine running Thrivie. Nothing is sent anywhere, except:</p>
+        <p>Your data is stored in this Thrivie server&apos;s database and is tied to your account. Other people with accounts on this server can never see it. It isn&apos;t shared with anyone else, except:</p>
         <ul className="list-disc space-y-1 pl-5 text-muted">
           <li><b className="text-text">AI Notes Import</b> sends the text you paste (plus your habit and goal names) to Anthropic&apos;s Claude API.</li>
           <li><b className="text-text">Daily brief & highlights</b> send a summary of the last 7 days (averages, counts, habit and goal names — never journal text) to Anthropic&apos;s Claude API, at most once a day unless you tap refresh.</li>
@@ -67,6 +69,8 @@ export default async function SettingsPage() {
       </section>
 
       <DangerZone />
+
+      <AccountSection email={user.email} />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CalendarDays, CircleCheck, Dumbbell, Sun, Target, Trophy } from "lucide-react";
-import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
+import { requireUser } from "@/lib/auth";
 import { addDays, formatDate, todayInTz } from "@/lib/dates";
 import { getGoalViews, getHabitViews, getHealthRange, getWorkoutsRange, habitCompletionByDay } from "@/lib/queries";
 import { healthTrendSpecs, weeklyVolume } from "@/lib/trends";
@@ -27,16 +27,17 @@ function greeting(name: string, timeZone: string) {
 
 export default async function Dashboard() {
   const settings = await getSettings();
+  const { db, user } = await requireUser();
   const { units: u, visibleModules: vis } = settings;
   const today = todayInTz(settings.timezone);
 
   const [health, workouts, habits, goals, journal, cached] = await Promise.all([
-    getHealthRange(today, 90),
-    getWorkoutsRange(today, 90),
-    getHabitViews(today),
-    getGoalViews(today),
-    prisma.journalEntry.findMany({ where: { date: { gte: addDays(today, -60) } }, select: { date: true } }),
-    prisma.dailyBrief.findUnique({ where: { date: today } }),
+    getHealthRange(db, today, 90),
+    getWorkoutsRange(db, today, 90),
+    getHabitViews(db, today),
+    getGoalViews(db, today),
+    db.journalEntry.findMany({ where: { date: { gte: addDays(today, -60) } }, select: { date: true } }),
+    db.dailyBrief.findUnique({ where: { userId_date: { userId: user.id, date: today } } }),
   ]);
 
   const todayLog = health.find((h) => h.date === today) ?? null;

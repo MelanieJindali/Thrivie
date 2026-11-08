@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
+import { requireUser } from "@/lib/auth";
+import { loadSampleData } from "@/lib/sampleData";
 import { getSettings, getToday, ALL_MODULES } from "@/lib/settings";
 import { isDateStr, isValidTimezone } from "@/lib/dates";
 import { WORKOUT_TYPES } from "@/lib/constants";
@@ -40,6 +41,7 @@ const healthInput = z.object({
 });
 
 export async function saveHealthLog(input: z.input<typeof healthInput>): Promise<ActionResult> {
+  const { db, user } = await requireUser();
   try {
     const v = healthInput.parse(input);
     const { units } = await getSettings();
@@ -55,7 +57,7 @@ export async function saveHealthLog(input: z.input<typeof healthInput>): Promise
       custom: v.custom === undefined ? undefined : v.custom && Object.keys(v.custom).length ? JSON.stringify(v.custom) : null,
       notes: v.notes === undefined ? undefined : v.notes?.trim() || null,
     };
-    const row = await prisma.healthLog.upsert({ where: { date: v.date }, update: data, create: { date: v.date, ...data } });
+    const row = await db.healthLog.upsert({ where: { userId_date: { userId: user.id, date: v.date } }, update: data, create: { userId: user.id, date: v.date, ...data } });
     done();
     return { ok: true, id: row.id };
   } catch (e) {
@@ -64,7 +66,8 @@ export async function saveHealthLog(input: z.input<typeof healthInput>): Promise
 }
 
 export async function deleteHealthLog(id: string): Promise<ActionResult> {
-  await prisma.healthLog.delete({ where: { id } }).catch(() => null);
+  const { db, user } = await requireUser();
+  await db.healthLog.delete({ where: { id } }).catch(() => null);
   done();
   return { ok: true };
 }
@@ -94,6 +97,7 @@ const workoutInput = z.object({
 });
 
 export async function saveWorkout(input: z.input<typeof workoutInput>): Promise<ActionResult> {
+  const { db, user } = await requireUser();
   try {
     const v = workoutInput.parse(input);
     const { units } = await getSettings();
@@ -119,10 +123,10 @@ export async function saveWorkout(input: z.input<typeof workoutInput>): Promise<
     }));
     let id: string;
     if (v.id) {
-      await prisma.exercise.deleteMany({ where: { workoutId: v.id } });
-      id = (await prisma.workout.update({ where: { id: v.id }, data: { ...data, exercises: { create: exercises } } })).id;
+      await db.exercise.deleteMany({ where: { workoutId: v.id } });
+      id = (await db.workout.update({ where: { id: v.id }, data: { ...data, exercises: { create: exercises } } })).id;
     } else {
-      id = (await prisma.workout.create({ data: { ...data, exercises: { create: exercises } } })).id;
+      id = (await db.workout.create({ data: { ...data, userId: user.id, exercises: { create: exercises } } })).id;
     }
     done();
     return { ok: true, id };
@@ -133,15 +137,17 @@ export async function saveWorkout(input: z.input<typeof workoutInput>): Promise<
 
 /** Copy the most recent workout to today. */
 export async function repeatLastWorkout(type?: string): Promise<ActionResult> {
-  const last = await prisma.workout.findFirst({
+  const { db, user } = await requireUser();
+  const last = await db.workout.findFirst({
     where: type ? { type } : {},
     orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     include: { exercises: true },
   });
   if (!last) return { ok: false, error: "No previous workout to repeat yet." };
   const today = await getToday();
-  const w = await prisma.workout.create({
+  const w = await db.workout.create({
     data: {
+      userId: user.id,
       date: today,
       type: last.type,
       title: last.title,
@@ -159,7 +165,8 @@ export async function repeatLastWorkout(type?: string): Promise<ActionResult> {
 }
 
 export async function deleteWorkout(id: string): Promise<ActionResult> {
-  await prisma.workout.delete({ where: { id } }).catch(() => null);
+  const { db, user } = await requireUser();
+  await db.workout.delete({ where: { id } }).catch(() => null);
   done();
   return { ok: true };
 }
@@ -175,6 +182,7 @@ const habitInput = z.object({
 });
 
 export async function saveHabit(input: z.input<typeof habitInput>): Promise<ActionResult> {
+  const { db, user } = await requireUser();
   try {
     const v = habitInput.parse(input);
     const data = {
@@ -184,8 +192,8 @@ export async function saveHabit(input: z.input<typeof habitInput>): Promise<Acti
       timesPerWeek: v.frequency === "daily" ? 7 : v.timesPerWeek,
     };
     const id = v.id
-      ? (await prisma.habit.update({ where: { id: v.id }, data })).id
-      : (await prisma.habit.create({ data: { ...data, order: await prisma.habit.count() } })).id;
+      ? (await db.habit.update({ where: { id: v.id }, data })).id
+      : (await db.habit.create({ data: { ...data, userId: user.id, order: await db.habit.count() } })).id;
     done();
     return { ok: true, id };
   } catch (e) {
@@ -194,22 +202,25 @@ export async function saveHabit(input: z.input<typeof habitInput>): Promise<Acti
 }
 
 export async function toggleHabit(habitId: string, date?: string): Promise<ActionResult> {
+  const { db, user } = await requireUser();
   const d = date && isDateStr(date) ? date : await getToday();
-  const existing = await prisma.habitCheckin.findUnique({ where: { habitId_date: { habitId, date: d } } });
-  if (existing) await prisma.habitCheckin.delete({ where: { id: existing.id } });
-  else await prisma.habitCheckin.create({ data: { habitId, date: d } });
+  const existing = await db.habitCheckin.findUnique({ where: { habitId_date: { habitId, date: d } } });
+  if (existing) await db.habitCheckin.delete({ where: { id: existing.id } });
+  else await db.habitCheckin.create({ data: { habitId, date: d } });
   done();
   return { ok: true };
 }
 
 export async function archiveHabit(id: string, archived: boolean): Promise<ActionResult> {
-  await prisma.habit.update({ where: { id }, data: { archived } });
+  const { db, user } = await requireUser();
+  await db.habit.update({ where: { id }, data: { archived } });
   done();
   return { ok: true };
 }
 
 export async function deleteHabit(id: string): Promise<ActionResult> {
-  await prisma.habit.delete({ where: { id } }).catch(() => null);
+  const { db, user } = await requireUser();
+  await db.habit.delete({ where: { id } }).catch(() => null);
   done();
   return { ok: true };
 }
@@ -232,9 +243,13 @@ const goalInput = z.object({
 });
 
 export async function saveGoal(input: z.input<typeof goalInput>): Promise<ActionResult> {
+  const { db, user } = await requireUser();
   try {
     const v = goalInput.parse(input);
     if (v.deadline < v.startDate) return { ok: false, error: "Deadline must be after the start date." };
+    if (v.linkType === "habit" && v.linkHabitId && !(await db.habit.findUnique({ where: { id: v.linkHabitId } }))) {
+      return { ok: false, error: "That habit doesn't exist." };
+    }
     const { units } = await getSettings();
     let target = v.target;
     let startValue = v.startValue ?? null;
@@ -257,7 +272,7 @@ export async function saveGoal(input: z.input<typeof goalInput>): Promise<Action
       linkMeasure: v.linkType === "workout" ? v.linkMeasure ?? "count" : null,
       linkHabitId: v.linkType === "habit" ? v.linkHabitId ?? null : null,
     };
-    const id = v.id ? (await prisma.goal.update({ where: { id: v.id }, data })).id : (await prisma.goal.create({ data })).id;
+    const id = v.id ? (await db.goal.update({ where: { id: v.id }, data })).id : (await db.goal.create({ data: { ...data, userId: user.id } })).id;
     done();
     return { ok: true, id };
   } catch (e) {
@@ -266,21 +281,24 @@ export async function saveGoal(input: z.input<typeof goalInput>): Promise<Action
 }
 
 export async function addGoalProgress(goalId: string, value: number, note?: string, date?: string): Promise<ActionResult> {
+  const { db, user } = await requireUser();
   if (!Number.isFinite(value)) return { ok: false, error: "Enter a number." };
   const d = date && isDateStr(date) ? date : await getToday();
-  await prisma.goalProgress.create({ data: { goalId, value, note: note?.trim() || null, date: d } });
+  await db.goalProgress.create({ data: { goalId, value, note: note?.trim() || null, date: d } });
   done();
   return { ok: true };
 }
 
 export async function archiveGoal(id: string, archived: boolean): Promise<ActionResult> {
-  await prisma.goal.update({ where: { id }, data: { archived } });
+  const { db, user } = await requireUser();
+  await db.goal.update({ where: { id }, data: { archived } });
   done();
   return { ok: true };
 }
 
 export async function deleteGoal(id: string): Promise<ActionResult> {
-  await prisma.goal.delete({ where: { id } }).catch(() => null);
+  const { db, user } = await requireUser();
+  await db.goal.delete({ where: { id } }).catch(() => null);
   done();
   return { ok: true };
 }
@@ -296,12 +314,13 @@ const journalInput = z.object({
 });
 
 export async function saveJournal(input: z.input<typeof journalInput>): Promise<ActionResult> {
+  const { db, user } = await requireUser();
   try {
     const v = journalInput.parse(input);
     const data = { date: v.date, content: v.content, mood: v.mood ?? null, prompt: v.prompt || null };
     const id = v.id
-      ? (await prisma.journalEntry.update({ where: { id: v.id }, data })).id
-      : (await prisma.journalEntry.create({ data })).id;
+      ? (await db.journalEntry.update({ where: { id: v.id }, data })).id
+      : (await db.journalEntry.create({ data: { ...data, userId: user.id } })).id;
     done();
     return { ok: true, id };
   } catch (e) {
@@ -310,7 +329,8 @@ export async function saveJournal(input: z.input<typeof journalInput>): Promise<
 }
 
 export async function deleteJournal(id: string): Promise<ActionResult> {
-  await prisma.journalEntry.delete({ where: { id } }).catch(() => null);
+  const { db, user } = await requireUser();
+  await db.journalEntry.delete({ where: { id } }).catch(() => null);
   done();
   return { ok: true };
 }
@@ -325,12 +345,13 @@ const settingsInput = z.object({
 });
 
 export async function saveSettings(input: z.input<typeof settingsInput>): Promise<ActionResult> {
+  const { db, user } = await requireUser();
   try {
     const v = settingsInput.parse(input);
-    await prisma.settings.upsert({
-      where: { id: 1 },
+    await db.settings.upsert({
+      where: { userId: user.id },
       update: { ...v, visibleModules: v.visibleModules.join(",") },
-      create: { id: 1, ...v, visibleModules: v.visibleModules.join(",") },
+      create: { userId: user.id, ...v, visibleModules: v.visibleModules.join(",") },
     });
     done();
     return { ok: true };
@@ -340,24 +361,39 @@ export async function saveSettings(input: z.input<typeof settingsInput>): Promis
 }
 
 export async function deleteAllData(confirm: string): Promise<ActionResult> {
+  const { db, user } = await requireUser();
   if (confirm !== "DELETE") return { ok: false, error: 'Type "DELETE" to confirm.' };
-  await prisma.$transaction([
-    prisma.dailyBrief.deleteMany(),
-    prisma.goalProgress.deleteMany(),
-    prisma.goal.deleteMany(),
-    prisma.habitCheckin.deleteMany(),
-    prisma.habit.deleteMany(),
-    prisma.exercise.deleteMany(),
-    prisma.workout.deleteMany(),
-    prisma.healthLog.deleteMany(),
-    prisma.journalEntry.deleteMany(),
+  await db.$transaction([
+    db.dailyBrief.deleteMany(),
+    db.weeklyReview.deleteMany(),
+    db.attachment.deleteMany(),
+    db.goalProgress.deleteMany(),
+    db.goal.deleteMany(),
+    db.habitCheckin.deleteMany(),
+    db.habit.deleteMany(),
+    db.exercise.deleteMany(),
+    db.workout.deleteMany(),
+    db.healthLog.deleteMany(),
+    db.journalEntry.deleteMany(),
   ]);
   done();
   return { ok: true };
 }
 
 export async function clearBriefCache(): Promise<ActionResult> {
-  await prisma.dailyBrief.deleteMany();
+  const { db, user } = await requireUser();
+  await db.dailyBrief.deleteMany();
+  done();
+  return { ok: true };
+}
+
+/** Fill a brand-new account with ~30 days of example data (only if it's empty). */
+export async function loadSampleDataAction(): Promise<ActionResult> {
+  const { db, user } = await requireUser();
+  const existing = (await db.healthLog.count()) + (await db.workout.count()) + (await db.habit.count()) + (await db.journalEntry.count());
+  if (existing > 0) return { ok: false, error: "Your account already has data, so sample data wasn't added." };
+  const { timezone } = await getSettings();
+  await loadSampleData(db, user.id, timezone);
   done();
   return { ok: true };
 }

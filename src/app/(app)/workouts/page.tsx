@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
+import { requireUser } from "@/lib/auth";
 import { todayInTz } from "@/lib/dates";
 import { getWorkoutsRange } from "@/lib/queries";
 import { weeklyVolume } from "@/lib/trends";
@@ -12,10 +12,11 @@ import { Dumbbell } from "lucide-react";
 
 export default async function WorkoutsPage() {
   const settings = await getSettings();
+  const { db, user } = await requireUser();
   const u = settings.units;
   const today = todayInTz(settings.timezone);
-  const workouts = await getWorkoutsRange(today, 120);
-  const names = await prisma.exercise.findMany({ distinct: ["name"], select: { name: true }, take: 200 });
+  const workouts = await getWorkoutsRange(db, today, 120);
+  const names = await db.exercise.findMany({ distinct: ["name"], select: { name: true }, take: 200 });
   const last = workouts.at(-1);
 
   const rows: WorkoutRow[] = [...workouts].reverse().map((w) => ({

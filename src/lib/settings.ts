@@ -1,6 +1,8 @@
 import "server-only";
-import { prisma } from "./db";
+import { cache } from "react";
+import { requireUser } from "./auth";
 import { todayInTz } from "./dates";
+import type { ScopedDb } from "./db";
 import type { Units } from "./units";
 
 export const ALL_MODULES = ["health", "workouts", "habits", "goals", "journal"] as const;
@@ -11,10 +13,12 @@ export type AppSettings = {
   units: Units;
   timezone: string;
   visibleModules: ModuleKey[];
+  remindersOn: boolean;
+  reminderHour: number;
 };
 
-export async function getSettings(): Promise<AppSettings> {
-  const s = await prisma.settings.upsert({ where: { id: 1 }, update: {}, create: { id: 1 } });
+export async function loadSettings(db: ScopedDb, userId: string): Promise<AppSettings> {
+  const s = (await db.settings.findUnique({ where: { userId } })) ?? (await db.settings.create({ data: { userId } }));
   return {
     name: s.name,
     units: s.units === "metric" ? "metric" : "imperial",
@@ -23,10 +27,17 @@ export async function getSettings(): Promise<AppSettings> {
       .split(",")
       .map((m) => m.trim())
       .filter((m): m is ModuleKey => (ALL_MODULES as readonly string[]).includes(m)),
+    remindersOn: s.remindersOn,
+    reminderHour: s.reminderHour,
   };
 }
 
+/** Settings of the signed-in user (memoized per request). */
+export const getSettings = cache(async (): Promise<AppSettings> => {
+  const { db, user } = await requireUser();
+  return loadSettings(db, user.id);
+});
+
 export async function getToday(): Promise<string> {
-  const s = await getSettings();
-  return todayInTz(s.timezone);
+  return todayInTz((await getSettings()).timezone);
 }

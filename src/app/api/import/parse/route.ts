@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
-import { getSettings } from "@/lib/settings";
+import { apiUser } from "@/lib/auth";
+import { loadSettings } from "@/lib/settings";
 import { todayInTz } from "@/lib/dates";
 import { AiError, complete } from "@/lib/ai";
 import { IMPORT_SYSTEM_PROMPT, buildImportUserMessage, parseImportResponse } from "@/lib/import/schema";
@@ -13,14 +13,17 @@ export const runtime = "nodejs";
 const Body = z.object({ text: z.string().trim().min(1, "Paste some notes first.").max(20000, "That's a lot of text — paste up to ~20,000 characters at a time.") });
 
 export async function POST(req: Request) {
+  const auth = await apiUser();
+  if (!auth) return NextResponse.json({ error: "Please sign in.", retryable: false }, { status: 401 });
+  const { db } = auth;
   const body = Body.safeParse(await req.json().catch(() => ({})));
   if (!body.success) return NextResponse.json({ error: body.error.issues[0].message, retryable: false }, { status: 400 });
 
-  const settings = await getSettings();
+  const settings = await loadSettings(db, auth.user.id);
   const today = todayInTz(settings.timezone);
   const [habits, goals] = await Promise.all([
-    prisma.habit.findMany({ where: { archived: false }, select: { id: true, name: true } }),
-    prisma.goal.findMany({ where: { archived: false }, select: { id: true, title: true, unit: true } }),
+    db.habit.findMany({ where: { archived: false }, select: { id: true, name: true } }),
+    db.goal.findMany({ where: { archived: false }, select: { id: true, title: true, unit: true } }),
   ]);
 
   let raw: string;
@@ -54,6 +57,6 @@ export async function POST(req: Request) {
     habits: habits.map((h) => ({ id: h.id, name: h.name })),
     goals: goals.map((g) => ({ id: g.id, name: g.title })),
   });
-  const withDup = await detectDuplicates(items, settings.units);
+  const withDup = await detectDuplicates(db, items, settings.units);
   return NextResponse.json({ today, items: withDup, unparsed: parsed.unparsed, dropped: parsed.dropped });
 }

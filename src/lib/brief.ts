@@ -1,7 +1,7 @@
 import "server-only";
 import { z } from "zod";
-import { prisma } from "./db";
-import { getSettings } from "./settings";
+import type { ScopedDb } from "./db";
+import { loadSettings } from "./settings";
 import { addDays, formatDate, todayInTz } from "./dates";
 import { getGoalViews, getHabitViews, getHealthRange, getWorkoutsRange } from "./queries";
 import { computeInsights, type Insight } from "./insights";
@@ -33,17 +33,17 @@ Tone and safety rules:
 
 export type BriefContext = Awaited<ReturnType<typeof buildContext>>;
 
-async function buildContext() {
-  const settings = await getSettings();
+export async function buildContext(db: ScopedDb, userId: string) {
+  const settings = await loadSettings(db, userId);
   const u = settings.units;
   const today = todayInTz(settings.timezone);
   const yesterday = addDays(today, -1);
   const [health, workouts, habits, goals, journal] = await Promise.all([
-    getHealthRange(today, 90),
-    getWorkoutsRange(today, 90),
-    getHabitViews(today),
-    getGoalViews(today),
-    prisma.journalEntry.findMany({ where: { date: { gte: addDays(today, -60) } }, select: { date: true } }),
+    getHealthRange(db, today, 90),
+    getWorkoutsRange(db, today, 90),
+    getHabitViews(db, today),
+    getGoalViews(db, today),
+    db.journalEntry.findMany({ where: { date: { gte: addDays(today, -60) } }, select: { date: true } }),
   ]);
   const insights = computeInsights({ today, units: u, health, workouts, habits, goals, journalDates: journal.map((j) => j.date) });
 
@@ -122,10 +122,10 @@ const BriefResponse = z.object({
 export type BriefResult = { brief: string; source: "ai" | "fallback"; createdAt: string; error?: string };
 
 /** Return today's cached brief, generating (and caching) it if needed. */
-export async function getOrCreateBrief(force = false): Promise<BriefResult> {
-  const { today, context, insights } = await buildContext();
+export async function getOrCreateBrief(db: ScopedDb, userId: string, force = false): Promise<BriefResult> {
+  const { today, context, insights } = await buildContext(db, userId);
   if (!force) {
-    const cached = await prisma.dailyBrief.findUnique({ where: { date: today } });
+    const cached = await db.dailyBrief.findUnique({ where: { userId_date: { userId, date: today } } });
     if (cached) return { brief: cached.brief, source: cached.source as "ai" | "fallback", createdAt: cached.createdAt.toISOString() };
   }
 
@@ -154,10 +154,10 @@ export async function getOrCreateBrief(force = false): Promise<BriefResult> {
   }
 
   // Cached once per day; the refresh button regenerates (and retries after an AI error).
-  const row = await prisma.dailyBrief.upsert({
-    where: { date: today },
+  const row = await db.dailyBrief.upsert({
+    where: { userId_date: { userId, date: today } },
     update: { brief, highlights: JSON.stringify(highlights), source: error ? "fallback" : source, createdAt: new Date() },
-    create: { date: today, brief, highlights: JSON.stringify(highlights), source: error ? "fallback" : source },
+    create: { userId, date: today, brief, highlights: JSON.stringify(highlights), source: error ? "fallback" : source },
   });
   return { brief, source, createdAt: row.createdAt.toISOString(), error };
 }
