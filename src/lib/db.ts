@@ -24,7 +24,7 @@ if (process.env.NODE_ENV !== "production") g.__prisma = base;
 
 /** Models whose rows carry a userId column. */
 const OWNED = new Set([
-  "Settings", "HealthLog", "Workout", "Habit", "Goal", "JournalEntry", "Attachment", "Alias", "PushSubscription", "ApiToken",
+  "Settings", "HealthLog", "Workout", "Meal", "Habit", "Goal", "JournalEntry", "Attachment", "Alias", "PushSubscription", "ApiToken",
 ]);
 /** Child models scoped through their parent. */
 const CHILD: Record<string, string> = { Exercise: "workout", HabitCheckin: "habit", GoalProgress: "goal" };
@@ -33,6 +33,7 @@ const ENCRYPTED: Record<string, string[]> = {
   JournalEntry: ["content"],
   HealthLog: ["notes"],
   Workout: ["notes"],
+  Meal: ["name", "notes"],
   GoalProgress: ["note"],
   Attachment: ["data"],
 };

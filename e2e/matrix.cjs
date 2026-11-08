@@ -11,7 +11,7 @@ const fs = require("node:fs");
 const BASE = process.env.BASE_URL || "http://localhost:3000";
 const OUT = process.env.SHOTS_DIR || "";
 const VIEWPORTS = [[320, 568], [375, 812], [414, 896], [768, 1024], [1024, 768], [1440, 900], [1920, 1080]];
-const PAGES = ["/login", "/", "/log", "/import", "/insights", "/me"];
+const PAGES = ["/login", "/", "/log", "/nutrition", "/import", "/insights", "/me"];
 
 let storageState = null;
 async function signIn(ctx) {

@@ -2,9 +2,9 @@
 
 # Thrivie · Fitness & Nutrition
 
-A simple, beautiful, mobile-first wellness app where people track **health, workouts, habits, goals and a journal**, with a calm dashboard, highlights, a daily brief, and a **free Smart Import** that turns notes-app text into entries on your own device.
+A simple, beautiful, mobile-first wellness app where people track **health, workouts, meals, habits, goals and a journal**, with a calm dashboard, highlights, a daily brief, and a **free Smart Import** that turns notes-app text into entries on your own device.
 
-**Private by design.** Every account's data is separated by the database itself. Journal text, notes, photos and voice notes are encrypted. Pasted notes never leave your device. No paid AI services, no ads, no tracking. See [SECURITY.md](SECURITY.md).
+**Private by design.** Every account's data is separated by the database itself. Journal text, meal names, notes, photos and voice notes are encrypted. Pasted notes never leave your device. No paid AI services, no ads, no tracking. See [SECURITY.md](SECURITY.md).
 
 > Thrivie is for personal tracking only. It isn't medical advice.
 
@@ -25,7 +25,7 @@ The visual system pairs the Thrivie brand navy from the logo with Coastal Earth 
 ## What's inside
 
 - **Today**: a daily brief (frosted glass with an iridescent edge), a habit progress ring, one-tap habits, quick-log buttons, goal rings and highlights.
-- **Log**: check-ins (weight, sleep and its quality, water, mood, energy, steps, custom metrics), workouts (with exercises or distance and pace, plus *Repeat last*), habits (daily or X per week, streaks, heatmaps), goals (linked to a metric, workout type or habit so they update themselves) and a journal (prompts, mood, photos, voice notes, dictation, search).
+- **Log**: check-ins (weight, sleep and its quality, water, mood, energy, steps, custom metrics), workouts (with exercises or distance and pace, plus *Repeat last*), meals (breakfast, lunch, dinner or snack, with optional calories, protein, carbs and fat, one-tap *Have it again* and optional daily targets), habits (daily or X per week, streaks, heatmaps), goals (linked to a metric, workout type or habit so they update themselves) and a journal (prompts, mood, photos, voice notes, dictation, search).
 - **Import**: Smart Import, explained below.
 - **Insights**: 7/30/90-day trends, weekly workout volume, habit heatmap, goal progress, highlights and a weekly review.
 - **Me**: profile and units, theme, visible modules, reminders, health sync (Apple Shortcuts / Android), two-step verification, Smart Import shorthand, export (JSON/CSV), restore, delete all data, delete account.
@@ -35,7 +35,7 @@ The visual system pairs the Thrivie brand navy from the logo with Coastal Earth 
 
 1. **Tier 1, always on.** A rule-based parser (chrono-node + Fuse.js) reads notes **as you paste**, entirely in the browser, and shows a live preview.
    - It splits notes by day and resolves "Mon", "yesterday" or "11/3" in your timezone.
-   - It finds sleep, weight, water, steps, mood, energy, workouts (distance, time, sets × reps), habits from ✅/❌, goal progress and journal reflections.
+   - It finds sleep, weight, water, steps, mood, energy, workouts (distance, time, sets × reps), meals ("lunch: chicken salad 520 cal, 40g protein", "had salmon for dinner"), habits from ✅/❌, goal progress and journal reflections.
    - Every field has a confidence score.
 2. **Tier 2, optional.** A small on-device model (WebLLM, Qwen2.5-0.5B) runs in a Web Worker on devices with WebGPU.
    - It's hidden elsewhere and off by default; turning it on means a one-time download.
@@ -70,8 +70,8 @@ Demo logins: **demo@thrivie.app** and **demo2@thrivie.app**, both with the passw
 | `npm audit --omit=dev` | Dependency check (0 known vulnerabilities at release) |
 
 Latest results:
-- **Tests:** 113 passing.
-- **Responsive and accessibility matrix:** 89/89 checks clean.
+- **Tests:** 124 passing.
+- **Responsive and accessibility matrix:** 103/103 checks clean.
 - **Lighthouse (mobile):**
   - Sign-in: Performance 100 · Accessibility 100 · Best Practices 100 · SEO 91
   - Today: 94 · 100 · 100 · 100

@@ -6,10 +6,11 @@ import { kgToDisplay, kmToDisplay, mlToDisplay, paceToDisplay, distanceUnit, wei
 export const BACKUP_VERSION = 1;
 
 export async function exportAll(db: ScopedDb, userId: string) {
-  const [settings, healthLogs, workouts, habits, goals, journal, aliases] = await Promise.all([
+  const [settings, healthLogs, workouts, meals, habits, goals, journal, aliases] = await Promise.all([
     db.settings.findUnique({ where: { userId } }),
     db.healthLog.findMany({ orderBy: { date: "asc" } }),
     db.workout.findMany({ include: { exercises: { orderBy: { order: "asc" } } }, orderBy: { date: "asc" } }),
+    db.meal.findMany({ orderBy: [{ date: "asc" }, { createdAt: "asc" }] }),
     db.habit.findMany({ include: { checkins: { orderBy: { date: "asc" } } }, orderBy: { order: "asc" } }),
     db.goal.findMany({ include: { progress: { orderBy: { date: "asc" } } } }),
     db.journalEntry.findMany({ orderBy: { date: "asc" } }),
@@ -23,6 +24,7 @@ export async function exportAll(db: ScopedDb, userId: string) {
     settings: settings && { name: settings.name, units: settings.units, timezone: settings.timezone, visibleModules: settings.visibleModules },
     healthLogs: healthLogs.map(({ createdAt, updatedAt, ...h }) => ({ ...h, custom: h.custom ? JSON.parse(h.custom) : null })),
     workouts: workouts.map(({ createdAt, exercises, ...w }) => ({ ...w, exercises: exercises.map(({ id, workoutId, ...e }) => e) })),
+    meals: meals.map(({ id, userId, createdAt, ...m }) => m),
     habits: habits.map(({ checkins, createdAt, ...h }) => ({ ...h, createdAt: createdAt.toISOString(), checkins: checkins.map((c) => c.date) })),
     goals: goals.map(({ progress, createdAt, ...g }) => ({ ...g, progress: progress.map(({ id, goalId, ...p }) => p) })),
     journal: journal.map(({ createdAt, updatedAt, ...j }) => ({ ...j, createdAt: createdAt.toISOString() })),
@@ -44,7 +46,7 @@ export function toCsv(rows: Record<string, unknown>[], columns: string[]): strin
   return [columns.join(","), ...rows.map((r) => columns.map((c) => csvCell(r[c])).join(","))].join("\r\n") + "\r\n";
 }
 
-export const CSV_TABLES = ["health", "workouts", "exercises", "habits", "checkins", "goals", "goal_progress", "journal"] as const;
+export const CSV_TABLES = ["health", "workouts", "exercises", "meals", "habits", "checkins", "goals", "goal_progress", "journal"] as const;
 export type CsvTable = (typeof CSV_TABLES)[number];
 
 /** CSV export in the user's display units (column names include the unit). */
@@ -89,6 +91,11 @@ export async function exportCsv(db: ScopedDb, table: CsvTable, u: Units): Promis
       const rows = await db.goalProgress.findMany({ include: { goal: { select: { title: true } } }, orderBy: { date: "asc" } });
       return toCsv(rows.map((r) => ({ date: r.date, goal: r.goal.title, goal_id: r.goalId, value: r.value, note: r.note })), ["date", "goal", "goal_id", "value", "note"]);
     }
+    case "meals": {
+      const rows = await db.meal.findMany({ orderBy: [{ date: "asc" }, { createdAt: "asc" }] });
+      const cols = ["date", "slot", "name", "calories", "protein_g", "carbs_g", "fat_g", "notes"];
+      return toCsv(rows.map((r) => ({ date: r.date, slot: r.slot, name: r.name, calories: r.calories, protein_g: r.proteinG, carbs_g: r.carbsG, fat_g: r.fatG, notes: r.notes })), cols);
+    }
     case "journal": {
       const rows = await db.journalEntry.findMany({ orderBy: { date: "asc" } });
       return toCsv(rows.map((r) => ({ date: r.date, mood: r.mood, prompt: r.prompt, content: r.content })), ["date", "mood", "prompt", "content"]);
@@ -116,6 +123,10 @@ export const BackupSchema = z.object({
     intensity: z.number().int().min(1).max(5).default(3), distanceKm: n, paceMinKm: n, notes: z.string().nullable().optional(),
     exercises: z.array(z.object({ name: z.string(), sets: n, reps: n, weightKg: n, order: z.number().int().optional() })).default([]),
   })).default([]),
+  meals: z.array(z.object({
+    date: d, slot: z.enum(["breakfast", "lunch", "dinner", "snack"]), name: z.string().min(1).max(200), calories: n, proteinG: n, carbsG: n, fatG: n,
+    notes: z.string().nullable().optional(),
+  })).default([]),
   habits: z.array(z.object({
     id: z.string(), name: z.string(), emoji: z.string().nullable().optional(), frequency: z.string(), timesPerWeek: z.number().int(),
     archived: z.boolean().default(false), order: z.number().int().default(0), checkins: z.array(d).default([]),
@@ -142,6 +153,7 @@ export async function restoreBackup(db: ScopedDb, userId: string, raw: unknown) 
     await tx.habit.deleteMany();
     await tx.exercise.deleteMany();
     await tx.workout.deleteMany();
+    await tx.meal.deleteMany();
     await tx.healthLog.deleteMany();
     await tx.journalEntry.deleteMany();
     if (b.settings) {
@@ -159,6 +171,9 @@ export async function restoreBackup(db: ScopedDb, userId: string, raw: unknown) 
         paceMinKm: w.paceMinKm ?? null, notes: w.notes ?? null,
         exercises: { create: w.exercises.map((e, i) => ({ name: e.name, sets: int(e.sets), reps: int(e.reps), weightKg: e.weightKg ?? null, order: e.order ?? i })) },
       } });
+    }
+    for (const m of b.meals) {
+      await tx.meal.create({ data: { userId, date: m.date, slot: m.slot, name: m.name, calories: int(m.calories), proteinG: m.proteinG ?? null, carbsG: m.carbsG ?? null, fatG: m.fatG ?? null, notes: m.notes ?? null } });
     }
     // New ids are generated so a backup can be restored into any account.
     const habitIdMap = new Map<string, string>();
@@ -184,6 +199,6 @@ export async function restoreBackup(db: ScopedDb, userId: string, raw: unknown) 
     }
   }, { timeout: 60_000 });
   return {
-    health: b.healthLogs.length, workouts: b.workouts.length, habits: b.habits.length, goals: b.goals.length, journal: b.journal.length,
+    health: b.healthLogs.length, workouts: b.workouts.length, meals: b.meals.length, habits: b.habits.length, goals: b.goals.length, journal: b.journal.length,
   };
 }

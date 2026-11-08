@@ -26,6 +26,7 @@ export type WorkoutData = {
   paceMinKm: number | null;
   exercises: { name: string; sets: number | null; reps: number | null; weightKg: number | null }[];
 };
+export type MealData = { slot: "breakfast" | "lunch" | "dinner" | "snack"; name: string; calories: number | null; proteinG: number | null; carbsG: number | null; fatG: number | null };
 export type HabitData = { habitName: string; habitId: string | null; createNew: boolean; frequency: "daily" | "weekly" };
 export type GoalData = { goalName: string; goalId: string | null; value: number; note: string | null };
 export type JournalData = { content: string; mood: number | null };
@@ -43,6 +44,7 @@ type Common = {
 export type ReviewItem =
   | (Common & { kind: "health"; data: HealthData })
   | (Common & { kind: "workout"; data: WorkoutData })
+  | (Common & { kind: "meal"; data: MealData })
   | (Common & { kind: "habit"; data: HabitData })
   | (Common & { kind: "goal_update"; data: GoalData })
   | (Common & { kind: "journal"; data: JournalData });
@@ -226,6 +228,12 @@ export function normalizeEntries(entries: ImportEntry[], ctx: NormalizeContext):
         });
         break;
       }
+      case "meal": {
+        const g = (v: number | null) => (v != null && v >= 0 && v <= 2000 ? round(v, 1) : null);
+        const calories = e.calories != null && e.calories >= 0 && e.calories <= 10000 ? Math.round(e.calories) : null;
+        items.push({ ...common, kind: "meal", data: { slot: e.slot, name: e.name.slice(0, 200), calories, proteinG: g(e.protein_g), carbsG: g(e.carbs_g), fatG: g(e.fat_g) } });
+        break;
+      }
       case "habit": {
         if (!e.completed) break; // explicitly missed – nothing to record
         const habitId = matchByName(e.habit_name, ctx.habits, e.matched_habit);
@@ -255,4 +263,4 @@ export function normalizeEntries(entries: ImportEntry[], ctx: NormalizeContext):
     .sort((a, b) => (a.date === b.date ? KIND_ORDER[a.kind] - KIND_ORDER[b.kind] : a.date < b.date ? -1 : 1));
 }
 
-const KIND_ORDER: Record<ReviewItem["kind"], number> = { health: 0, workout: 1, habit: 2, goal_update: 3, journal: 4 };
+const KIND_ORDER: Record<ReviewItem["kind"], number> = { health: 0, workout: 1, meal: 2, habit: 3, goal_update: 4, journal: 5 };

@@ -105,7 +105,23 @@ export const JournalEntry = z.object({
   mood: rating,
 });
 
-export const ImportEntry = z.discriminatedUnion("kind", [HealthEntry, WorkoutEntry, HabitEntry, GoalEntry, JournalEntry]);
+export const MEAL_KINDS = ["breakfast", "lunch", "dinner", "snack"] as const;
+
+export const MealEntry = z.object({
+  kind: z.literal("meal"),
+  ...base,
+  slot: z.preprocess((v) => {
+    const s = typeof v === "string" ? v.toLowerCase() : "";
+    return s === "brunch" ? "lunch" : s === "supper" ? "dinner" : (MEAL_KINDS as readonly string[]).includes(s) ? s : "snack";
+  }, z.enum(MEAL_KINDS)),
+  name: z.string().min(1).max(200),
+  calories: optNum,
+  protein_g: optNum,
+  carbs_g: optNum,
+  fat_g: optNum,
+});
+
+export const ImportEntry = z.discriminatedUnion("kind", [HealthEntry, WorkoutEntry, MealEntry, HabitEntry, GoalEntry, JournalEntry]);
 export type ImportEntry = z.infer<typeof ImportEntry>;
 
 export const ImportEnvelope = z.object({

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { HeartPulse, Dumbbell, Repeat, NotebookPen, ClipboardPaste, CircleCheck, Sun, Trophy, ChevronRight } from "lucide-react";
+import { HeartPulse, Dumbbell, Repeat, NotebookPen, ClipboardPaste, CircleCheck, Sun, Trophy, ChevronRight, Utensils } from "lucide-react";
 import { getSettings } from "@/lib/settings";
 import { requireUser } from "@/lib/auth";
 import { formatDate, todayInTz } from "@/lib/dates";
@@ -13,6 +13,7 @@ import { DailyBrief } from "@/components/DailyBrief";
 import { ProgressRing } from "@/components/ProgressRing";
 import { RepeatLastButton } from "@/components/RepeatLastButton";
 import { goalDisplay } from "@/lib/goalDisplay";
+import { dayTotals, macroLine } from "@/lib/nutrition";
 
 function greeting(name: string, timeZone: string) {
   let h = 12;
@@ -31,13 +32,15 @@ export default async function TodayPage() {
   const { units: u, visibleModules: vis } = settings;
   const today = todayInTz(settings.timezone);
 
-  const [habits, goals, recentWorkouts, todayLog, brief] = await Promise.all([
+  const [habits, goals, recentWorkouts, todayLog, brief, todayMeals] = await Promise.all([
     getHabitViews(db, today),
     getGoalViews(db, today),
     getWorkoutsRange(db, today, 60),
     db.healthLog.findUnique({ where: { userId_date: { userId: user.id, date: today } } }),
     buildBrief(db, user.id),
+    vis.includes("nutrition") ? db.meal.findMany({ where: { date: today }, select: { date: true, calories: true, proteinG: true, carbsG: true, fatG: true } }) : [],
   ]);
+  const food = dayTotals(todayMeals);
   const todaysWorkouts = recentWorkouts.filter((w) => w.date === today);
   const lastWorkout = recentWorkouts.at(-1);
   const due = habits.filter((h) => h.dueToday);
@@ -49,6 +52,7 @@ export default async function TodayPage() {
   const quick = [
     vis.includes("health") && { href: "/health#log", label: "Check-in", icon: HeartPulse, tone: "bg-terracotta-soft text-terracotta-ink" },
     vis.includes("workouts") && { href: "/workouts#log", label: "Workout", icon: Dumbbell, tone: "bg-ocean-soft text-ocean" },
+    vis.includes("nutrition") && { href: "/nutrition#log", label: "Meal", icon: Utensils, tone: "bg-clay-soft text-clay-ink" },
     vis.includes("journal") && { href: "/journal#new", label: "Journal", icon: NotebookPen, tone: "bg-iris-soft text-iris" },
     { href: "/import", label: "Paste notes", icon: ClipboardPaste, tone: "bg-seaglass-soft text-primary" },
   ].filter(Boolean) as { href: string; label: string; icon: typeof HeartPulse; tone: string }[];
@@ -131,6 +135,12 @@ export default async function TodayPage() {
                 <ChevronRight size={16} aria-hidden />
               </Link>
             ))}
+          {vis.includes("nutrition") && (
+            <Link href="/nutrition" className="flex min-h-12 items-center justify-between gap-3 rounded-2xl bg-clay-soft px-4 py-2.5 text-sm">
+              <span><span aria-hidden>🍽️ </span>{food.meals ? [`${food.meals} ${food.meals === 1 ? "meal" : "meals"}`, macroLine({ calories: food.calories, proteinG: food.proteinG })].filter(Boolean).join(" · ") : "No meals logged yet today."}</span>
+              <ChevronRight size={16} aria-hidden />
+            </Link>
+          )}
           {vis.includes("workouts") && (
             todaysWorkouts.length ? (
               <ul className="space-y-2">{todaysWorkouts.map((w) => <li key={w.id} className="rounded-2xl bg-ocean-soft px-4 py-2.5 text-sm font-semibold">{describeWorkout(w, u)}</li>)}</ul>

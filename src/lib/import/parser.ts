@@ -73,6 +73,18 @@ const STRONG_MOOD = /\b(happy|sad|stressed|anxious|calm|awful|miserable|overwhel
 const REFLECTIVE = /\b(journal(?:ed|led|ing)?\s+about|felt|feel(?:ing)?|grateful|thankful|thinking about|worried|proud|realized|reflect(?:ed|ing)?|stress(?:ed)?\s+(?:about|over)|excited about|struggled)\b/i;
 
 const NUM = "(\\d+(?:[.,]\\d+)?)";
+
+// Meals: "lunch: chicken salad 520 cal, 40g protein" or "had salmon for dinner".
+const MEAL_WORD = "(breakfast|brunch|lunch|dinner|supper|snacks?|dessert)";
+const MEAL_LINE = new RegExp(`^[ \\t>*•-]*${MEAL_WORD}\\s*[:\\-–—=]\\s*(.+)$`, "i");
+const MEAL_ATE = new RegExp(`\\b(?:had|ate|eaten)\\s+([^,;.!?\\n]+?)\\s+(?:for|at)\\s+${MEAL_WORD}\\b([^,;!?\\n]*)`, "gi");
+const MACROS: [keyof Pick<Meal, "calories" | "protein_g" | "carbs_g" | "fat_g">, RegExp[]][] = [
+  ["calories", [/(\d{2,4}(?:,\d{3})?)\s*(?:kcals?|cals?|calories)\b/i, /\b(?:kcal|cals?|calories)\s*[:=]?\s*(\d{2,4})/i]],
+  ["protein_g", [/(\d{1,3}(?:\.\d)?)\s*g(?:rams?)?\s*(?:of\s+)?protein\b/i, /\bprotein\s*[:=]?\s*(\d{1,3}(?:\.\d)?)\s*g?\b/i]],
+  ["carbs_g", [/(\d{1,3}(?:\.\d)?)\s*g(?:rams?)?\s*(?:of\s+)?carbs?\b/i, /\bcarbs?\s*[:=]?\s*(\d{1,3}(?:\.\d)?)\s*g?\b/i]],
+  ["fat_g", [/(\d{1,3}(?:\.\d)?)\s*g(?:rams?)?\s*(?:of\s+)?fats?\b/i, /\bfats?\s*[:=]?\s*(\d{1,3}(?:\.\d)?)\s*g?\b/i]],
+];
+const MEAL_SLOT: Record<string, Meal["slot"]> = { breakfast: "breakfast", brunch: "lunch", lunch: "lunch", dinner: "dinner", supper: "dinner", snack: "snack", snacks: "snack", dessert: "snack" };
 const clean = (s: string) => s.replace(/\s+/g, " ").trim();
 const num = (s: string) => Number(s.replace(",", "."));
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -131,6 +143,32 @@ export function splitClauses(body: string): string[] {
 
 type Health = Extract<ImportEntry, { kind: "health" }>;
 type Workout = Extract<ImportEntry, { kind: "workout" }>;
+type Meal = Extract<ImportEntry, { kind: "meal" }>;
+
+/** Reads one meal: slot word, what was eaten, and any calories/macros written with it. */
+export function parseMeal(slotWord: string, text: string, base: { date_text: string | null; date: string }, raw: string, dateConfidence: number): Meal | null {
+  let name = text;
+  const out: Meal = {
+    kind: "meal", ...base, source_text: raw, confidence: Math.min(dateConfidence, 0.9), field_confidence: {},
+    slot: MEAL_SLOT[slotWord.toLowerCase()] ?? "snack", name: "", calories: null, protein_g: null, carbs_g: null, fat_g: null,
+  };
+  for (const [field, patterns] of MACROS) {
+    for (const re of patterns) {
+      const m = name.match(re);
+      if (!m) continue;
+      const v = Number(m[1].replace(/,/g, ""));
+      if (Number.isFinite(v)) out[field] = v;
+      name = name.replace(m[0], " ");
+      break;
+    }
+  }
+  name = clean(name.replace(/\(\s*[,;·]*\s*\)/g, " ").replace(/\s*[,;·(]\s*(?=[,;·)]|$)/g, "").replace(/^[\s,;:·-]+|[\s,;:·.(-]+$/g, ""));
+  if (!name && out.calories == null) return null;
+  out.name = name ? cap(name).slice(0, 200) : cap(out.slot);
+  if (!name) out.field_confidence.name = 0.4;
+  if (out.calories != null && (out.calories < 10 || out.calories > 5000)) { out.field_confidence.calories = 0.4; }
+  return out;
+}
 
 function wordScore(clause: string, table: [RegExp, number][]): number | null {
   for (const [re, v] of table) if (re.test(clause)) return v;
@@ -160,7 +198,20 @@ export function parseNotes(text: string, ctx: ParseContext): ParseOutput {
     let healthTouched = false;
     let lastWorkout: Workout | null = null;
 
-    for (const raw of splitClauses(seg.body)) {
+    // Whole lines that describe a meal are read first, so "and"/commas inside them don't split the food.
+    const body = seg.body.split("\n").filter((line) => {
+      const m = line.match(MEAL_LINE);
+      const meal = m && parseMeal(m[1], m[2], base, clean(line), seg.dateConfidence);
+      if (meal) entries.push(meal);
+      return !meal;
+    }).join("\n").replace(MEAL_ATE, (all, food: string, slot: string, rest: string) => {
+      const meal = parseMeal(slot, `${food} ${rest}`, base, clean(all), seg.dateConfidence);
+      if (!meal) return all;
+      entries.push(meal);
+      return "";
+    });
+
+    for (const raw of splitClauses(body)) {
       let clause = raw;
       const lc = clause.toLowerCase();
       let used = false;
@@ -173,6 +224,11 @@ export function parseNotes(text: string, ctx: ParseContext): ParseOutput {
       };
 
       if (/\brest day\b|\bday off\b/i.test(lc)) { used = true; continue; }
+
+      // A meal later in a line: "slept 7h, lunch: salad 400 cal"
+      const mealHit = clause.match(MEAL_LINE);
+      const meal = mealHit && parseMeal(mealHit[1], mealHit[2], base, raw, seg.dateConfidence);
+      if (meal) { entries.push(meal); continue; }
 
       // Sleep: "slept 6h", "8h sleep", "sleep 7.5 hrs", "slept 6 hours felt tired"
       const sleep = lc.match(new RegExp(`(?:slept|sleep|sleeping|bed)\\D{0,12}?${NUM}\\s*(?:h|hr|hrs|hours?)\\b`)) ?? lc.match(new RegExp(`${NUM}\\s*(?:h|hr|hrs|hours?)\\s*(?:of\\s+)?(?:sleep|slept)`));

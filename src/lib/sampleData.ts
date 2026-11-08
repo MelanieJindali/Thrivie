@@ -213,4 +213,26 @@ export async function loadSampleData(db: ScopedDb, userId: string, timezone: str
     await db.journalEntry.create({ data: { userId, date: addDays(today, -ago), content, mood, prompt } });
   }
 
+  // --- Meals (last 10 days, a few with macros) -------------------------------
+  const MENU: [string, string, number, number, number, number][] = [
+    ["breakfast", "Greek yogurt with berries and granola", 380, 24, 48, 10],
+    ["breakfast", "Oatmeal with banana and peanut butter", 450, 14, 66, 15],
+    ["lunch", "Chicken salad with avocado", 520, 40, 18, 32],
+    ["lunch", "Turkey and hummus wrap", 480, 32, 46, 18],
+    ["dinner", "Salmon, rice and broccoli", 640, 42, 60, 22],
+    ["dinner", "Veggie stir-fry with tofu", 560, 28, 64, 20],
+    ["snack", "Apple and almonds", 210, 6, 22, 12],
+  ];
+  const mealRows = [];
+  for (let ago = 9; ago >= 0; ago--) {
+    const date = addDays(today, -ago);
+    for (const slot of ago === 0 ? ["breakfast", "lunch"] : ["breakfast", "lunch", "dinner", "snack"]) {
+      if (slot === "snack" && !chance(0.6)) continue;
+      const options = MENU.filter((m) => m[0] === slot);
+      const [, name, calories, proteinG, carbsG, fatG] = options[Math.floor(rand() * options.length)];
+      mealRows.push({ userId, date, slot, name, calories, proteinG, carbsG, fatG });
+    }
+  }
+  for (const data of mealRows) await db.meal.create({ data });
+
 }

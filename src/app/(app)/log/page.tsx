@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { HeartPulse, Dumbbell, CircleCheck, Target, NotebookPen, ClipboardPaste, ChevronRight } from "lucide-react";
+import { HeartPulse, Dumbbell, CircleCheck, Target, NotebookPen, ClipboardPaste, ChevronRight, Utensils } from "lucide-react";
 import { getSettings } from "@/lib/settings";
 import { requireUser } from "@/lib/auth";
 import { relativeLabel, todayInTz } from "@/lib/dates";
@@ -10,6 +10,7 @@ import { Tip } from "@/components/Tip";
 const TILES = [
   { href: "/health#log", module: "health", label: "Check-in", sub: "Mood, energy, sleep, water, steps, weight", icon: HeartPulse, tone: "bg-terracotta-soft text-terracotta-ink" },
   { href: "/workouts#log", module: "workouts", label: "Workout", sub: "Type, time, intensity — or repeat last", icon: Dumbbell, tone: "bg-ocean-soft text-ocean" },
+  { href: "/nutrition#log", module: "nutrition", label: "Meal", sub: "What you ate, with optional calories and macros", icon: Utensils, tone: "bg-clay-soft text-clay-ink" },
   { href: "/habits#today", module: "habits", label: "Habits", sub: "One tap to check off", icon: CircleCheck, tone: "bg-sage-soft text-sage-ink" },
   { href: "/goals#progress", module: "goals", label: "Goal progress", sub: "Linked goals update by themselves", icon: Target, tone: "bg-gold-soft text-gold-ink" },
   { href: "/journal#new", module: "journal", label: "Journal", sub: "A few lines, a photo or a voice note", icon: NotebookPen, tone: "bg-iris-soft text-iris" },
@@ -19,14 +20,16 @@ export default async function LogPage() {
   const settings = await getSettings();
   const { db } = await requireUser();
   const today = todayInTz(settings.timezone);
-  const [workouts, journal, health] = await Promise.all([
+  const [workouts, journal, health, meals] = await Promise.all([
     db.workout.findMany({ orderBy: [{ date: "desc" }, { createdAt: "desc" }], take: 4 }),
     db.journalEntry.findMany({ orderBy: [{ date: "desc" }, { createdAt: "desc" }], take: 3, select: { id: true, date: true, content: true } }),
     db.healthLog.findMany({ orderBy: { date: "desc" }, take: 3 }),
+    db.meal.findMany({ orderBy: [{ date: "desc" }, { createdAt: "desc" }], take: 3 }),
   ]);
   const recent = [
     ...workouts.map((w) => ({ key: `w${w.id}`, date: w.date, text: describeWorkout(w, settings.units), href: "/workouts" })),
     ...journal.map((j) => ({ key: `j${j.id}`, date: j.date, text: `📝 ${j.content.slice(0, 70)}${j.content.length > 70 ? "…" : ""}`, href: "/journal" })),
+    ...meals.map((m) => ({ key: `m${m.id}`, date: m.date, text: `🍽️ ${m.name}${m.calories != null ? ` · ${m.calories} kcal` : ""}`, href: "/nutrition" })),
     ...health.map((h) => ({ key: `h${h.id}`, date: h.date, text: `🩺 Check-in${h.sleepHours != null ? ` · ${h.sleepHours}h sleep` : ""}${h.mood ? ` · mood ${h.mood}/5` : ""}`, href: "/health" })),
   ].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 8);
 

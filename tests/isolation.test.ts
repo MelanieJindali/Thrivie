@@ -38,6 +38,8 @@ beforeAll(async () => {
   await b.journalEntry.create({ data: { userId: bob, date: "2026-11-01", content: "bob private thoughts" } });
   await a.healthLog.create({ data: { userId: alice, date: "2026-11-02", steps: 1000 } });
   await b.healthLog.create({ data: { userId: bob, date: "2026-11-02", steps: 9000 } });
+  await a.meal.create({ data: { userId: alice, date: "2026-11-02", slot: "lunch", name: "alice secret salad", calories: 450 } });
+  await b.meal.create({ data: { userId: bob, date: "2026-11-02", slot: "dinner", name: "bob pasta", calories: 700 } });
 });
 
 afterAll(async () => {
@@ -105,13 +107,13 @@ describe("database alone (RLS, no application checks)", () => {
   });
 
   it("returns nothing when no user is set (fails closed)", async () => {
-    for (const t of ["JournalEntry", "HealthLog", "Workout", "Habit", "HabitCheckin", "Goal", "Settings", "User", "Session"]) {
+    for (const t of ["JournalEntry", "HealthLog", "Workout", "Meal", "Habit", "HabitCheckin", "Goal", "Settings", "User", "Session"]) {
       expect((await asUser(null, `SELECT 1 FROM "${t}"`)).rowCount, t).toBe(0);
     }
   });
 
   it("does not let the system role read personal data", async () => {
-    for (const t of ["JournalEntry", "HealthLog", "Workout", "Habit", "HabitCheckin", "Goal", "GoalProgress", "Attachment", "Alias"]) {
+    for (const t of ["JournalEntry", "HealthLog", "Workout", "Meal", "Habit", "HabitCheckin", "Goal", "GoalProgress", "Attachment", "Alias"]) {
       expect((await asUser(null, `SELECT 1 FROM "${t}"`, [], true)).rowCount, t).toBe(0);
     }
   });
@@ -120,6 +122,14 @@ describe("database alone (RLS, no application checks)", () => {
     expect((await asUser(alice, `UPDATE "HealthLog" SET steps = 0 WHERE "userId" = $1`, [bob])).rowCount).toBe(0);
     expect((await asUser(alice, `DELETE FROM "JournalEntry" WHERE "userId" = $1`, [bob])).rowCount).toBe(0);
     expect((await asUser(bob, `SELECT steps FROM "HealthLog"`)).rows[0].steps).toBe(9000);
+  });
+
+  it("keeps meals private to their owner", async () => {
+    expect((await scopedDb(alice).meal.findMany()).map((m) => m.name)).toEqual(["alice secret salad"]);
+    const r = await asUser(alice, `SELECT "userId" FROM "Meal"`);
+    expect(r.rows.map((x) => x.userId)).toEqual([alice]);
+    expect((await asUser(alice, `UPDATE "Meal" SET calories = 0 WHERE "userId" = $1`, [bob])).rowCount).toBe(0);
+    await expect(asUser(alice, `INSERT INTO "Meal" (id, "userId", date, slot, name) VALUES ('m1', $1, '2026-11-05', 'snack', 'spoof')`, [bob])).rejects.toThrow(/row-level security/);
   });
 
   it("refuses to insert rows owned by someone else", async () => {
@@ -152,6 +162,14 @@ describe("encryption at rest", () => {
     expect(r.rows[0].content).not.toContain("alice");
     expect(decryptText(r.rows[0].content, alice)).toBe("alice private thoughts");
     expect(() => decryptText(r.rows[0].content, bob)).toThrow(); // copied into another user's row, it won't decrypt
+  });
+
+  it("stores meal names encrypted", async () => {
+    const r = await raw.query(`SELECT name, calories FROM "Meal" WHERE "userId" = $1`, [alice]);
+    expect(r.rows[0].name.startsWith("enc:")).toBe(true);
+    expect(r.rows[0].name).not.toContain("salad");
+    expect(decryptText(r.rows[0].name, alice)).toBe("alice secret salad");
+    expect(r.rows[0].calories).toBe(450);
   });
 
   it("stores photos and voice notes encrypted", async () => {
