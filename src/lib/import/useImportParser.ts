@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ParseContext, ParseOutput } from "./parser";
-import { createIncrementalParser } from "./incremental";
+import type { createIncrementalParser } from "./incremental";
 
 /**
  * Parses notes in a Web Worker, 250 ms after typing stops, and ignores out-of-date results.
@@ -38,8 +38,11 @@ export function useImportParser(text: string, ctx: ParseContext, delay = 250) {
     const t = setTimeout(() => {
       if (worker.current) worker.current.postMessage({ id, text, ctx });
       else {
-        fallback.current ??= createIncrementalParser();
-        if (id === seq.current) { setResult(fallback.current(text, ctx)); setPending(false); }
+        // Loaded only when a Worker can't start, so the parser stays out of the page's startup code.
+        void import("./incremental").then(({ createIncrementalParser }) => {
+          fallback.current ??= createIncrementalParser();
+          if (id === seq.current) { setResult(fallback.current(text, ctx)); setPending(false); }
+        });
       }
     }, result ? delay : 0);
     return () => clearTimeout(t);
