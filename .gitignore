@@ -8,3 +8,28 @@ next-env.d.ts
 prisma/*.db
 prisma/*.db-journal
 .DS_Store
+
+# --- Security: secrets & local state ---
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+id_rsa*
+credentials.json
+
+# Claude Code: keep shared settings, ignore local state/logs
+.claude/*
+!.claude/settings.json
+CLAUDE.local.md
+
+# Logs, deps, builds, metadata
+*.log
+__pycache__/
+dist/
+build/
+.vercel/
+coverage/
+.vscode/
+.idea/
