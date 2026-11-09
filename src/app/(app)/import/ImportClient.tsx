@@ -323,7 +323,7 @@ function ReviewCard({
   const fieldCls = (f: string) => `input py-1.5 text-sm ${lowField(f) ? "border-terracotta-ink bg-terracotta-soft" : ""}`;
 
   return (
-    <div className={`card space-y-3 transition ${item.approved && !skipped && !blocked ? "border-primary/50" : ""} ${skipped ? "opacity-70" : ""} ${!item.approved && !skipped ? "border-l-4 border-l-warn" : ""}`}>
+    <div className={`card space-y-3 transition ${item.approved && !skipped && !blocked ? "border-primary/50" : ""} ${skipped ? "border-dashed border-border shadow-none" : ""} ${!item.approved && !skipped ? "border-l-4 border-l-warn" : ""}`}>
       <div className="flex flex-wrap items-center gap-2">
         <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-medium">{KIND_LABEL[item.kind]}</span>
         {low && <span className="rounded-full bg-terracotta-soft px-2 py-0.5 text-[11px] text-terracotta-ink">Not sure ({Math.round(item.confidence * 100)}%)</span>}

@@ -286,6 +286,31 @@ tr:last-child td { border-bottom: 0; }
 @media (max-width: 520px) {
   .type-row { grid-template-columns: 1fr; gap: 2px; }
 }
+/* --- 11 · Smart Import review --- */
+.imp-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 18px; background: var(--glass); box-shadow: inset 0 0 0 1px var(--glass-edge), var(--shadow); backdrop-filter: blur(12px); }
+.imp-bar .n { margin-right: auto; font-size: 0.9rem; color: var(--muted); }
+.imp-bar .n b { color: var(--fg); }
+.imp-bar .btn { min-height: 44px; padding: 0 18px; font-size: 0.88rem; }
+.rv { border-radius: var(--r-card); background: var(--surface); box-shadow: var(--shadow); padding: 16px; display: grid; gap: 10px; border: 1.5px solid transparent; min-width: 0; }
+.rv.ready { border-color: color-mix(in srgb, var(--primary) 50%, transparent); }
+.rv.look { border-left: 5px solid var(--gold); }
+.rv.skip { border: 1.5px dashed var(--line); box-shadow: none; }
+.rv-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.75rem; }
+.rv-kind { padding: 2px 10px; border-radius: var(--r-pill); background: var(--surface-2); font-weight: 700; }
+.rv-from { color: var(--muted); }
+.rv-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr)); gap: 8px; }
+.rv-fields label { display: grid; gap: 3px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); min-width: 0; }
+.rv-fields input { min-height: 40px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); color: var(--fg); padding: 0 10px; font: 600 0.9rem var(--font-body); min-width: 0; width: 100%; box-sizing: border-box; }
+.rv-fields input.flag { border-color: var(--gold-ink); background: var(--gold-soft); }
+.issue { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; border-radius: 14px; padding: 8px 12px; background: var(--gold-soft); color: var(--gold-ink); font-size: 0.8rem; }
+.issue span { flex: 1 1 12rem; min-width: 0; }
+.issue.dup { background: var(--terracotta-soft); color: var(--terracotta-ink); }
+.fix { min-height: 36px; border: 0; border-radius: var(--r-pill); padding: 0 12px; background: var(--surface); color: var(--fg); font: 700 0.78rem var(--font-body); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.rv-foot { display: flex; justify-content: flex-end; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--muted); }
+.okbtn { min-height: 36px; border-radius: var(--r-pill); border: 0; padding: 0 14px; font: 700 0.78rem var(--font-body); cursor: pointer; background: var(--seaglass-soft); color: var(--fg); }
+.okbtn[aria-pressed="true"] { background: transparent; color: var(--primary); }
+.unrec { font-size: 0.8rem; color: var(--muted); display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.unrec b { color: var(--fg); font-weight: 700; }
 </style>
 
 
@@ -378,7 +403,7 @@ tr:last-child td { border-bottom: 0; }
       <h2 id="contrast">What changed to meet WCAG AA</h2>
       <p class="muted">Text needs 4.5:1 against its background; input borders, rings and icons need 3:1. Your original colors are all kept. Where one failed, it stays for fills and decoration and a darker “ink” takes over for text.</p>
     </header>
-    <div class="table-wrap">
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Contrast changes">
       <table>
         <thead><tr><th>Your token</th><th>Problem (on Shell #FFFDF9)</th><th>Fix</th><th>Result</th></tr></thead>
         <tbody>
@@ -662,6 +687,70 @@ tr:last-child td { border-bottom: 0; }
       </div>
     </div>
   </section>
+
+  <!-- SMART IMPORT -->
+  <section class="block" aria-labelledby="imph">
+    <header>
+      <p class="eyebrow">11 · Smart Import review</p>
+      <h2 id="imph">Paste, glance, save</h2>
+      <p class="muted">Import is one screen now. Notes are read on the device as you type, and each entry appears as a card. Confident entries start ready. Anything unusual gets a gold edge, a plain sentence about why, and, where Thrivie can tell what you meant, a one-tap fix. Duplicates and repeats use terracotta. Nothing is saved until you tap Save.</p>
+    </header>
+    <div class="grid">
+      <div class="card" style="grid-column: 1 / -1">
+        <div class="imp-bar"><span class="n" aria-live="polite"><b id="imp-n">2</b> of 4 ready</span>
+          <button type="button" class="btn btn-ghost" id="imp-all">Include all</button>
+          <button type="button" class="btn btn-primary" id="imp-save">Save 2</button></div>
+
+        <article class="rv look" id="rv-w" aria-label="Health, Sunday">
+          <div class="rv-head"><span class="rv-kind">Health</span><span class="rv-from">“Sun”</span></div>
+          <div class="rv-fields">
+            <label>Weight (lb)<input id="rv-wt" class="flag" value="379.2" inputmode="decimal"></label>
+            <label>Sleep (h)<input value="7" inputmode="decimal"></label>
+          </div>
+          <div class="issue" id="rv-issue"><span>That's a big change from your last weight (172 lb on Sat, Nov 7).</span>
+            <button type="button" class="fix" id="rv-fix"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m15 4 5 5L9 20H4v-5Z"/></svg>Did you mean 172 lb?</button></div>
+          <div class="rv-foot"><button type="button" class="okbtn" aria-pressed="false" data-ok>Looks right</button></div>
+        </article>
+
+        <article class="rv ready" aria-label="Meal, Sunday">
+          <div class="rv-head"><span class="rv-kind">Meal</span><span class="rv-from">“Sun”</span></div>
+          <div class="rv-fields"><label>Meal<input value="Lunch"></label><label>What you had<input value="Turkey wrap"></label><label>Calories<input value="480" inputmode="numeric"></label></div>
+          <p class="rv-from" style="margin:0;font-size:0.72rem">From: “turkey wrap 480 cal for lunch”</p>
+          <div class="rv-foot"><button type="button" class="okbtn" aria-pressed="true" data-ok>✓ Will be saved</button></div>
+        </article>
+
+        <article class="rv ready" aria-label="Workout, Saturday">
+          <div class="rv-head"><span class="rv-kind">Workout</span><span class="rv-from">“Sat”</span></div>
+          <div class="rv-fields"><label>Type<input value="Cardio"></label><label>Minutes<input value="40" inputmode="numeric"></label><label>Distance (mi)<input value="2" inputmode="decimal"></label></div>
+          <div class="rv-foot"><button type="button" class="okbtn" aria-pressed="true" data-ok>✓ Will be saved</button></div>
+        </article>
+
+        <article class="rv skip" aria-label="Habit, Sunday, repeated">
+          <div class="rv-head"><span class="rv-kind">Habit</span><span class="rv-from">“Sun”</span></div>
+          <div class="issue dup"><span>This appears twice in your notes for the same day, so it's saved once.</span></div>
+          <div class="rv-foot">Won't be saved</div>
+        </article>
+      </div>
+
+      <div class="card">
+        <h3>When a line isn't read</h3>
+        <ul class="unrec">
+          <li><b>“slept 450”</b> · try “slept 7.5h”</li>
+          <li><b>“bluetooth headphones broke”</b></li>
+        </ul>
+        <p class="muted" style="font-size:0.85rem">One example phrasing per line, chosen by what the line seems to be about. No hint for lines that aren't about anything Thrivie tracks.</p>
+      </div>
+      <div class="card">
+        <h3>Colors in review</h3>
+        <ul class="unrec">
+          <li><b>Navy edge</b>: ready, will be saved</li>
+          <li><b>Gold edge and note</b>: worth a quick look, with a fix when there's a likely one</li>
+          <li><b>Terracotta note</b>: already logged, or repeated in this paste</li>
+        </ul>
+        <p class="muted" style="font-size:0.85rem">Gold never means “wrong”. It means “check me”. Values outside what can be saved (a future date, 25 hours of sleep) stay out of the save until fixed.</p>
+      </div>
+    </div>
+  </section>
 </main>
 
 <script>
@@ -908,5 +997,29 @@ tr:last-child td { border-bottom: 0; }
 
   setTheme(saved);
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', renderSwatches);
+})();
+</script>
+
+<script>
+(() => {
+  const n = document.getElementById('imp-n'), save = document.getElementById('imp-save');
+  const cards = [...document.querySelector('[aria-labelledby=imph]').querySelectorAll('.rv')].filter((c) => !c.classList.contains('skip'));
+  const count = () => {
+    const k = cards.filter((c) => c.querySelector('[data-ok]').getAttribute('aria-pressed') === 'true').length;
+    n.textContent = k; save.textContent = 'Save ' + k;
+  };
+  const setOk = (card, on) => {
+    const b = card.querySelector('[data-ok]');
+    b.setAttribute('aria-pressed', String(on)); b.textContent = on ? '✓ Will be saved' : 'Looks right';
+    card.classList.toggle('ready', on); card.classList.toggle('look', !on && card.id === 'rv-w' && !document.getElementById('rv-issue').hidden);
+    count();
+  };
+  cards.forEach((c) => c.querySelector('[data-ok]').addEventListener('click', (e) => setOk(c, e.currentTarget.getAttribute('aria-pressed') !== 'true')));
+  document.getElementById('rv-fix').addEventListener('click', () => {
+    const w = document.getElementById('rv-wt'); w.value = '172'; w.classList.remove('flag');
+    document.getElementById('rv-issue').hidden = true; setOk(document.getElementById('rv-w'), true);
+  });
+  document.getElementById('imp-all').addEventListener('click', () => cards.forEach((c) => setOk(c, true)));
+  save.addEventListener('click', () => { save.textContent = 'Saved ✓'; setTimeout(count, 1400); });
 })();
 </script>
