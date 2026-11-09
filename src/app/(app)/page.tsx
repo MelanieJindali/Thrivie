@@ -14,6 +14,8 @@ import { ProgressRing } from "@/components/ProgressRing";
 import { RepeatLastButton } from "@/components/RepeatLastButton";
 import { goalDisplay } from "@/lib/goalDisplay";
 import { dayTotals, macroLine } from "@/lib/nutrition";
+import { getPlanContext, planCard } from "@/lib/nutrition/planStore";
+import { MealPlanCard } from "@/components/MealPlanCard";
 
 function greeting(name: string, timeZone: string) {
   let h = 12;
@@ -41,6 +43,7 @@ export default async function TodayPage() {
     vis.includes("nutrition") ? db.meal.findMany({ where: { date: today }, select: { date: true, calories: true, proteinG: true, carbsG: true, fatG: true } }) : [],
   ]);
   const food = dayTotals(todayMeals);
+  const plan = vis.includes("nutrition") ? await getPlanContext(db, user.id, today) : null;
   const todaysWorkouts = recentWorkouts.filter((w) => w.date === today);
   const lastWorkout = recentWorkouts.at(-1);
   const due = habits.filter((h) => h.dueToday);
@@ -174,6 +177,8 @@ export default async function TodayPage() {
           </ul>
         </section>
       )}
+
+      {plan?.state === "ready" && <MealPlanCard plan={planCard(plan, settings.hideCalories)} compact />}
 
       {brief.insights.length > 0 && (
         <section className="card" aria-labelledby="hl-h">

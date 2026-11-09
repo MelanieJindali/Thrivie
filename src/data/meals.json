@@ -1,0 +1,1586 @@
+{
+ "source": "Calculated from USDA FoodData Central SR Legacy values for each ingredient",
+ "meals": [
+  {
+   "id": "b-oats-berries",
+   "name": "Oatmeal with blueberries and walnuts",
+   "slot": "breakfast",
+   "kcal": 408,
+   "proteinG": 16,
+   "carbsG": 51.6,
+   "fatG": 16.8,
+   "diet": "vegetarian",
+   "allergens": [
+    "dairy",
+    "gluten",
+    "nuts"
+   ],
+   "ingredients": [
+    {
+     "key": "oats",
+     "grams": 40,
+     "label": "½ cup oats"
+    },
+    {
+     "key": "milk",
+     "grams": 244,
+     "label": "1 cup milk"
+    },
+    {
+     "key": "blueberries",
+     "grams": 75,
+     "label": "½ cup blueberries"
+    },
+    {
+     "key": "walnuts",
+     "grams": 14,
+     "label": "2 tbsp walnuts"
+    }
+   ]
+  },
+  {
+   "id": "b-oats-pb-banana",
+   "name": "Peanut butter banana oats",
+   "slot": "breakfast",
+   "kcal": 432,
+   "proteinG": 17.4,
+   "carbsG": 59.6,
+   "fatG": 15.3,
+   "diet": "vegan",
+   "allergens": [
+    "gluten",
+    "nuts",
+    "soy"
+   ],
+   "ingredients": [
+    {
+     "key": "oats",
+     "grams": 40,
+     "label": "½ cup oats"
+    },
+    {
+     "key": "soymilk",
+     "grams": 243,
+     "label": "1 cup soy milk"
+    },
+    {
+     "key": "banana",
+     "grams": 60,
+     "label": "½ banana"
+    },
+    {
+     "key": "peanut_butter",
+     "grams": 16,
+     "label": "1 tbsp peanut butter"
+    }
+   ]
+  },
+  {
+   "id": "b-yogurt-parfait",
+   "name": "Greek yogurt parfait",
+   "slot": "breakfast",
+   "kcal": 312,
+   "proteinG": 25,
+   "carbsG": 35.3,
+   "fatG": 8.3,
+   "diet": "vegetarian",
+   "allergens": [
+    "dairy",
+    "gluten",
+    "nuts"
+   ],
+   "ingredients": [
+    {
+     "key": "yogurt_greek",
+     "grams": 200,
+     "label": "¾ cup Greek yogurt"
+    },
+    {
+     "key": "strawberries",
+     "grams": 80,
+     "label": "½ cup strawberries"
+    },
+    {
+     "key": "granola",
+     "grams": 30,
+     "label": "¼ cup granola"
+    },
+    {
+     "key": "honey",
+     "grams": 7,
+     "label": "1 tsp honey"
+    }
+   ]
+  },
+  {
+   "id": "b-eggs-avocado-toast",
+   "name": "Eggs and avocado toast",
+   "slot": "breakfast",
+   "kcal": 364,
+   "proteinG": 20.5,
+   "carbsG": 28.9,
+   "fatG": 18.8,
+   "diet": "vegetarian",
+   "allergens": [
+    "eggs",
+    "gluten"
+   ],
+   "ingredients": [
+    {
+     "key": "egg",
+     "grams": 100,
+     "label": "2 eggs"
+    },
+    {
+     "key": "bread_ww",
+     "grams": 56,
+     "label": "2 slices whole-wheat bread"
+    },
+    {
+     "key": "avocado",
+     "grams": 50,
+     "label": "⅓ avocado"
+    }
+   ]
+  },
+  {
+   "id": "b-veggie-omelet",
+   "name": "Spinach, mushroom and feta omelet",
+   "slot": "breakfast",
+   "kcal": 351,
+   "proteinG": 25.2,
+   "carbsG": 4.9,
+   "fatG": 25.6,
+   "diet": "vegetarian",
+   "allergens": [
+    "dairy",
+    "eggs"
+   ],
+   "ingredients": [
+    {
+     "key": "egg",
+     "grams": 150,
+     "label": "3 eggs"
+    },
+    {
+     "key": "spinach",
+     "grams": 30,
+     "label": "1 cup spinach"
+    },
+    {
+     "key": "mushroom",
+     "grams": 50,
+     "label": "½ cup mushrooms"
+    },
+    {
+     "key": "feta",
+     "grams": 28,
+     "label": "1 oz feta"
+    },
+    {
+     "key": "olive_oil",
+     "grams": 5,
+     "label": "1 tsp olive oil"
+    }
+   ]
+  },
+  {
+   "id": "b-tofu-scramble",
+   "name": "Tofu scramble with corn tortillas",
+   "slot": "breakfast",
+   "kcal": 423,
+   "proteinG": 30.6,
+   "carbsG": 34.3,
+   "fatG": 21.9,
+   "diet": "vegan",
+   "allergens": [
+    "soy"
+   ],
+   "ingredients": [
+    {
+     "key": "tofu",
+     "grams": 150,
+     "label": "⅔ cup firm tofu"
+    },
+    {
+     "key": "spinach",
+     "grams": 30,
+     "label": "1 cup spinach"
+    },
+    {
+     "key": "bell_pepper",
+     "grams": 50,
+     "label": "⅓ red pepper"
+    },
+    {
+     "key": "onion",
+     "grams": 30,
+     "label": "¼ onion"
+    },
+    {
+     "key": "olive_oil",
+     "grams": 7,
+     "label": "½ tbsp olive oil"
+    },
+    {
+     "key": "tortilla_corn",
+     "grams": 52,
+     "label": "2 corn tortillas"
+    }
+   ]
+  },
+  {
+   "id": "b-chia-pudding",
+   "name": "Chia pudding with strawberries",
+   "slot": "breakfast",
+   "kcal": 303,
+   "proteinG": 13.4,
+   "carbsG": 34,
+   "fatG": 13.7,
+   "diet": "vegan",
+   "allergens": [
+    "soy"
+   ],
+   "ingredients": [
+    {
+     "key": "chia",
+     "grams": 30,
+     "label": "2½ tbsp chia seeds"
+    },
+    {
+     "key": "soymilk",
+     "grams": 243,
+     "label": "1 cup soy milk"
+    },
+    {
+     "key": "strawberries",
+     "grams": 80,
+     "label": "½ cup strawberries"
+    }
+   ]
+  },
+  {
+   "id": "b-cottage-fruit",
+   "name": "Cottage cheese with blueberries and almonds",
+   "slot": "breakfast",
+   "kcal": 286,
+   "proteinG": 24.4,
+   "carbsG": 23.4,
+   "fatG": 11.8,
+   "diet": "vegetarian",
+   "allergens": [
+    "dairy",
+    "nuts"
+   ],
+   "ingredients": [
+    {
+     "key": "cottage",
+     "grams": 200,
+     "label": "¾ cup cottage cheese"
+    },
+    {
+     "key": "blueberries",
+     "grams": 75,
+     "label": "½ cup blueberries"
+    },
+    {
+     "key": "almonds",
+     "grams": 14,
+     "label": "12 almonds"
+    }
+   ]
+  },
+  {
+   "id": "b-breakfast-burrito",
+   "name": "Bean and egg breakfast burrito",
+   "slot": "breakfast",
+   "kcal": 457,
+   "proteinG": 26.8,
+   "carbsG": 41.8,
+   "fatG": 20.3,
+   "diet": "vegetarian",
+   "allergens": [
+    "dairy",
+    "eggs",
+    "gluten"
+   ],
+   "ingredients": [
+    {
+     "key": "egg",
+     "grams": 100,
+     "label": "2 eggs"
+    },
+    {
+     "key": "black_beans",
+     "grams": 60,
+     "label": "⅓ cup black beans"
+    },
+    {
+     "key": "tortilla_flour",
+     "grams": 49,
+     "label": "1 flour tortilla"
+    },
+    {
+     "key": "salsa",
+     "grams": 30,
+     "label": "2 tbsp salsa"
+    },
+    {
+     "key": "cheddar",
+     "grams": 20,
+     "label": "2 tbsp shredded cheddar"
+    }
+   ]
+  },
+  {
+   "id": "b-sweet-potato-hash",
+   "name": "Sweet potato and black bean hash",
+   "slot": "breakfast",
+   "kcal": 407,
+   "proteinG": 11.9,
+   "carbsG": 60.1,
+   "fatG": 15.2,
+   "diet": "vegan",
+   "allergens": [],
+   "ingredients": [
+    {
+     "key": "sweet_potato",
+     "grams": 150,
+     "label": "1 small sweet potato"
+    },
+    {
+     "key": "black_beans",
+     "grams": 80,
+     "label": "½ cup black beans"
+    },
+    {
+     "key": "bell_pepper",
+     "grams": 50,
+     "label": "⅓ red pepper"
+    },
+    {
+     "key": "onion",
+     "grams": 30,
+     "label": "¼ onion"
+    },
+    {
+     "key": "olive_oil",
+     "grams": 7,
+     "label": "½ tbsp olive oil"
+    },
+    {
+     "key": "avocado",
+     "grams": 50,
+     "label": "⅓ avocado"
+    }
+   ]
+  },
+  {
+   "id": "b-smoothie",
+   "name": "Berry banana smoothie",
+   "slot": "breakfast",
+   "kcal": 328,
+   "proteinG": 12.3,
+   "carbsG": 59.3,
+   "fatG": 6.2,
+   "diet": "vegan",
+   "allergens": [
+    "gluten",
+    "soy"
+   ],
+   "ingredients": [
+    {
+     "key": "banana",
+     "grams": 100,
+     "label": "1 small banana"
+    },
+    {
+     "key": "strawberries",
+     "grams": 100,
+     "label": "⅔ cup strawberries"
+    },
+    {
+     "key": "soymilk",
+     "grams": 243,
+     "label": "1 cup soy milk"
+    },
+    {
+     "key": "oats",
+     "grams": 20,
+     "label": "¼ cup oats"
+    }
+   ]
+  },
+  {
+   "id": "l-chicken-quinoa-bowl",
+   "name": "Chicken quinoa bowl with feta",
+   "slot": "lunch",
+   "kcal": 501,
+   "proteinG": 42.5,
+   "carbsG": 37.5,
+   "fatG": 19.7,
+   "diet": "omnivore",
+   "allergens": [
+    "dairy"
+   ],
+   "ingredients": [
+    {
+     "key": "chicken",
+     "grams": 100,
+     "label": "3½ oz chicken breast"
+    },
+    {
+     "key": "quinoa",
+     "grams": 150,
+     "label": "¾ cup cooked quinoa"
+    },
+    {
+     "key": "cucumber",
+     "grams": 60,
+     "label": "½ cup cucumber"
+    },
+    {
+     "key": "tomato",
+     "grams": 60,
+     "label": "½ tomato"
+    },
+    {
+     "key": "feta",
+     "grams": 28,
+     "label": "1 oz feta"
+    },
+    {
+     "key": "olive_oil",
+     "grams": 7,
+     "label": "½ tbsp olive oil"
+    }
+   ]
+  },
+  {
+   "id": "l-tuna-wrap",
+   "name": "Tuna avocado wrap",
+   "slot": "lunch",
+   "kcal": 311,
+   "proteinG": 25.1,
+   "carbsG": 30.8,
+   "fatG": 10.8,
+   "diet": "pescatarian",
+   "allergens": [
+    "fish",
+    "gluten"
+   ],
+   "ingredients": [
+    {
+     "key": "tuna",
+     "grams": 100,
+     "label": "1 can tuna, drained"
+    },
+    {
+     "key": "tortilla_flour",
+     "grams": 49,
+     "label": "1 flour tortilla"
+    },
+    {
+     "key": "romaine",
+     "grams": 40,
+     "label": "1 cup lettuce"
+    },
+    {
+     "key": "tomato",
+     "grams": 50,
+     "label": "½ tomato"
+    },
+    {
+     "key": "avocado",
+     "grams": 40,
+     "label": "¼ avocado"
+    }
+   ]
+  },
+  {
+   "id": "l-lentil-salad",
+   "name": "Lentil salad with crunchy vegetables",
+   "slot": "lunch",
+   "kcal": 330,
+   "proteinG": 17.6,
+   "carbsG": 43.8,
+   "fatG": 11,
+   "diet": "vegan",
+   "allergens": [],
+   "ingredients": [
+    {
+     "key": "lentils",
+     "grams": 180,
+     "label": "1 cup cooked lentils"
+    },
+    {
+     "key": "cucumber",
+     "grams": 60,
+     "label": "½ cup cucumber"
+    },
+    {
+     "key": "tomato",
+     "grams": 60,
+     "label": "½ tomato"
+    },
+    {
+     "key": "bell_pepper",
+     "grams": 50,
+     "label": "⅓ red pepper"
+    },
+    {
+     "key": "olive_oil",
+     "grams": 10,
+     "label": "2 tsp olive oil"
+    }
+   ]
+  },
+  {
+   "id": "l-hummus-pita",
+   "name": "Hummus and chickpea pita",
+   "slot": "lunch",
+   "kcal": 458,
+   "proteinG": 18.8,
+   "carbsG": 70.5,
+   "fatG": 14,
+   "diet": "vegan",
+   "allergens": [
+    "gluten"
+   ],
+   "ingredients": [
+    {
+     "key": "pita_ww",
+     "grams": 64,
+     "label": "1 whole-wheat pita"
+    },
+    {
+     "key": "hummus",
+     "grams": 60,
+     "label": "¼ cup hummus"
+    },
+    {
+     "key": "chickpeas",
+     "grams": 80,
+     "label": "½ cup chickpeas"
+    },
+    {
+     "key": "cucumber",
+     "grams": 50,
+     "label": "½ cup cucumber"
+    },
+    {
+     "key": "tomato",
+     "grams": 50,
+     "label": "½ tomato"
+    }
+   ]
+  },
+  {
+   "id": "l-turkey-sandwich",
+   "name": "Turkey and cheddar sandwich",
+   "slot": "lunch",
+   "kcal": 340,
+   "proteinG": 35.1,
+   "carbsG": 26.8,
+   "fatG": 10.5,
+   "diet": "omnivore",
+   "allergens": [
+    "dairy",
+    "gluten"
+   ],
+   "ingredients": [
+    {
+     "key": "bread_ww",
+     "grams": 56,
+     "label": "2 slices whole-wheat bread"
+    },
+    {
+     "key": "turkey",
+     "grams": 85,
+     "label": "3 oz turkey breast"
+    },
+    {
+     "key": "cheddar",
+     "grams": 20,
+     "label": "1 slice cheddar"
+    },
+    {
+     "key": "romaine",
+     "grams": 20,
+     "label": "lettuce"
+    },
+    {
+     "key": "tomato",
+     "grams": 40,
+     "label": "2 tomato slices"
+    }
+   ]
+  },
+  {
+   "id": "l-bean-rice-bowl",
+   "name": "Black bean and rice bowl",
+   "slot": "lunch",
+   "kcal": 445,
+   "proteinG": 17,
+   "carbsG": 76.1,
+   "fatG": 9.6,
+   "diet": "vegan",
+   "allergens": [],
+   "ingredients": [
+    {
+     "key": "rice_brown",
+     "grams": 150,
+     "label": "¾ cup cooked brown rice"
+    },
+    {
+     "key": "black_beans",
+     "grams": 120,
+     "label": "¾ cup black beans"
+    },
+    {
+     "key": "salsa",
+     "grams": 60,
+     "label": "¼ cup salsa"
+    },
+    {
+     "key": "avocado",
+     "grams": 50,
+     "label": "⅓ avocado"
+    },
+    {
+     "key": "romaine",
+     "grams": 30,
+     "label": "lettuce"
+    }
+   ]
+  },
+  {
+   "id": "l-salmon-salad",
+   "name": "Salmon quinoa salad",
+   "slot": "lunch",
+   "kcal": 421,
+   "proteinG": 28.4,
+   "carbsG": 28.4,
+   "fatG": 21.7,
+   "diet": "pescatarian",
+   "allergens": [
+    "fish"
+   ],
+   "ingredients": [
+    {
+     "key": "salmon",
+     "grams": 100,
+     "label": "3½ oz salmon"
+    },
+    {
+     "key": "quinoa",
+     "grams": 100,
+     "label": "½ cup cooked quinoa"
+    },
+    {
+     "key": "romaine",
+     "grams": 80,
+     "label": "2 cups lettuce"
+    },
+    {
+     "key": "cucumber",
+     "grams": 60,
+     "label": "½ cup cucumber"
+    },
+    {
+     "key": "tomato",
+     "grams": 60,
+     "label": "½ tomato"
+    },
+    {
+     "key": "olive_oil",
+     "grams": 7,
+     "label": "½ tbsp olive oil"
+    }
+   ]
+  },
+  {
+   "id": "l-tofu-rice-bowl",
+   "name": "Teriyaki-style tofu rice bowl",
+   "slot": "lunch",
+   "kcal": 436,
+   "proteinG": 33.1,
+   "carbsG": 49,
+   "fatG": 14.9,
+   "diet": "vegan",
+   "allergens": [
+    "gluten",
+    "soy"
+   ],
+   "ingredients": [
+    {
+     "key": "tofu",
+     "grams": 150,
+     "label": "⅔ cup firm tofu"
+    },
+    {
+     "key": "rice_brown",
+     "grams": 150,
+     "label": "¾ cup cooked brown rice"
+    },
+    {
+     "key": "broccoli",
+     "grams": 80,
+     "label": "1 cup broccoli"
+    },
+    {
+     "key": "soy_sauce",
+     "grams": 15,
+     "label": "1 tbsp soy sauce"
+    }
+   ]
+  },
+  {
+   "id": "l-greek-chickpea-salad",
+   "name": "Greek chickpea salad",
+   "slot": "lunch",
+   "kcal": 475,
+   "proteinG": 20.8,
+   "carbsG": 50.3,
+   "fatG": 22.9,
+   "diet": "vegetarian",
+   "allergens": [
+    "dairy"
+   ],
+   "ingredients": [
+    {
+     "key": "chickpeas",
+     "grams": 150,
+     "label": "1 cup chickpeas"
+    },
+    {
+     "key": "cucumber",
+     "grams": 80,
+     "label": "¾ cup cucumber"
+    },
+    {
+     "key": "tomato",
+     "grams": 80,
+     "label": "1 small tomato"
+    },
+    {
+     "key": "feta",
+     "grams": 40,
+     "label": "1½ oz feta"
+    },
+    {
+     "key": "romaine",
+     "grams": 50,
+     "label": "lettuce"
+    },
+    {
+     "key": "olive_oil",
+     "grams": 10,
+     "label": "2 tsp olive oil"
+    }
+   ]
+  },
+  {
+   "id": "l-caprese-pasta",
+   "name": "Caprese pasta with spinach",
+   "slot": "lunch",
+   "kcal": 422,
+   "proteinG": 22.3,
+   "carbsG": 48.5,
+   "fatG": 17.7,
+   "diet": "vegetarian",
+   "allergens": [
+    "dairy",
+    "gluten"
+   ],
+   "ingredients": [
+    {
+     "key": "pasta_ww",
+     "grams": 140,
+     "label": "1 cup cooked pasta"
+    },
+    {
+     "key": "mozzarella",
+     "grams": 50,
+     "label": "1¾ oz mozzarella"
+    },
+    {
+     "key": "tomato",
+     "grams": 100,
+     "label": "1 tomato"
+    },
+    {
+     "key": "spinach",
+     "grams": 30,
+     "label": "1 cup spinach"
+    },
+    {
+     "key": "olive_oil",
+     "grams": 7,
+     "label": "½ tbsp olive oil"
+    }
+   ]
+  },
+  {
+   "id": "l-chicken-hummus-wrap",
+   "name": "Chicken hummus wrap",
+   "slot": "lunch",
+   "kcal": 372,
+   "proteinG": 33.4,
+   "carbsG": 32,
+   "fatG": 12.3,
+   "diet": "omnivore",
+   "allergens": [
+    "gluten"
+   ],
+   "ingredients": [
+    {
+     "key": "tortilla_flour",
+     "grams": 49,
+     "label": "1 flour tortilla"
+    },
+    {
+     "key": "chicken",
+     "grams": 85,
+     "label": "3 oz chicken breast"
+    },
+    {
+     "key": "hummus",
+     "grams": 30,
+     "label": "2 tbsp hummus"
+    },
+    {
+     "key": "romaine",
+     "grams": 30,
+     "label": "lettuce"
+    },
+    {
+     "key": "bell_pepper",
+     "grams": 40,
+     "label": "¼ red pepper"
+    }
+   ]
+  },
+  {
+   "id": "d-salmon-sweet-potato",
+   "name": "Salmon, sweet potato and broccoli",
+   "slot": "dinner",
+   "kcal": 548,
+   "proteinG": 37.3,
+   "carbsG": 48.6,
+   "fatG": 23,
+   "diet": "pescatarian",
+   "allergens": [
+    "fish"
+   ],
+   "ingredients": [
+    {
+     "key": "salmon",
+     "grams": 140,
+     "label": "5 oz salmon"
+    },
+    {
+     "key": "sweet_potato",
+     "grams": 200,
+     "label": "1 medium sweet potato"
+    },
+    {
+     "key": "broccoli",
+     "grams": 100,
+     "label": "1 cup broccoli"
+    },
+    {
+     "key": "olive_oil",
+     "grams": 5,
+     "label": "1 tsp olive oil"
+    }
+   ]
+  },
+  {
+   "id": "d-chicken-stirfry",
+   "name": "Chicken vegetable stir-fry with rice",
+   "slot": "dinner",
+   "kcal": 582,
+   "proteinG": 52.5,
+   "carbsG": 59.7,
+   "fatG": 14.4,
+   "diet": "omnivore",
+   "allergens": [
+    "gluten",
+    "soy"
+   ],
+   "ingredients": [
+    {
+     "key": "chicken",
+     "grams": 140,
+     "label": "5 oz chicken breast"
+    },
+    {
+     "key": "rice_brown",
+     "grams": 180,
+     "label": "1 cup cooked brown rice"
+    },
+    {
+     "key": "broccoli",
+     "grams": 100,
+     "label": "1 cup broccoli"
+    },
+    {
+     "key": "carrot",
+     "grams": 60,
+     "label": "1 carrot"
+    },
+    {
+     "key": "soy_sauce",
+     "grams": 15,
+     "label": "1 tbsp soy sauce"
+    },
+    {
+     "key": "olive_oil",
+     "grams": 7,
+     "label": "½ tbsp olive oil"
+    }
+   ]
+  },
+  {
+   "id": "d-beef-chili",
+   "name": "Beef and bean chili",
+   "slot": "dinner",
+   "kcal": 526,
+   "proteinG": 45.9,
+   "carbsG": 42.1,
+   "fatG": 19.8,
+   "diet": "omnivore",
+   "allergens": [
+    "dairy"
+   ],
+   "ingredients": [
+    {
+     "key": "beef",
+     "grams": 100,
+     "label": "3½ oz lean ground beef"
+    },
+    {
+     "key": "black_beans",
+     "grams": 120,
+     "label": "¾ cup black beans"
+    },
+    {
+     "key": "tomato",
+     "grams": 120,
+     "label": "1 tomato"
+    },
+    {
+     "key": "onion",
+     "grams": 50,
+     "label": "½ onion"
+    },
+    {
+     "key": "bell_pepper",
+     "grams": 60,
+     "label": "½ red pepper"
+    },
+    {
+     "key": "cheddar",
+     "grams": 20,
+     "label": "2 tbsp shredded cheddar"
+    }
+   ]
+  },
+  {
+   "id": "d-lentil-stew",
+   "name": "Lentil and spinach stew with rice",
+   "slot": "dinner",
+   "kcal": 565,
+   "proteinG": 24.9,
+   "carbsG": 92.9,
+   "fatG": 11.6,
+   "diet": "vegan",
+   "allergens": [],
+   "ingredients": [
+    {
+     "key": "lentils",
+     "grams": 200,
+     "label": "1 cup cooked lentils"
+    },
+    {
+     "key": "spinach",
+     "grams": 50,
+     "label": "2 cups spinach"
+    },
+    {
+     "key": "tomato",
+     "grams": 100,
+     "label": "1 tomato"
+    },
+    {
+     "key": "onion",
+     "grams": 50,
+     "label": "½ onion"
+    },
+    {
+     "key": "olive_oil",
+     "grams": 10,
+     "label": "2 tsp olive oil"
+    },
+    {
+     "key": "rice_white",
+     "grams": 150,
+     "label": "¾ cup cooked rice"
+    }
+   ]
+  },
+  {
+   "id": "d-shrimp-tacos",
+   "name": "Shrimp tacos with avocado",
+   "slot": "dinner",
+   "kcal": 415,
+   "proteinG": 34.1,
+   "carbsG": 45.9,
+   "fatG": 11.8,
+   "diet": "pescatarian",
+   "allergens": [
+    "shellfish"
+   ],
+   "ingredients": [
+    {
+     "key": "shrimp",
+     "grams": 120,
+     "label": "4 oz shrimp"
+    },
+    {
+     "key": "tortilla_corn",
+     "grams": 78,
+     "label": "3 corn tortillas"
+    },
+    {
+     "key": "romaine",
+     "grams": 30,
+     "label": "shredded lettuce"
+    },
+    {
+     "key": "salsa",
+     "grams": 60,
+     "label": "¼ cup salsa"
+    },
+    {
+     "key": "avocado",
+     "grams": 50,
+     "label": "⅓ avocado"
+    }
+   ]
+  },
+  {
+   "id": "d-turkey-pasta",
+   "name": "Whole-wheat pasta with turkey marinara",
+   "slot": "dinner",
+   "kcal": 481,
+   "proteinG": 38.3,
+   "carbsG": 64.8,
+   "fatG": 9.6,
+   "diet": "omnivore",
+   "allergens": [
+    "dairy",
+    "gluten"
+   ],
+   "ingredients": [
+    {
+     "key": "pasta_ww",
+     "grams": 180,
+     "label": "1¼ cups cooked pasta"
+    },
+    {
+     "key": "marinara",
+     "grams": 125,
+     "label": "½ cup marinara"
+    },
+    {
+     "key": "turkey",
+     "grams": 85,
+     "label": "3 oz turkey breast"
+    },
+    {
+     "key": "parmesan",
+     "grams": 10,
+     "label": "2 tbsp parmesan"
+    }
+   ]
+  },
+  {
+   "id": "d-tofu-stirfry",
+   "name": "Tofu and vegetable stir-fry",
+   "slot": "dinner",
+   "kcal": 614,
+   "proteinG": 40.1,
+   "carbsG": 67.2,
+   "fatG": 23.9,
+   "diet": "vegan",
+   "allergens": [
+    "gluten",
+    "soy"
+   ],
+   "ingredients": [
+    {
+     "key": "tofu",
+     "grams": 180,
+     "label": "¾ cup firm tofu"
+    },
+    {
+     "key": "rice_white",
+     "grams": 180,
+     "label": "1 cup cooked rice"
+    },
+    {
+     "key": "broccoli",
+     "grams": 100,
+     "label": "1 cup broccoli"
+    },
+    {
+     "key": "bell_pepper",
+     "grams": 60,
+     "label": "½ red pepper"
+    },
+    {
+     "key": "soy_sauce",
+     "grams": 15,
+     "label": "1 tbsp soy sauce"
+    },
+    {
+     "key": "olive_oil",
+     "grams": 7,
+     "label": "½ tbsp olive oil"
+    }
+   ]
+  },
+  {
+   "id": "d-cod-potatoes",
+   "name": "Baked cod with potatoes and greens",
+   "slot": "dinner",
+   "kcal": 467,
+   "proteinG": 41.6,
+   "carbsG": 49.5,
+   "fatG": 12,
+   "diet": "pescatarian",
+   "allergens": [
+    "fish"
+   ],
+   "ingredients": [
+    {
+     "key": "cod",
+     "grams": 150,
+     "label": "5 oz cod"
+    },
+    {
+     "key": "potato",
+     "grams": 200,
+     "label": "1 medium potato"
+    },
+    {
+     "key": "broccoli",
+     "grams": 100,
+     "label": "1 cup broccoli"
+    },
+    {
+     "key": "olive_oil",
+     "grams": 10,
+     "label": "2 tsp olive oil"
+    }
+   ]
+  },
+  {
+   "id": "d-veggie-pasta",
+   "name": "Zucchini mushroom pasta",
+   "slot": "dinner",
+   "kcal": 443,
+   "proteinG": 19.3,
+   "carbsG": 65.2,
+   "fatG": 14.5,
+   "diet": "vegetarian",
+   "allergens": [
+    "dairy",
+    "gluten"
+   ],
+   "ingredients": [
+    {
+     "key": "pasta_ww",
+     "grams": 160,
+     "label": "1 cup cooked pasta"
+    },
+    {
+     "key": "zucchini",
+     "grams": 100,
+     "label": "1 small zucchini"
+    },
+    {
+     "key": "mushroom",
+     "grams": 80,
+     "label": "1 cup mushrooms"
+    },
+    {
+     "key": "marinara",
+     "grams": 125,
+     "label": "½ cup marinara"
+    },
+    {
+     "key": "parmesan",
+     "grams": 15,
+     "label": "3 tbsp parmesan"
+    },
+    {
+     "key": "olive_oil",
+     "grams": 5,
+     "label": "1 tsp olive oil"
+    }
+   ]
+  },
+  {
+   "id": "d-chickpea-quinoa",
+   "name": "Roasted vegetable chickpea quinoa",
+   "slot": "dinner",
+   "kcal": 563,
+   "proteinG": 22.6,
+   "carbsG": 82.6,
+   "fatG": 17.5,
+   "diet": "vegan",
+   "allergens": [],
+   "ingredients": [
+    {
+     "key": "chickpeas",
+     "grams": 160,
+     "label": "1 cup chickpeas"
+    },
+    {
+     "key": "quinoa",
+     "grams": 150,
+     "label": "¾ cup cooked quinoa"
+    },
+    {
+     "key": "zucchini",
+     "grams": 100,
+     "label": "1 small zucchini"
+    },
+    {
+     "key": "bell_pepper",
+     "grams": 60,
+     "label": "½ red pepper"
+    },
+    {
+     "key": "olive_oil",
+     "grams": 10,
+     "label": "2 tsp olive oil"
+    }
+   ]
+  },
+  {
+   "id": "d-tempeh-bowl",
+   "name": "Tempeh rice bowl",
+   "slot": "dinner",
+   "kcal": 476,
+   "proteinG": 32.1,
+   "carbsG": 60,
+   "fatG": 15,
+   "diet": "vegan",
+   "allergens": [
+    "gluten",
+    "soy"
+   ],
+   "ingredients": [
+    {
+     "key": "tempeh",
+     "grams": 120,
+     "label": "4 oz tempeh"
+    },
+    {
+     "key": "rice_brown",
+     "grams": 150,
+     "label": "¾ cup cooked brown rice"
+    },
+    {
+     "key": "broccoli",
+     "grams": 100,
+     "label": "1 cup broccoli"
+    },
+    {
+     "key": "carrot",
+     "grams": 50,
+     "label": "1 small carrot"
+    },
+    {
+     "key": "soy_sauce",
+     "grams": 10,
+     "label": "2 tsp soy sauce"
+    }
+   ]
+  },
+  {
+   "id": "d-chicken-potatoes",
+   "name": "Roast chicken, potatoes and spinach",
+   "slot": "dinner",
+   "kcal": 517,
+   "proteinG": 49.9,
+   "carbsG": 44.1,
+   "fatG": 15.5,
+   "diet": "omnivore",
+   "allergens": [],
+   "ingredients": [
+    {
+     "key": "chicken",
+     "grams": 140,
+     "label": "5 oz chicken breast"
+    },
+    {
+     "key": "potato",
+     "grams": 200,
+     "label": "1 medium potato"
+    },
+    {
+     "key": "spinach",
+     "grams": 50,
+     "label": "2 cups spinach"
+    },
+    {
+     "key": "olive_oil",
+     "grams": 10,
+     "label": "2 tsp olive oil"
+    }
+   ]
+  },
+  {
+   "id": "s-apple-pb",
+   "name": "Apple with peanut butter",
+   "slot": "snack",
+   "kcal": 294,
+   "proteinG": 7.6,
+   "carbsG": 31.8,
+   "fatG": 16.7,
+   "diet": "vegan",
+   "allergens": [
+    "nuts"
+   ],
+   "ingredients": [
+    {
+     "key": "apple",
+     "grams": 180,
+     "label": "1 apple"
+    },
+    {
+     "key": "peanut_butter",
+     "grams": 32,
+     "label": "2 tbsp peanut butter"
+    }
+   ]
+  },
+  {
+   "id": "s-yogurt-berries",
+   "name": "Greek yogurt with blueberries",
+   "slot": "snack",
+   "kcal": 143,
+   "proteinG": 17.9,
+   "carbsG": 17,
+   "fatG": 0.9,
+   "diet": "vegetarian",
+   "allergens": [
+    "dairy"
+   ],
+   "ingredients": [
+    {
+     "key": "yogurt_greek",
+     "grams": 170,
+     "label": "⅔ cup Greek yogurt"
+    },
+    {
+     "key": "blueberries",
+     "grams": 75,
+     "label": "½ cup blueberries"
+    }
+   ]
+  },
+  {
+   "id": "s-hummus-veg",
+   "name": "Hummus with carrots and cucumber",
+   "slot": "snack",
+   "kcal": 187,
+   "proteinG": 5.9,
+   "carbsG": 19.6,
+   "fatG": 11,
+   "diet": "vegan",
+   "allergens": [],
+   "ingredients": [
+    {
+     "key": "hummus",
+     "grams": 60,
+     "label": "¼ cup hummus"
+    },
+    {
+     "key": "carrot",
+     "grams": 80,
+     "label": "1 carrot"
+    },
+    {
+     "key": "cucumber",
+     "grams": 80,
+     "label": "¾ cup cucumber"
+    }
+   ]
+  },
+  {
+   "id": "s-almonds-orange",
+   "name": "Almonds and an orange",
+   "slot": "snack",
+   "kcal": 223,
+   "proteinG": 7.1,
+   "carbsG": 21.3,
+   "fatG": 14.1,
+   "diet": "vegan",
+   "allergens": [
+    "nuts"
+   ],
+   "ingredients": [
+    {
+     "key": "almonds",
+     "grams": 28,
+     "label": "23 almonds"
+    },
+    {
+     "key": "orange",
+     "grams": 130,
+     "label": "1 orange"
+    }
+   ]
+  },
+  {
+   "id": "s-edamame",
+   "name": "Steamed edamame",
+   "slot": "snack",
+   "kcal": 188,
+   "proteinG": 18.5,
+   "carbsG": 13.8,
+   "fatG": 8.1,
+   "diet": "vegan",
+   "allergens": [
+    "soy"
+   ],
+   "ingredients": [
+    {
+     "key": "edamame",
+     "grams": 155,
+     "label": "1 cup edamame"
+    }
+   ]
+  },
+  {
+   "id": "s-rice-cakes-avocado",
+   "name": "Rice cakes with avocado",
+   "slot": "snack",
+   "kcal": 149,
+   "proteinG": 2.5,
+   "carbsG": 18.9,
+   "fatG": 7.9,
+   "diet": "vegan",
+   "allergens": [],
+   "ingredients": [
+    {
+     "key": "rice_cakes",
+     "grams": 18,
+     "label": "2 rice cakes"
+    },
+    {
+     "key": "avocado",
+     "grams": 50,
+     "label": "⅓ avocado"
+    }
+   ]
+  },
+  {
+   "id": "s-banana",
+   "name": "Banana",
+   "slot": "snack",
+   "kcal": 105,
+   "proteinG": 1.3,
+   "carbsG": 27,
+   "fatG": 0.4,
+   "diet": "vegan",
+   "allergens": [],
+   "ingredients": [
+    {
+     "key": "banana",
+     "grams": 118,
+     "label": "1 medium banana"
+    }
+   ]
+  },
+  {
+   "id": "s-cheese-apple",
+   "name": "Cheddar and apple slices",
+   "slot": "snack",
+   "kcal": 215,
+   "proteinG": 6.9,
+   "carbsG": 25.6,
+   "fatG": 9.5,
+   "diet": "vegetarian",
+   "allergens": [
+    "dairy"
+   ],
+   "ingredients": [
+    {
+     "key": "cheddar",
+     "grams": 28,
+     "label": "1 oz cheddar"
+    },
+    {
+     "key": "apple",
+     "grams": 180,
+     "label": "1 apple"
+    }
+   ]
+  },
+  {
+   "id": "s-eggs-cucumber",
+   "name": "Hard-boiled eggs and cucumber",
+   "slot": "snack",
+   "kcal": 155,
+   "proteinG": 13.1,
+   "carbsG": 3.6,
+   "fatG": 9.6,
+   "diet": "vegetarian",
+   "allergens": [
+    "eggs"
+   ],
+   "ingredients": [
+    {
+     "key": "egg",
+     "grams": 100,
+     "label": "2 eggs"
+    },
+    {
+     "key": "cucumber",
+     "grams": 80,
+     "label": "¾ cup cucumber"
+    }
+   ]
+  },
+  {
+   "id": "s-roasted-chickpeas",
+   "name": "Roasted chickpeas",
+   "slot": "snack",
+   "kcal": 208,
+   "proteinG": 8.9,
+   "carbsG": 27.4,
+   "fatG": 7.6,
+   "diet": "vegan",
+   "allergens": [],
+   "ingredients": [
+    {
+     "key": "chickpeas",
+     "grams": 100,
+     "label": "⅔ cup chickpeas"
+    },
+    {
+     "key": "olive_oil",
+     "grams": 5,
+     "label": "1 tsp olive oil"
+    }
+   ]
+  }
+ ]
+}

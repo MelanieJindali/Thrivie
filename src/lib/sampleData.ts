@@ -237,4 +237,7 @@ export async function loadSampleData(db: ScopedDb, userId: string, timezone: str
   }
   for (const data of mealRows) await db.meal.create({ data });
 
+  // --- Body & Goals (so the sample shows a meal plan) ------------------------
+  await db.bodyProfile.create({ data: { userId, data: JSON.stringify({ heightCm: 172, weightKg: 78, age: 35, sex: "unspecified", pregnantOrBreastfeeding: false, activity: "light", goal: "maintain", diet: "none", allergies: [] }) } });
+
 }

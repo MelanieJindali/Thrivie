@@ -7,13 +7,16 @@ import { MEAL_SLOTS, type MealSlot } from "@/lib/constants";
 import { PageHeader, ProgressBar } from "@/components/ui";
 import { NutritionView, TargetsForm, type DayGroup } from "./NutritionView";
 import type { RecentMeal } from "./MealForm";
+import { MealPlanCard } from "@/components/MealPlanCard";
+import { getPlanContext, planCard } from "@/lib/nutrition/planStore";
 
 const str = (v: number | null) => (v == null ? "" : String(v));
 
 export default async function NutritionPage() {
   const settings = await getSettings();
-  const { db } = await requireUser();
+  const { db, user } = await requireUser();
   const today = todayInTz(settings.timezone);
+  const plan = await getPlanContext(db, user.id, today);
   const meals = await db.meal.findMany({ where: { date: { gte: addDays(today, -29) } }, orderBy: [{ date: "desc" }, { createdAt: "asc" }] });
   const slotOrder = (s: string) => MEAL_SLOTS.indexOf(s as MealSlot);
 
@@ -47,6 +50,8 @@ export default async function NutritionPage() {
     <div className="space-y-6">
       <PageHeader theme="nutrition" icon={<Utensils size={26} />} eyebrow="Nourish" title="Nutrition"
         subtitle={t.meals ? `${t.meals} ${t.meals === 1 ? "meal" : "meals"} logged today.` : "A simple, private food diary. Numbers are optional."} />
+
+      <MealPlanCard plan={planCard(plan, settings.hideCalories)} />
 
       <section className="card" aria-labelledby="today-food-h">
         <h2 id="today-food-h" className="h2 mb-4">Today</h2>

@@ -12,6 +12,7 @@ import { MEAL_SLOTS, WORKOUT_TYPES } from "@/lib/constants";
 import { InvalidScheduleError, parseSchedule } from "@/lib/habits/schedule";
 import { BodyProfileSchema } from "@/lib/nutrition/calculations";
 import { storeBodyProfile } from "@/lib/nutrition/profile";
+import { regeneratePlan, swapStoredMeal } from "@/lib/nutrition/planStore";
 import { displayToKg, displayToKm, displayToMl, displayToPace } from "@/lib/units";
 
 const dateStr = z.string().refine(isDateStr, "Invalid date");
@@ -237,6 +238,24 @@ export async function saveBodyProfile(input: unknown): Promise<ActionResult> {
   } catch (e) {
     return fail(e);
   }
+}
+
+/** Swap one meal in this week's plan (indices are validated; the plan is re-checked against the profile). */
+export async function swapPlanMeal(dayIndex: number, itemIndex: number): Promise<ActionResult> {
+  const { db, user } = await requireUser();
+  if (await tooFast(user.id)) return SLOW_DOWN;
+  if (![dayIndex, itemIndex].every((n) => Number.isInteger(n) && n >= 0 && n < 10)) return { ok: false, error: "Invalid meal." };
+  const ok = await swapStoredMeal(db, user.id, await getToday(), dayIndex, itemIndex);
+  done();
+  return ok ? { ok: true } : { ok: false, error: "No other meal fits your preferences for this slot yet." };
+}
+
+export async function newMealPlan(): Promise<ActionResult> {
+  const { db, user } = await requireUser();
+  if (await tooFast(user.id)) return SLOW_DOWN;
+  await regeneratePlan(db, user.id, await getToday());
+  done();
+  return { ok: true };
 }
 
 export async function clearBodyProfile(): Promise<ActionResult> {
