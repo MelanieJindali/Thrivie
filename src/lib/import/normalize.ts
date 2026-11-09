@@ -39,6 +39,8 @@ type Common = {
   confidence: number;
   lowFields: string[];
   sourceText: string | null;
+  /** Same-day values that disagreed and were not kept ("weight 168 lb vs 172 lb"). */
+  conflicts?: { field: string; kept: number; other: number }[];
 };
 
 export type ReviewItem =
@@ -149,7 +151,14 @@ export type NormalizeContext = {
 export function normalizeEntries(entries: ImportEntry[], ctx: NormalizeContext): ReviewItem[] {
   const items: ReviewItem[] = [];
   const healthByDate = new Map<string, ReviewItem & { kind: "health" }>();
-  let n = 0;
+  // Keys come from the content, so they stay the same when other parts of the note change.
+  const seen = new Map<string, number>();
+  const keyFor = (kind: string, date: string, src: string | null) => {
+    const base = `${kind}|${date}|${(src ?? "").slice(0, 80)}`;
+    const k = seen.get(base) ?? 0;
+    seen.set(base, k + 1);
+    return `${base}|${k}`;
+  };
 
   for (const e of entries) {
     const { date, resolvedBy } = pickEntryDate(e.date_text, e.date, ctx.today);
@@ -158,7 +167,7 @@ export function normalizeEntries(entries: ImportEntry[], ctx: NormalizeContext):
       .map(([f]) => f);
     if (resolvedBy === "default" && e.date_text) lowFields.push("date");
     const common: Common = {
-      key: `${e.kind}-${n++}`,
+      key: keyFor(e.kind, date, e.source_text),
       date,
       dateText: e.date_text,
       dateResolvedBy: resolvedBy,
@@ -171,7 +180,8 @@ export function normalizeEntries(entries: ImportEntry[], ctx: NormalizeContext):
       case "health": {
         const data: HealthData = {
           weightKg: weightKg(e.weight, ctx.units),
-          sleepHours: e.sleep_hours != null && e.sleep_hours >= 0 && e.sleep_hours <= 24 ? e.sleep_hours : null,
+          // Out-of-range sleep is kept so verification can offer "did you mean minutes?"
+          sleepHours: e.sleep_hours != null && e.sleep_hours >= 0 && e.sleep_hours <= 1440 ? e.sleep_hours : null,
           sleepQuality: e.sleep_quality,
           waterMl: waterMl(e.water, ctx.units),
           mood: e.mood,
@@ -185,6 +195,9 @@ export function normalizeEntries(entries: ImportEntry[], ctx: NormalizeContext):
           for (const [k, v] of Object.entries(data) as [keyof HealthData, unknown][]) {
             if (k === "custom") prev.data.custom = { ...prev.data.custom, ...data.custom };
             else if (v != null && prev.data[k] == null) (prev.data as Record<string, unknown>)[k] = v;
+            else if (typeof v === "number" && typeof prev.data[k] === "number" && Math.abs((prev.data[k] as number) - v) > 1e-6) {
+              (prev.conflicts ??= []).push({ field: k, kept: prev.data[k] as number, other: v });
+            }
           }
           prev.confidence = Math.min(prev.confidence, e.confidence);
           prev.lowFields = [...new Set([...prev.lowFields, ...lowFields])];

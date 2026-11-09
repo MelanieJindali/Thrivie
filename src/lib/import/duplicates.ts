@@ -74,3 +74,16 @@ export function flagDuplicates(items: ReviewItem[], ex: Existing, units: Units):
     }
   });
 }
+
+/** Same thing listed twice for one day in a single paste: keep the first, skip the rest. */
+export function flagRepeats<T extends ReviewItemWithDup>(items: T[], keyOf: (i: T) => string | null): T[] {
+  const seen = new Set<string>();
+  return items.map((i) => {
+    const k = keyOf(i);
+    if (!k) return i;
+    if (!seen.has(k)) { seen.add(k); return i; }
+    return { ...i, decision: "skip", dup: { message: "This appears twice in your notes for the same day, so it's saved once.", options: ["skip", "add"] } };
+  });
+}
+
+export const NO_EXISTING: Existing = { health: [], workouts: [], meals: [], checkins: [], journal: [], progress: [], goals: [] };

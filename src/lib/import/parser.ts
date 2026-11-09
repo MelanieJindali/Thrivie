@@ -83,6 +83,8 @@ const NUM = "(\\d+(?:[.,]\\d+)?)";
 const MEAL_WORD = "(breakfast|brunch|lunch|dinner|supper|snacks?|dessert)";
 const MEAL_LINE = new RegExp(`^[ \\t>*•-]*${MEAL_WORD}\\s*[:\\-–—=]\\s*(.+)$`, "i");
 const MEAL_ATE = new RegExp(`\\b(?:had|ate|eaten)\\s+([^,;.!?\\n]+?)\\s+(?:for|at)\\s+${MEAL_WORD}\\b([^,;!?\\n]*)`, "gi");
+/** "turkey wrap 480 cal for lunch": no "ate", but the calories make it clearly food. */
+const MEAL_CAL_FOR = new RegExp(`(?<=^|[,;.\\n])\\s*([^,;.!?\\n]*?\\b\\d+\\s*(?:k?cals?|calories)\\b[^,;.!?\\n]*?)\\s+(?:for|at)\\s+${MEAL_WORD}\\b([^,;!?\\n]*)`, "gi");
 const MACROS: [keyof Pick<Meal, "calories" | "protein_g" | "carbs_g" | "fat_g">, RegExp[]][] = [
   ["calories", [/(\d{2,4}(?:,\d{3})?)\s*(?:kcals?|cals?|calories)\b/i, /\b(?:kcal|cals?|calories)\s*[:=]?\s*(\d{2,4})/i]],
   ["protein_g", [/(\d{1,3}(?:\.\d)?)\s*g(?:rams?)?\s*(?:of\s+)?protein\b/i, /\bprotein\s*[:=]?\s*(\d{1,3}(?:\.\d)?)\s*g?\b/i]],
@@ -258,17 +260,19 @@ export function parseSegments(segments: Segment[], ctx: ParseContext): SegmentRe
     let lastWorkout: Workout | null = null;
 
     // Whole lines that describe a meal are read first, so "and"/commas inside them don't split the food.
-    const body = seg.body.split("\n").filter((line) => {
+    const withoutMealLines = seg.body.split("\n").filter((line) => {
       const m = line.match(MEAL_LINE);
       const meal = m && parseMeal(m[1], m[2], base, clean(line), seg.dateConfidence);
       if (meal) entries.push(meal);
       return !meal;
-    }).join("\n").replace(MEAL_ATE, (all, food: string, slot: string, rest: string) => {
+    }).join("\n");
+    const readMeal = (all: string, food: string, slot: string, rest: string) => {
       const meal = parseMeal(slot, `${food} ${rest}`, base, clean(all), seg.dateConfidence);
       if (!meal) return all;
       entries.push(meal);
       return "";
-    });
+    };
+    const body = withoutMealLines.replace(MEAL_ATE, readMeal).replace(MEAL_CAL_FOR, readMeal);
 
     for (const raw of splitClauses(body)) {
       let clause = raw;
