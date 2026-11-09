@@ -55,13 +55,13 @@ export default async function NutritionPage() {
             {calT ? (
               <div>
                 <p className="mb-1.5 flex justify-between text-sm"><span className="font-bold">Calories</span><span>{(t.calories ?? 0).toLocaleString("en-US")} / {calT.toLocaleString("en-US")} kcal</span></p>
-                <ProgressBar pct={Math.min(100, ((t.calories ?? 0) / calT) * 100)} />
+                <ProgressBar label="Calories toward today's target" pct={Math.min(100, ((t.calories ?? 0) / calT) * 100)} />
               </div>
             ) : null}
             {proT ? (
               <div>
                 <p className="mb-1.5 flex justify-between text-sm"><span className="font-bold">Protein</span><span>{t.proteinG ?? 0} / {proT} g</span></p>
-                <ProgressBar pct={Math.min(100, ((t.proteinG ?? 0) / proT) * 100)} tone="accent" />
+                <ProgressBar label="Protein toward today's target" pct={Math.min(100, ((t.proteinG ?? 0) / proT) * 100)} tone="accent" />
               </div>
             ) : null}
             <dl className="grid grid-cols-2 gap-2.5 text-center sm:grid-cols-4">

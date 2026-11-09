@@ -62,7 +62,7 @@ export function RatingPicker({
           aria-checked={value === n}
           aria-label={`${name} ${n}`}
           onClick={() => onChange(value === n ? null : n)}
-          className={`h-11 min-w-10 flex-1 rounded-2xl border text-base font-semibold transition duration-200 ${
+          className={`h-11 min-w-11 flex-1 rounded-2xl border text-base font-semibold transition duration-200 ${
             value === n
               ? "scale-[1.04] border-primary bg-primary-soft text-primary shadow-md shadow-primary/15"
               : "border-border bg-surface text-muted hover:-translate-y-0.5 hover:border-primary/30 hover:bg-surface-2"
@@ -124,11 +124,11 @@ export function FormStatus({ error, message }: { error: string | null; message: 
   return null;
 }
 
-export function ProgressBar({ pct, expected, tone = "primary" }: { pct: number; expected?: number; tone?: "primary" | "warn" | "accent" }) {
+export function ProgressBar({ pct, expected, tone = "primary", label }: { pct: number; expected?: number; tone?: "primary" | "warn" | "accent"; label: string }) {
   const color =
     tone === "warn" ? "from-gold-ink to-terracotta-ink" : tone === "accent" ? "from-gold-ink to-gold-ink" : "from-sage-ink to-primary";
   return (
-    <div className="relative h-3 w-full overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}>
+    <div className="relative h-3 w-full overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-label={label} aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}>
       <div className={`h-full rounded-full bg-linear-to-r ${color} shadow-[inset_0_-1px_0_rgb(0_0_0/0.08)] transition-all duration-700`} style={{ width: `${Math.max(3, pct)}%` }} />
       {expected != null && expected > 0 && expected < 100 && (
         <div className="absolute top-0.5 bottom-0.5 w-[3px] rounded-full bg-text/25" style={{ left: `${expected}%` }} title="Where a steady pace would be" />

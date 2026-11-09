@@ -47,7 +47,7 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
           {s.habits.length ? s.habits.map((h) => (
             <div key={h.name}>
               <div className="mb-1 flex justify-between text-sm"><span>{h.emoji} {h.name}</span><span className="text-muted">{h.done}/{h.target}</span></div>
-              <ProgressBar pct={h.pct} />
+              <ProgressBar label={`${h.name} this week`} pct={h.pct} />
             </div>
           )) : <p className="text-sm text-muted">No habits yet.</p>}
         </section>
@@ -67,7 +67,7 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
           {s.goals.map((g) => (
             <div key={g.title}>
               <div className="mb-1 flex justify-between text-sm"><span>{g.title}</span><span className="text-muted">{g.current} / {g.target} {g.unit}</span></div>
-              <ProgressBar pct={g.pct} tone={g.status === "behind" ? "warn" : "primary"} />
+              <ProgressBar label={`${g.title} progress`} pct={g.pct} tone={g.status === "behind" ? "warn" : "primary"} />
             </div>
           ))}
         </section>
