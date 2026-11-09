@@ -13,7 +13,7 @@ for f in $staged; do
 done
 
 if command -v gitleaks >/dev/null 2>&1; then
-  gitleaks protect --staged --redact -v || { echo "BLOCKED: gitleaks found a secret."; exit 1; }
+  gitleaks git --pre-commit --staged --redact --no-banner -v || { echo "BLOCKED: gitleaks found a secret."; exit 1; }
 else
   # Added lines only, skipping this file (its patterns would match themselves).
   # Obvious placeholders such as postgresql://USER:PASSWORD@HOST are allowed.

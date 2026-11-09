@@ -63,7 +63,7 @@ npm run dev                     # http://localhost:3000
 
 Demo logins: **demo@thrivie.app** and **demo2@thrivie.app**, both with the `DEMO_PASSWORD` you set in `.env` (there is no built-in default). Each has 30 days of sample data. Seeding refuses to run in production.
 
-`npm install` also turns on the repo's pre-commit hook (`.githooks/pre-commit`), which blocks commits that contain secrets or key/env/log files. For a deeper scan, install [gitleaks](https://github.com/gitleaks/gitleaks) (`brew install gitleaks`); the hook uses it automatically when present.
+`npm install` also turns on the repo's pre-commit hook (`.githooks/pre-commit`), which blocks commits that contain secrets or key/env/log files. For a deeper scan, install [gitleaks](https://github.com/gitleaks/gitleaks) (`brew install gitleaks`); the hook uses it automatically when present. GitHub also runs gitleaks over the full history on every push and pull request (`.github/workflows/secret-scan.yml`), so a secret can't slip in from a machine without the hook.
 
 | Command | |
 |---|---|
