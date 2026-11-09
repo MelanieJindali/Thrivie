@@ -21,6 +21,7 @@ export type AppSettings = {
   onDeviceAi: boolean;
   calorieTarget: number | null;
   proteinTargetG: number | null;
+  hideCalories: boolean;
 };
 
 export async function loadSettings(db: ScopedDb, userId: string): Promise<AppSettings> {
@@ -40,6 +41,7 @@ export async function loadSettings(db: ScopedDb, userId: string): Promise<AppSet
     onDeviceAi: s.onDeviceAi,
     calorieTarget: s.calorieTarget,
     proteinTargetG: s.proteinTargetG,
+    hideCalories: s.hideCalories,
   };
 }
 

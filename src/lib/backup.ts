@@ -1,6 +1,8 @@
 import "server-only";
 import { z } from "zod";
 import type { ScopedDb } from "./db";
+import { BodyProfileSchema } from "./nutrition/calculations";
+import { loadBodyProfile } from "./nutrition/profile";
 import { describeSchedule, parseSchedule, readSchedule, scheduleFromLegacy } from "./habits/schedule";
 import { kgToDisplay, kmToDisplay, mlToDisplay, paceToDisplay, distanceUnit, weightUnit, waterUnit, type Units } from "./units";
 
@@ -8,7 +10,7 @@ import { kgToDisplay, kmToDisplay, mlToDisplay, paceToDisplay, distanceUnit, wei
 export const BACKUP_VERSION = 2;
 
 export async function exportAll(db: ScopedDb, userId: string) {
-  const [settings, healthLogs, workouts, meals, habits, goals, journal, aliases] = await Promise.all([
+  const [settings, healthLogs, workouts, meals, habits, goals, journal, aliases, bodyProfile] = await Promise.all([
     db.settings.findUnique({ where: { userId } }),
     db.healthLog.findMany({ orderBy: { date: "asc" } }),
     db.workout.findMany({ include: { exercises: { orderBy: { order: "asc" } } }, orderBy: { date: "asc" } }),
@@ -17,6 +19,7 @@ export async function exportAll(db: ScopedDb, userId: string) {
     db.goal.findMany({ include: { progress: { orderBy: { date: "asc" } } } }),
     db.journalEntry.findMany({ orderBy: { date: "asc" } }),
     db.alias.findMany({ select: { kind: true, alias: true, target: true } }),
+    loadBodyProfile(db, userId),
   ]);
   return {
     app: "thrivie",
@@ -31,6 +34,7 @@ export async function exportAll(db: ScopedDb, userId: string) {
     goals: goals.map(({ progress, createdAt, ...g }) => ({ ...g, progress: progress.map(({ id, goalId, ...p }) => p) })),
     journal: journal.map(({ createdAt, updatedAt, ...j }) => ({ ...j, createdAt: createdAt.toISOString() })),
     aliases,
+    bodyProfile, // decrypted for you; meal plans are regenerated from it
   };
 }
 
@@ -143,6 +147,7 @@ export const BackupSchema = z.object({
     progress: z.array(z.object({ date: d, value: z.number(), note: z.string().nullable().optional() })).default([]),
   })).default([]),
   journal: z.array(z.object({ date: d, content: z.string(), mood: n, prompt: z.string().nullable().optional() })).default([]),
+  bodyProfile: BodyProfileSchema.nullable().optional(),
   aliases: z.array(z.object({ kind: z.enum(["exercise", "habit", "workout", "metric"]), alias: z.string().min(1).max(40), target: z.string().min(1).max(60) })).max(500).default([]),
 });
 
@@ -159,6 +164,9 @@ export async function restoreBackup(db: ScopedDb, userId: string, raw: unknown) 
     await tx.exercise.deleteMany();
     await tx.workout.deleteMany();
     await tx.meal.deleteMany();
+    await tx.mealPlan.deleteMany();
+    await tx.bodyProfile.deleteMany();
+    if (b.bodyProfile) await tx.bodyProfile.create({ data: { userId, data: JSON.stringify(b.bodyProfile) } });
     await tx.healthLog.deleteMany();
     await tx.journalEntry.deleteMany();
     if (b.settings) {

@@ -43,6 +43,8 @@ model User {
   goals         Goal[]
   journal       JournalEntry[]
   meals         Meal[]
+  bodyProfile   BodyProfile?
+  mealPlans     MealPlan[]
   attachments   Attachment[]
   pushSubs      PushSubscription[]
   apiTokens     ApiToken[]
@@ -96,6 +98,7 @@ model Settings {
   // Optional daily nutrition targets (never set by default).
   calorieTarget  Int?
   proteinTargetG Int?
+  hideCalories   Boolean  @default(false) // meal plans show portions, not numbers
   updatedAt      DateTime @updatedAt
 }
 
@@ -169,6 +172,27 @@ model Meal {
   createdAt DateTime @default(now())
 
   @@index([userId, date])
+}
+
+/// Body & Goals profile: height, weight, age, sex, pregnancy, activity, goal,
+/// diet and allergies, stored as one AES-256-GCM encrypted JSON blob.
+model BodyProfile {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data      String // encrypted JSON (src/lib/nutrition/calculations.ts BodyProfileSchema)
+  updatedAt DateTime @updatedAt
+}
+
+/// A week's meal plan (meal ids and swaps). Encrypted because it can reveal diet and allergies.
+model MealPlan {
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekStart   String // YYYY-MM-DD (Monday)
+  data        String // encrypted JSON
+  profileHash String // regenerate when the profile or targets change
+  createdAt   DateTime @default(now())
+
+  @@id([userId, weekStart])
 }
 
 // ------------------------------------------------------------------ habits --

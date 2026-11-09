@@ -10,6 +10,8 @@ import { getSettings, getToday, ALL_MODULES } from "@/lib/settings";
 import { addDays, isDateStr, isValidTimezone, todayInTz } from "@/lib/dates";
 import { MEAL_SLOTS, WORKOUT_TYPES } from "@/lib/constants";
 import { InvalidScheduleError, parseSchedule } from "@/lib/habits/schedule";
+import { BodyProfileSchema } from "@/lib/nutrition/calculations";
+import { storeBodyProfile } from "@/lib/nutrition/profile";
 import { displayToKg, displayToKm, displayToMl, displayToPace } from "@/lib/units";
 
 const dateStr = z.string().refine(isDateStr, "Invalid date");
@@ -219,6 +221,37 @@ export async function deleteMeal(id: string): Promise<ActionResult> {
   const { db, user } = await requireUser();
   if (await tooFast(user.id)) return SLOW_DOWN;
   await db.meal.delete({ where: { id } }).catch(() => null);
+  done();
+  return { ok: true };
+}
+
+/** Body & Goals profile (encrypted). Validated strictly: unknown sex/diet/allergy values are rejected. */
+export async function saveBodyProfile(input: unknown): Promise<ActionResult> {
+  const { db, user } = await requireUser();
+  if (await tooFast(user.id)) return SLOW_DOWN;
+  try {
+    await storeBodyProfile(db, user.id, BodyProfileSchema.parse(input));
+    await db.mealPlan.deleteMany(); // plans regenerate from the new profile
+    done();
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function clearBodyProfile(): Promise<ActionResult> {
+  const { db, user } = await requireUser();
+  if (await tooFast(user.id)) return SLOW_DOWN;
+  await db.bodyProfile.deleteMany();
+  await db.mealPlan.deleteMany();
+  done();
+  return { ok: true };
+}
+
+export async function setHideCalories(hide: boolean): Promise<ActionResult> {
+  const { db, user } = await requireUser();
+  if (await tooFast(user.id)) return SLOW_DOWN;
+  await db.settings.update({ where: { userId: user.id }, data: { hideCalories: hide === true } });
   done();
   return { ok: true };
 }
@@ -449,6 +482,8 @@ export async function deleteAllData(confirm: string): Promise<ActionResult> {
     await tx.exercise.deleteMany();
     await tx.workout.deleteMany();
     await tx.meal.deleteMany();
+    await tx.mealPlan.deleteMany();
+    await tx.bodyProfile.deleteMany();
     await tx.healthLog.deleteMany();
     await tx.journalEntry.deleteMany();
     await tx.alias.deleteMany();

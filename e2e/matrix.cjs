@@ -12,7 +12,7 @@ const fs = require("node:fs");
 const BASE = process.env.BASE_URL || "http://localhost:3000";
 const OUT = process.env.SHOTS_DIR || "";
 const VIEWPORTS = [[320, 568], [375, 812], [414, 896], [768, 1024], [820, 1180], [1024, 768], [1180, 820], [1440, 900], [1920, 1080]];
-const PAGES = (process.env.PAGES ? process.env.PAGES.split(",") : ["/login", "/", "/log", "/health", "/workouts", "/nutrition", "/habits", "/goals", "/journal", "/review", "/import", "/insights", "/me"]);
+const PAGES = (process.env.PAGES ? process.env.PAGES.split(",") : ["/login", "/", "/log", "/health", "/workouts", "/nutrition", "/habits", "/goals", "/journal", "/review", "/import", "/insights", "/me", "/me/body"]);
 const ONLY_THEMES = process.env.THEMES ? process.env.THEMES.split(",") : ["light", "dark"];
 
 /** Elements whose content is wider than the element itself (and isn't meant to scroll or clip). */
