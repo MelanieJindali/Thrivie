@@ -20,7 +20,7 @@ export default async function NutritionPage() {
   const meals = await db.meal.findMany({ where: { date: { gte: addDays(today, -29) } }, orderBy: [{ date: "desc" }, { createdAt: "asc" }] });
   const slotOrder = (s: string) => MEAL_SLOTS.indexOf(s as MealSlot);
 
-  const days: DayGroup[] = groupByDay(meals).slice(0, 7).map((d) => ({
+  const days: DayGroup[] = groupByDay(meals).map((d) => ({
     date: d.date,
     calories: d.totals.calories,
     proteinG: d.totals.proteinG,

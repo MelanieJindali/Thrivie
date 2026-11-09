@@ -7,6 +7,7 @@ import { newMealPlan, swapPlanMeal } from "@/app/actions";
 import { formatPortion, getMeal, type DayPlan } from "@/lib/nutrition/mealPlan";
 import { NOT_MEDICAL_ADVICE } from "@/lib/nutrition/calculations";
 import { useToast } from "./Toast";
+import { ShowMoreText } from "./ListControls";
 
 const SLOT_LABEL = { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snack" } as const;
 
@@ -49,7 +50,7 @@ export function MealPlanDay({ day, dayIndex, hideCalories, compact = false, titl
                   {formatPortion(it.portion)}
                   {!hideCalories && ` · ${it.kcal} kcal · ${it.proteinG}g protein`}
                 </p>
-                {!compact && <p className="mt-0.5 text-xs text-muted">{meal.ingredients.map((g) => g.label).join(", ")}{it.portion !== 1 ? ` (per serving)` : ""}</p>}
+                {!compact && <ShowMoreText lines={2} className="mt-0.5 text-xs text-muted">{meal.ingredients.map((g) => g.label).join(", ")}{it.portion !== 1 ? " (per serving)" : ""}</ShowMoreText>}
               </div>
               <button type="button" className="btn-ghost min-h-11 shrink-0 px-3 text-xs" disabled={pending} onClick={() => swap(i)} aria-label={`Swap ${SLOT_LABEL[it.slot].toLowerCase()}: ${meal.name}`}>
                 <RefreshCw size={14} className={busy === i ? "animate-spin" : ""} aria-hidden /> Swap

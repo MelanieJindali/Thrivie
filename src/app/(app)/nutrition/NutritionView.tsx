@@ -7,6 +7,8 @@ import { Empty, Field, FormStatus, numOrNull, useAction } from "@/components/ui"
 import { relativeLabel } from "@/lib/dates";
 import { MEAL_EMOJI, MEAL_LABELS } from "@/lib/constants";
 import { macroLine } from "@/lib/nutrition";
+import { ListControls, NoMatches, ShowMoreButton, useListView } from "@/components/ListControls";
+import { MEAL_SLOTS } from "@/lib/constants";
 import { MealForm, type MealDraft, type RecentMeal } from "./MealForm";
 
 export type MealRow = MealDraft & { id: string };
@@ -16,6 +18,24 @@ const n = (s: string) => (s === "" ? null : Number(s));
 
 export function NutritionView({ today, days, recent }: { today: string; days: DayGroup[]; recent: RecentMeal[] }) {
   const [editing, setEditing] = useState<MealDraft | null>(null);
+  // Filter and sort individual meals, then regroup what's visible by day (day totals stay whole-day).
+  const meals = days.flatMap((d) => d.meals);
+  const view = useListView(meals, {
+    searchText: (m) => `${m.name} ${m.notes}`,
+    sorts: [
+      { key: "new", label: "Newest", compare: (a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0) },
+      { key: "old", label: "Oldest", compare: (a, b) => (a.date > b.date ? 1 : a.date < b.date ? -1 : 0) },
+    ],
+    filters: MEAL_SLOTS.map((s) => ({ key: s, label: MEAL_LABELS[s], test: (m) => m.slot === s })),
+    pageSize: 20,
+  });
+  const byDate = new Map(days.map((d) => [d.date, d]));
+  const shownDays: DayGroup[] = [];
+  for (const m of view.visible) {
+    const last = shownDays.at(-1);
+    if (last?.date === m.date) last.meals.push(m);
+    else shownDays.push({ ...byDate.get(m.date)!, meals: [m] });
+  }
   return (
     <>
       <div id="log" className="scroll-mt-6">
@@ -23,9 +43,12 @@ export function NutritionView({ today, days, recent }: { today: string; days: Da
       </div>
       <section className="card" aria-labelledby="meal-history-h">
         <h2 id="meal-history-h" className="h2 mb-3">Recent meals</h2>
+        {days.length > 0 && <ListControls view={view} label="meals" searchPlaceholder="Search meals" />}
+        <NoMatches view={view} />
         {days.length ? (
+          <>
           <div className="space-y-5">
-            {days.map((d) => (
+            {shownDays.map((d) => (
               <div key={d.date}>
                 <h3 className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border pb-1.5 text-sm font-bold">
                   {relativeLabel(d.date, today)}
@@ -52,6 +75,8 @@ export function NutritionView({ today, days, recent }: { today: string; days: Da
               </div>
             ))}
           </div>
+          <ShowMoreButton view={view} noun="more meals" />
+          </>
         ) : (
           <Empty>No meals yet. Log your first one above, or paste notes like “lunch: chicken salad 520 cal”.</Empty>
         )}

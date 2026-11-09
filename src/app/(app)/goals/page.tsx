@@ -4,6 +4,7 @@ import { todayInTz } from "@/lib/dates";
 import { getGoalViews } from "@/lib/queries";
 import { GoalSummary } from "@/components/GoalCard";
 import { Empty } from "@/components/ui";
+import { SortableCards } from "@/components/SortableCards";
 import { GoalForm, GoalActions } from "./GoalForm";
 import { goalDisplay } from "@/lib/goalDisplay";
 import { PageHeader } from "@/components/ui";
@@ -23,10 +24,10 @@ export default async function GoalsPage() {
       <PageHeader theme="goals" icon={<Target size={26} />} eyebrow="Ambitions" title="Goals" subtitle="Link a goal to your logs and it updates itself. The thin marker shows a steady pace." />
       <section className="scroll-mt-6 space-y-3" id="progress">
         {active.length ? (
-          active.map((g) => {
+          <SortableCards preset="goals" label="goals" items={active.map((g) => {
             const d = goalDisplay(g, settings.units);
-            return (
-              <div key={g.id} className="card">
+            return { key: g.id, title: g.title, meta: { status: g.status, pct: g.pct, deadline: g.deadline }, node: (
+              <div className="card">
                 <GoalSummary goal={g} units={settings.units} />
                 <GoalActions
                   goal={{
@@ -39,8 +40,8 @@ export default async function GoalsPage() {
                   units={settings.units}
                 />
               </div>
-            );
-          })
+            ) };
+          })} />
         ) : (
           <Empty>No goals yet. Try “Run 100 km by March”.</Empty>
         )}
