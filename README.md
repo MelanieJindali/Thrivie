@@ -90,7 +90,7 @@ Vercel runs the app; a free **Neon** Postgres database, added from inside Vercel
 2. **Keys:** open `https://<your-app>/setup` (it works before setup is finished). It generates `ENCRYPTION_KEY`, `CRON_SECRET` and `SIGNUP_CODE` in your browser. Add them under **Settings → Environment Variables**.
 3. **Deploy the new version:** merge this branch into `main` on GitHub (or set **Settings → Git → Production Branch** to this branch). Vercel rebuilds, and the build applies the database migrations, including all security policies, automatically.
 4. **Reminders (optional):** at [cron-job.org](https://cron-job.org), call `https://<your-app>/api/cron/reminders?secret=<CRON_SECRET>` **every hour**.
-5. **Email sign-in links (optional):** add `RESEND_API_KEY`, `EMAIL_FROM` and `APP_URL`.
+5. **Email (optional, recommended):** add `RESEND_API_KEY`, `EMAIL_FROM` and `APP_URL` (Resend's free tier is enough). This turns on "Forgot password?" reset emails, password-change notices and email sign-in links. Without email, people can still reset a forgotten password with the recovery key they create in **Me → Account**.
 6. Open the site in Safari, create your account with the signup code, then tap **Share → Add to Home Screen**.
 
 > **Keep a safe copy of `ENCRYPTION_KEY`.** Without it, encrypted entries can't be read. To rotate it, set the old key as `ENCRYPTION_KEY_PREVIOUS` and the new one as `ENCRYPTION_KEY`.

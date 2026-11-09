@@ -2,7 +2,11 @@
 
 import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
-import { consumeMagicLink, requestMagicLink, signIn, signUp, verifyMfa, type AuthState } from "@/app/authActions";
+import { consumeMagicLink, requestMagicLink, requestPasswordReset, resetPasswordWithLink, resetPasswordWithRecoveryKey, signIn, signUp, verifyMfa, type AuthState } from "@/app/authActions";
+import { PasswordInput } from "@/components/PasswordInput";
+import { RecoveryKeyReveal } from "@/components/RecoveryKeyReveal";
+
+const NEW_PW_HINT = "At least 10 characters. A short phrase like “sea glass at sunrise” is strong and easy to remember.";
 
 function Err({ state }: { state: AuthState }) {
   if (!state?.error) return null;
@@ -14,16 +18,18 @@ export function LoginForm({ next, notice, magic }: { next?: string; notice?: str
   return (
     <form action={action} className="card space-y-4">
       <h2 className="h2 text-xl">Welcome back</h2>
-      {notice && <p className="rounded-2xl bg-primary-soft px-4 py-2.5 text-sm text-primary">{notice}</p>}
+      {notice && <p className="rounded-2xl bg-primary-soft px-4 py-2.5 text-sm text-primary" role="status">{notice}</p>}
       <input type="hidden" name="next" value={next ?? "/"} />
       <label className="block">
         <span className="label">Email</span>
         <input className="input" name="email" type="email" autoComplete="email" inputMode="email" required defaultValue={state?.email} key={state?.email} />
       </label>
-      <label className="block">
-        <span className="label">Password</span>
-        <input className="input" name="password" type="password" autoComplete="current-password" required />
-      </label>
+      <div className="space-y-1">
+        <PasswordInput name="password" label="Password" autoComplete="current-password" />
+        <p className="text-right">
+          <Link href="/login/forgot" className="inline-flex min-h-11 items-center text-sm font-semibold text-primary">Forgot password?</Link>
+        </p>
+      </div>
       <Err state={state} />
       <button className="btn-primary w-full" disabled={pending}>{pending ? "Signing in…" : "Sign in"}</button>
       {magic && <MagicLinkRequest />}
@@ -112,11 +118,7 @@ export function SignupForm({ needsCode, closed }: { needsCode: boolean; closed: 
         <span className="label">Email</span>
         <input className="input" name="email" type="email" autoComplete="email" inputMode="email" required defaultValue={state?.email} key={state?.email} />
       </label>
-      <label className="block">
-        <span className="label">Password</span>
-        <input className="input" name="password" type="password" autoComplete="new-password" minLength={10} required aria-describedby="pw-hint" />
-        <span id="pw-hint" className="mt-1 block text-xs text-muted">At least 10 characters. A short phrase like “sea glass at sunrise” is strong and easy to remember.</span>
-      </label>
+      <PasswordInput name="password" label="Password" autoComplete="new-password" minLength={10} hint={NEW_PW_HINT} />
       {needsCode && (
         <label className="block">
           <span className="label">Invite code</span>
@@ -129,6 +131,119 @@ export function SignupForm({ needsCode, closed }: { needsCode: boolean; closed: 
       <p className="text-center text-sm text-muted">
         Already have an account? <Link href="/login" className="font-semibold text-primary">Sign in</Link>
       </p>
+    </form>
+  );
+}
+
+// ------------------------------------------------------------ forgot password --
+
+/** /login/forgot: reset by email (when this server can send email) or with a recovery key. */
+export function ForgotPassword({ emailReset }: { emailReset: boolean }) {
+  const [mode, setMode] = useState<"email" | "key">(emailReset ? "email" : "key");
+  return (
+    <div className="card space-y-4">
+      <div>
+        <h2 className="h2 text-xl">Reset your password</h2>
+        <p className="mt-1 text-sm text-muted">Your entries stay safe. Only the password changes, and every device is signed out.</p>
+      </div>
+      {emailReset && (
+        <div className="grid grid-cols-2 gap-1 rounded-2xl bg-surface-2/70 p-1" role="tablist" aria-label="How to reset">
+          {([["email", "Email me a link"], ["key", "Use recovery key"]] as const).map(([k, l]) => (
+            <button key={k} type="button" role="tab" aria-selected={mode === k} aria-controls={`reset-${k}`} id={`tab-${k}`} onClick={() => setMode(k)}
+              className={`min-h-11 rounded-xl px-2 text-sm font-semibold ${mode === k ? "bg-surface text-text shadow-sm" : "text-muted"}`}>
+              {l}
+            </button>
+          ))}
+        </div>
+      )}
+      <div id={`reset-${mode}`} role={emailReset ? "tabpanel" : undefined} aria-labelledby={emailReset ? `tab-${mode}` : undefined}>
+        {mode === "email" ? <EmailResetRequest /> : <RecoveryKeyReset emailReset={emailReset} />}
+      </div>
+      <p className="text-center text-sm text-muted">
+        Remembered it? <Link href="/login" className="font-semibold text-primary">Back to sign in</Link>
+      </p>
+    </div>
+  );
+}
+
+function EmailResetRequest() {
+  const [state, action, pending] = useActionState(requestPasswordReset, undefined);
+  if (state?.ok) return <p className="rounded-2xl bg-sage-soft px-4 py-3 text-sm text-sage-ink" role="status">{state.ok}</p>;
+  return (
+    <form action={action} className="space-y-4">
+      <label className="block">
+        <span className="label">Email</span>
+        <input className="input" name="email" type="email" autoComplete="email" inputMode="email" required defaultValue={state?.email} key={state?.email} />
+      </label>
+      <Err state={state} />
+      <button className="btn-primary w-full" disabled={pending}>{pending ? "Sending…" : "Send reset link"}</button>
+    </form>
+  );
+}
+
+function RecoveryKeyReset({ emailReset }: { emailReset: boolean }) {
+  const [state, action, pending] = useActionState(resetPasswordWithRecoveryKey, undefined);
+  // Controlled, so a typo in the new password doesn't wipe the email and the 20-character key.
+  const [em, setEm] = useState("");
+  const [key, setKey] = useState("");
+  if (state?.recoveryKey)
+    return (
+      <div className="space-y-4" role="status">
+        <p className="rounded-2xl bg-sage-soft px-4 py-3 text-sm text-sage-ink">{state.ok}</p>
+        <RecoveryKeyReveal value={state.recoveryKey} intro="Your old recovery key is used up. Here is your new one:" />
+        <Link href="/login" className="btn-primary w-full">Sign in with your new password</Link>
+      </div>
+    );
+  return (
+    <form action={action} className="space-y-4">
+      <p className="text-sm text-muted">
+        Use the recovery key you saved from Me → Account.{!emailReset && " This server can't send email, so the key is the way to reset."}
+      </p>
+      <label className="block">
+        <span className="label">Email</span>
+        <input className="input" name="email" type="email" autoComplete="email" inputMode="email" required value={em} onChange={(e) => setEm(e.target.value)} />
+      </label>
+      <label className="block">
+        <span className="label">Recovery key</span>
+        <input className="input font-mono tracking-wider uppercase" name="key" autoComplete="off" autoCapitalize="characters" spellCheck={false} required placeholder="XXXXX-XXXXX-XXXXX-XXXXX" maxLength={60} value={key} onChange={(e) => setKey(e.target.value)} />
+      </label>
+      <PasswordInput name="password" label="New password" autoComplete="new-password" minLength={10} hint={NEW_PW_HINT} />
+      <PasswordInput name="confirm" label="Confirm new password" autoComplete="new-password" minLength={10} />
+      <Err state={state} />
+      <button className="btn-primary w-full" disabled={pending}>{pending ? "Resetting…" : "Reset password"}</button>
+      <p className="text-xs text-muted">No recovery key and no reset email? Ask whoever runs this Thrivie server to help you get back in.</p>
+    </form>
+  );
+}
+
+/** /login/reset#t=…: choose a new password from an emailed link. */
+export function ResetFromLink() {
+  const [token, setToken] = useState("");
+  const [checked, setChecked] = useState(false);
+  const [state, action, pending] = useActionState(resetPasswordWithLink, undefined);
+  useEffect(() => {
+    const m = window.location.hash.match(/t=([A-Za-z0-9_-]+)/);
+    if (m) setToken(m[1]);
+    setChecked(true);
+    history.replaceState(null, "", window.location.pathname); // remove the token from the address bar
+  }, []);
+  if (checked && !token)
+    return (
+      <div className="card space-y-4 text-center">
+        <h2 className="h2 text-xl">This link is incomplete</h2>
+        <p className="text-sm text-muted">Open the link from the email again, or request a new one.</p>
+        <Link href="/login/forgot" className="btn-primary w-full">Request a new link</Link>
+      </div>
+    );
+  return (
+    <form action={action} className="card space-y-4">
+      <h2 className="h2 text-xl">Choose a new password</h2>
+      <input type="hidden" name="token" value={token} />
+      <PasswordInput name="password" label="New password" autoComplete="new-password" minLength={10} hint={NEW_PW_HINT} autoFocus />
+      <PasswordInput name="confirm" label="Confirm new password" autoComplete="new-password" minLength={10} />
+      <Err state={state} />
+      {state?.error?.includes("expired") && <Link href="/login/forgot" className="btn-soft w-full">Request a new link</Link>}
+      <button className="btn-primary w-full" disabled={pending || !token}>{pending ? "Saving…" : "Save new password"}</button>
     </form>
   );
 }
