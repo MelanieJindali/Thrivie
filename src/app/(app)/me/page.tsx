@@ -16,7 +16,6 @@ export default async function SettingsPage() {
   const settings = await getSettings();
   const { db, user } = await requireUser();
   const habitCount = await db.habit.count({ where: { archived: false } });
-  const timezones = Intl.supportedValuesOf("timeZone");
 
   return (
     <div className="space-y-6">
@@ -24,7 +23,7 @@ export default async function SettingsPage() {
 
       <section className="card">
         <h2 className="h2 mb-4">Profile & units</h2>
-        <SettingsForm initial={settings} timezones={timezones} />
+        <SettingsForm initial={settings} />
       </section>
 
       <ReminderCard on={settings.remindersOn} hour={settings.reminderHour} publicKey={(await getVapidKeys()).publicKey} />

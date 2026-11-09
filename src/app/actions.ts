@@ -7,7 +7,7 @@ import { logError } from "@/lib/log";
 import crypto from "node:crypto";
 import { loadSampleData } from "@/lib/sampleData";
 import { getSettings, getToday, ALL_MODULES } from "@/lib/settings";
-import { addDays, isDateStr, isValidTimezone } from "@/lib/dates";
+import { addDays, isDateStr, isValidTimezone, todayInTz } from "@/lib/dates";
 import { MEAL_SLOTS, WORKOUT_TYPES } from "@/lib/constants";
 import { InvalidScheduleError, parseSchedule } from "@/lib/habits/schedule";
 import { displayToKg, displayToKm, displayToMl, displayToPace } from "@/lib/units";
@@ -514,6 +514,7 @@ export async function dismissTip(id: string): Promise<ActionResult> {
 const onboardingInput = z.object({
   name: z.string().trim().max(60),
   units: z.enum(["metric", "imperial"]),
+  timezone: z.string().refine(isValidTimezone, "Unknown timezone"),
   habits: z.array(z.object({ name: z.string().trim().min(1).max(60), emoji: z.string().max(8).optional() })).max(3),
   goal: z
     .object({ title: z.string().trim().min(1).max(100), target: z.number().positive(), unit: z.string().max(20), days: z.number().int().min(7).max(365), linkType: z.enum(["manual", "workout", "habit"]), linkMeasure: z.enum(["count", "minutes", "distance"]).optional() })
@@ -525,8 +526,8 @@ export async function completeOnboarding(input: z.input<typeof onboardingInput>)
   try {
     const v = onboardingInput.parse(input);
     const { db, user } = await requireUser();
-    const today = await getToday();
-    await db.settings.update({ where: { userId: user.id }, data: { name: v.name, units: v.units, onboarded: true } });
+    await db.settings.update({ where: { userId: user.id }, data: { name: v.name, units: v.units, timezone: v.timezone, onboarded: true } });
+    const today = todayInTz(v.timezone);
     const created: string[] = [];
     for (const [i, h] of v.habits.entries()) {
       created.push((await db.habit.create({ data: { userId: user.id, name: h.name, emoji: h.emoji ?? null, order: i } })).id);
@@ -549,9 +550,10 @@ export async function completeOnboarding(input: z.input<typeof onboardingInput>)
   }
 }
 
-export async function skipOnboarding(): Promise<ActionResult> {
+export async function skipOnboarding(timezone?: string): Promise<ActionResult> {
   const { db, user } = await requireUser();
-  await db.settings.update({ where: { userId: user.id }, data: { onboarded: true } });
+  const tz = timezone && isValidTimezone(timezone) ? { timezone } : {};
+  await db.settings.update({ where: { userId: user.id }, data: { onboarded: true, ...tz } });
   return { ok: true };
 }
 
