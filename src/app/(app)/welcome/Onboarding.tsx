@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { TimezonePicker } from "@/components/TimezonePicker";
+import { detectTimeZone } from "@/lib/timezones";
 import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { completeOnboarding, loadSampleDataAction, skipOnboarding } from "@/app/actions";
@@ -13,10 +15,13 @@ const STARTERS = [
 
 type GoalChoice = { key: string; label: string; goal: { title: string; target: number; unit: string; days: number; linkType: "manual" | "workout" | "habit"; linkMeasure?: "count" | "minutes" | "distance" } };
 
-export function Onboarding({ name: initialName, units: initialUnits }: { name: string; units: "metric" | "imperial" }) {
+export function Onboarding({ name: initialName, units: initialUnits, timezone: initialTimezone }: { name: string; units: "metric" | "imperial"; timezone: string }) {
   const [step, setStep] = useState(0);
   const [name, setName] = useState(initialName);
   const [units, setUnits] = useState(initialUnits);
+  const [timezone, setTimezone] = useState(initialTimezone);
+  // Preselect the device's timezone (the user can change it before continuing).
+  useEffect(() => setTimezone(detectTimeZone()), []);
   const [habits, setHabits] = useState<{ name: string; emoji?: string }[]>([]);
   const [custom, setCustom] = useState("");
   const [goal, setGoal] = useState<string | null>(null);
@@ -39,7 +44,7 @@ export function Onboarding({ name: initialName, units: initialUnits }: { name: s
     setError(null);
     start(async () => {
       const g = withGoal ? GOALS.find((x) => x.key === goal)?.goal ?? null : null;
-      const r = await completeOnboarding({ name, units, habits, goal: g });
+      const r = await completeOnboarding({ name, units, timezone, habits, goal: g });
       if (!r.ok) return setError(r.error);
       router.push("/");
     });
@@ -71,9 +76,10 @@ export function Onboarding({ name: initialName, units: initialUnits }: { name: s
               <button type="button" className={`chip ${units === "metric" ? "chip-on" : ""}`} aria-pressed={units === "metric"} onClick={() => setUnits("metric")}>Metric (kg, km, ml)</button>
             </div>
           </div>
+          <TimezonePicker value={timezone} onChange={setTimezone} hint="Decides when your day starts, for streaks and reminders." />
           <div className="flex flex-wrap items-center justify-between gap-2">
             <button type="button" className="btn-ghost" disabled={pending}
-              onClick={() => start(async () => { const r = await loadSampleDataAction(); if (!r.ok) return setError(r.error); await skipOnboarding(); router.push("/"); })}>
+              onClick={() => start(async () => { await skipOnboarding(timezone); const r = await loadSampleDataAction(); if (!r.ok) return setError(r.error); router.push("/"); })}>
               Explore with sample data
             </button>
             <button type="button" className="btn-primary" onClick={() => setStep(1)}>Continue</button>

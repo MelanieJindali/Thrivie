@@ -93,7 +93,7 @@ export function WorkoutForm({
     <form onSubmit={submit} className="card space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="h2">{w.id ? "Edit workout" : "Log a workout"}</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           {!w.id && lastSummary && (
             <button
               type="button"

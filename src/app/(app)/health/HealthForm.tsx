@@ -122,7 +122,7 @@ export function HealthForm({
         </Field>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-4">
         <Field label="Mood">
           <RatingPicker name="Mood" value={mood} onChange={setMood} labels={MOOD_EMOJI} />
         </Field>

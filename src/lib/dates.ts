@@ -66,6 +66,18 @@ export function startOfWeek(d: DateStr): DateStr {
   return addDays(d, -((wd + 6) % 7));
 }
 
+/** First day of the month containing d */
+export function startOfMonth(d: DateStr): DateStr {
+  return `${d.slice(0, 7)}-01`;
+}
+
+/** First day of the month `n` months after the month containing d */
+export function addMonths(d: DateStr, n: number): DateStr {
+  const x = toUtc(startOfMonth(d));
+  x.setUTCMonth(x.getUTCMonth() + n);
+  return fromUtc(x);
+}
+
 /** Inclusive list of the `n` days ending at `end` (oldest first). */
 export function lastNDays(end: DateStr, n: number): DateStr[] {
   return Array.from({ length: n }, (_, i) => addDays(end, i - (n - 1)));

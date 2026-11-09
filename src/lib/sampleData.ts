@@ -21,13 +21,14 @@ export async function loadSampleData(db: ScopedDb, userId: string, timezone: str
   // --- Habits -------------------------------------------------------------
   const habits = await Promise.all(
     [
-      { name: "Meditate", emoji: "🧘", frequency: "daily", timesPerWeek: 7, order: 0 },
-      { name: "No sugar", emoji: "🍎", frequency: "daily", timesPerWeek: 7, order: 1 },
-      { name: "Read 20 min", emoji: "📚", frequency: "weekly", timesPerWeek: 5, order: 2 },
-      { name: "Stretch", emoji: "🤸", frequency: "weekly", timesPerWeek: 3, order: 3 },
+      { name: "Meditate", emoji: "🧘", schedule: { type: "daily" }, order: 0 },
+      { name: "No sugar", emoji: "🍎", schedule: { type: "daily" }, order: 1 },
+      { name: "Read 20 min", emoji: "📚", schedule: { type: "times_per_period", count: 5, period: "week" }, order: 2 },
+      { name: "Stretch", emoji: "🤸", schedule: { type: "specific_days", days: [1, 3, 5] }, order: 3 },
+      { name: "Glasses of water", emoji: "💧", schedule: { type: "times_per_period", count: 8, period: "day" }, order: 4 },
     ].map((h) => db.habit.create({ data: { userId, ...h, createdAt: new Date(Date.now() - 40 * 86400000) } })),
   );
-  const [meditate, noSugar, read, stretch] = habits;
+  const [meditate, noSugar, read, stretch, water] = habits;
 
   // --- Workouts -----------------------------------------------------------
   // Mon: strength, Tue: run, Thu: strength, Sat: long run, Sun sometimes yoga.
@@ -131,10 +132,11 @@ export async function loadSampleData(db: ScopedDb, userId: string, timezone: str
       if (daysAgo <= 12 || chance(0.6)) await db.habitCheckin.create({ data: { habitId: meditate.id, date } });
       if (chance(0.75)) await db.habitCheckin.create({ data: { habitId: noSugar.id, date } });
       if (chance(0.7)) await db.habitCheckin.create({ data: { habitId: read.id, date } });
-      if (wd === 0 || wd === 3 || (chance(0.2) && wd !== 1))
-        await db.habitCheckin.create({ data: { habitId: stretch.id, date } });
+      if ((wd === 1 || wd === 3 || wd === 5) && chance(0.85)) await db.habitCheckin.create({ data: { habitId: stretch.id, date } });
+      await db.habitCheckin.create({ data: { habitId: water.id, date, count: 5 + Math.floor(rand() * 4) } });
     } else {
       await db.habitCheckin.create({ data: { habitId: meditate.id, date } });
+      await db.habitCheckin.create({ data: { habitId: water.id, date, count: 3 } });
     }
   }
 
@@ -234,5 +236,8 @@ export async function loadSampleData(db: ScopedDb, userId: string, timezone: str
     }
   }
   for (const data of mealRows) await db.meal.create({ data });
+
+  // --- Body & Goals (so the sample shows a meal plan) ------------------------
+  await db.bodyProfile.create({ data: { userId, data: JSON.stringify({ heightCm: 172, weightKg: 78, age: 35, sex: "unspecified", pregnantOrBreastfeeding: false, activity: "light", goal: "maintain", diet: "none", allergies: [] }) } });
 
 }

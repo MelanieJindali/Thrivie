@@ -164,6 +164,23 @@ describe("encryption at rest", () => {
     expect(() => decryptText(r.rows[0].content, bob)).toThrow(); // copied into another user's row, it won't decrypt
   });
 
+  it("stores the Body & Goals profile and meal plans encrypted and private", async () => {
+    const profile = JSON.stringify({ heightCm: 170, weightKg: 70, age: 40, sex: "female", diet: "vegan", allergies: ["nuts"] });
+    await scopedDb(alice).bodyProfile.create({ data: { userId: alice, data: profile } });
+    await scopedDb(alice).mealPlan.create({ data: { userId: alice, weekStart: "2026-11-02", data: '{"days":[]}', profileHash: "h" } });
+    const r = await raw.query(`SELECT data FROM "BodyProfile" WHERE "userId" = $1`, [alice]);
+    expect(r.rows[0].data.startsWith("enc:")).toBe(true);
+    expect(r.rows[0].data).not.toContain("vegan");
+    expect((await scopedDb(alice).bodyProfile.findUnique({ where: { userId: alice } }))?.data).toBe(profile);
+    expect((await raw.query(`SELECT data FROM "MealPlan" WHERE "userId" = $1`, [alice])).rows[0].data.startsWith("enc:")).toBe(true);
+    // another user, the database alone, and the system role all see nothing
+    expect(await scopedDb(bob).bodyProfile.findUnique({ where: { userId: alice } })).toBeNull();
+    for (const tbl of ["BodyProfile", "MealPlan"]) {
+      expect((await asUser(bob, `SELECT 1 FROM "${tbl}"`)).rowCount, tbl).toBe(0);
+      expect((await asUser(null, `SELECT 1 FROM "${tbl}"`, [], true)).rowCount, tbl).toBe(0);
+    }
+  });
+
   it("stores meal names encrypted", async () => {
     const r = await raw.query(`SELECT name, calories FROM "Meal" WHERE "userId" = $1`, [alice]);
     expect(r.rows[0].name.startsWith("enc:")).toBe(true);

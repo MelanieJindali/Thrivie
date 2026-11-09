@@ -1,0 +1,791 @@
+{
+ "source": "USDA FoodData Central, SR Legacy (April 2018), public domain",
+ "ingredients": {
+  "oats": {
+   "fdcId": 173904,
+   "usdaDescription": "Cereals, oats, regular and quick, not fortified, dry",
+   "per100g": {
+    "fatG": 6.52,
+    "carbsG": 67.7,
+    "kcal": 379,
+    "proteinG": 13.15
+   },
+   "allergens": [
+    "gluten"
+   ],
+   "animal": null
+  },
+  "milk": {
+   "fdcId": 171267,
+   "usdaDescription": "Milk, reduced fat, fluid, 2% milkfat, with added vitamin A and vitamin D",
+   "per100g": {
+    "proteinG": 3.3,
+    "carbsG": 4.8,
+    "kcal": 50,
+    "fatG": 1.98
+   },
+   "allergens": [
+    "dairy"
+   ],
+   "animal": "dairy"
+  },
+  "soymilk": {
+   "fdcId": 172446,
+   "usdaDescription": "Soymilk, original and vanilla, unfortified",
+   "per100g": {
+    "fatG": 1.75,
+    "carbsG": 6.28,
+    "kcal": 54,
+    "proteinG": 3.27
+   },
+   "allergens": [
+    "soy"
+   ],
+   "animal": null
+  },
+  "yogurt_greek": {
+   "fdcId": 170894,
+   "usdaDescription": "Yogurt, Greek, plain, nonfat (Includes foods for USDA's Food Distribution Program)",
+   "per100g": {
+    "proteinG": 10.19,
+    "fatG": 0.39,
+    "carbsG": 3.6,
+    "kcal": 59
+   },
+   "allergens": [
+    "dairy"
+   ],
+   "animal": "dairy"
+  },
+  "blueberries": {
+   "fdcId": 171711,
+   "usdaDescription": "Blueberries, raw",
+   "per100g": {
+    "carbsG": 14.49,
+    "kcal": 57,
+    "fatG": 0.33,
+    "proteinG": 0.74
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "strawberries": {
+   "fdcId": 167762,
+   "usdaDescription": "Strawberries, raw",
+   "per100g": {
+    "fatG": 0.3,
+    "proteinG": 0.67,
+    "carbsG": 7.68,
+    "kcal": 32
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "banana": {
+   "fdcId": 173944,
+   "usdaDescription": "Bananas, raw",
+   "per100g": {
+    "carbsG": 22.84,
+    "kcal": 89,
+    "proteinG": 1.09,
+    "fatG": 0.33
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "apple": {
+   "fdcId": 168204,
+   "usdaDescription": "Apples, raw, gala, with skin (Includes foods for USDA's Food Distribution Program)",
+   "per100g": {
+    "fatG": 0.12,
+    "carbsG": 13.68,
+    "kcal": 57,
+    "proteinG": 0.25
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "orange": {
+   "fdcId": 169097,
+   "usdaDescription": "Oranges, raw, all commercial varieties",
+   "per100g": {
+    "fatG": 0.12,
+    "carbsG": 11.75,
+    "kcal": 47,
+    "proteinG": 0.94
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "egg": {
+   "fdcId": 171287,
+   "usdaDescription": "Egg, whole, raw, fresh",
+   "per100g": {
+    "kcal": 143,
+    "proteinG": 12.56,
+    "fatG": 9.51,
+    "carbsG": 0.72
+   },
+   "allergens": [
+    "eggs"
+   ],
+   "animal": "egg"
+  },
+  "bread_ww": {
+   "fdcId": 172688,
+   "usdaDescription": "Bread, whole-wheat, commercially prepared",
+   "per100g": {
+    "fatG": 3.5,
+    "carbsG": 42.71,
+    "kcal": 252,
+    "proteinG": 12.45
+   },
+   "allergens": [
+    "gluten"
+   ],
+   "animal": null
+  },
+  "pita_ww": {
+   "fdcId": 174916,
+   "usdaDescription": "Bread, pita, whole-wheat",
+   "per100g": {
+    "fatG": 1.71,
+    "proteinG": 9.8,
+    "carbsG": 55.89,
+    "kcal": 262
+   },
+   "allergens": [
+    "gluten"
+   ],
+   "animal": null
+  },
+  "avocado": {
+   "fdcId": 171705,
+   "usdaDescription": "Avocados, raw, all commercial varieties",
+   "per100g": {
+    "proteinG": 2,
+    "fatG": 14.66,
+    "carbsG": 8.53,
+    "kcal": 160
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "peanut_butter": {
+   "fdcId": 172470,
+   "usdaDescription": "Peanut butter, smooth style, without salt",
+   "per100g": {
+    "proteinG": 22.21,
+    "fatG": 51.36,
+    "carbsG": 22.31,
+    "kcal": 598
+   },
+   "allergens": [
+    "nuts"
+   ],
+   "animal": null
+  },
+  "almonds": {
+   "fdcId": 170567,
+   "usdaDescription": "Nuts, almonds",
+   "per100g": {
+    "proteinG": 21.15,
+    "fatG": 49.93,
+    "carbsG": 21.55,
+    "kcal": 579
+   },
+   "allergens": [
+    "nuts"
+   ],
+   "animal": null
+  },
+  "walnuts": {
+   "fdcId": 170187,
+   "usdaDescription": "Nuts, walnuts, english",
+   "per100g": {
+    "carbsG": 13.71,
+    "kcal": 654,
+    "proteinG": 15.23,
+    "fatG": 65.21
+   },
+   "allergens": [
+    "nuts"
+   ],
+   "animal": null
+  },
+  "chia": {
+   "fdcId": 170554,
+   "usdaDescription": "Seeds, chia seeds, dried",
+   "per100g": {
+    "proteinG": 16.54,
+    "fatG": 30.74,
+    "carbsG": 42.12,
+    "kcal": 486
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "honey": {
+   "fdcId": 169640,
+   "usdaDescription": "Honey",
+   "per100g": {
+    "proteinG": 0.3,
+    "fatG": 0,
+    "carbsG": 82.4,
+    "kcal": 304
+   },
+   "allergens": [],
+   "animal": "honey"
+  },
+  "chicken": {
+   "fdcId": 171477,
+   "usdaDescription": "Chicken, broilers or fryers, breast, meat only, cooked, roasted",
+   "per100g": {
+    "fatG": 3.57,
+    "carbsG": 0,
+    "kcal": 165,
+    "proteinG": 31.02
+   },
+   "allergens": [],
+   "animal": "meat"
+  },
+  "turkey": {
+   "fdcId": 174519,
+   "usdaDescription": "Turkey, breast, from whole bird, meat only, with added solution, roasted",
+   "per100g": {
+    "fatG": 2.08,
+    "carbsG": 0,
+    "kcal": 127,
+    "proteinG": 26.97
+   },
+   "allergens": [],
+   "animal": "meat"
+  },
+  "beef": {
+   "fdcId": 171794,
+   "usdaDescription": "Beef, ground, 90% lean meat / 10% fat, crumbles, cooked, pan-browned",
+   "per100g": {
+    "kcal": 230,
+    "carbsG": 0,
+    "proteinG": 28.45,
+    "fatG": 12.04
+   },
+   "allergens": [],
+   "animal": "meat"
+  },
+  "salmon": {
+   "fdcId": 175168,
+   "usdaDescription": "Fish, salmon, Atlantic, farmed, cooked, dry heat",
+   "per100g": {
+    "fatG": 12.35,
+    "carbsG": 0,
+    "proteinG": 22.1,
+    "kcal": 206
+   },
+   "allergens": [
+    "fish"
+   ],
+   "animal": "fish"
+  },
+  "tuna": {
+   "fdcId": 173709,
+   "usdaDescription": "Fish, tuna, light, canned in water, drained solids (Includes foods for USDA's Food Distribution Program)",
+   "per100g": {
+    "fatG": 0.96,
+    "kcal": 86,
+    "proteinG": 19.44,
+    "carbsG": 0
+   },
+   "allergens": [
+    "fish"
+   ],
+   "animal": "fish"
+  },
+  "cod": {
+   "fdcId": 171956,
+   "usdaDescription": "Fish, cod, Atlantic, cooked, dry heat",
+   "per100g": {
+    "kcal": 105,
+    "fatG": 0.86,
+    "carbsG": 0,
+    "proteinG": 22.83
+   },
+   "allergens": [
+    "fish"
+   ],
+   "animal": "fish"
+  },
+  "shrimp": {
+   "fdcId": 171971,
+   "usdaDescription": "Crustaceans, shrimp, mixed species, cooked, moist heat (may contain additives to retain moisture)",
+   "per100g": {
+    "proteinG": 22.78,
+    "fatG": 1.7,
+    "carbsG": 1.52,
+    "kcal": 119
+   },
+   "allergens": [
+    "shellfish"
+   ],
+   "animal": "shellfish"
+  },
+  "tofu": {
+   "fdcId": 172475,
+   "usdaDescription": "Tofu, raw, firm, prepared with calcium sulfate",
+   "per100g": {
+    "carbsG": 2.78,
+    "kcal": 144,
+    "proteinG": 17.27,
+    "fatG": 8.72
+   },
+   "allergens": [
+    "soy"
+   ],
+   "animal": null
+  },
+  "tempeh": {
+   "fdcId": 174272,
+   "usdaDescription": "Tempeh",
+   "per100g": {
+    "proteinG": 20.29,
+    "carbsG": 7.64,
+    "kcal": 192,
+    "fatG": 10.8
+   },
+   "allergens": [
+    "soy"
+   ],
+   "animal": null
+  },
+  "edamame": {
+   "fdcId": 168411,
+   "usdaDescription": "Edamame, frozen, prepared",
+   "per100g": {
+    "fatG": 5.2,
+    "carbsG": 8.91,
+    "kcal": 121,
+    "proteinG": 11.91
+   },
+   "allergens": [
+    "soy"
+   ],
+   "animal": null
+  },
+  "soy_sauce": {
+   "fdcId": 174277,
+   "usdaDescription": "Soy sauce made from soy and wheat (shoyu)",
+   "per100g": {
+    "fatG": 0.57,
+    "carbsG": 4.93,
+    "proteinG": 8.14,
+    "kcal": 53
+   },
+   "allergens": [
+    "soy",
+    "gluten"
+   ],
+   "animal": null
+  },
+  "black_beans": {
+   "fdcId": 173735,
+   "usdaDescription": "Beans, black, mature seeds, cooked, boiled, without salt",
+   "per100g": {
+    "fatG": 0.54,
+    "carbsG": 23.71,
+    "kcal": 132,
+    "proteinG": 8.86
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "chickpeas": {
+   "fdcId": 173757,
+   "usdaDescription": "Chickpeas (garbanzo beans, bengal gram), mature seeds, cooked, boiled, without salt",
+   "per100g": {
+    "carbsG": 27.42,
+    "kcal": 164,
+    "fatG": 2.59,
+    "proteinG": 8.86
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "lentils": {
+   "fdcId": 172421,
+   "usdaDescription": "Lentils, mature seeds, cooked, boiled, without salt",
+   "per100g": {
+    "carbsG": 20.13,
+    "kcal": 116,
+    "proteinG": 9.02,
+    "fatG": 0.38
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "hummus": {
+   "fdcId": 174289,
+   "usdaDescription": "Hummus, commercial",
+   "per100g": {
+    "proteinG": 7.78,
+    "fatG": 17.82,
+    "carbsG": 15,
+    "kcal": 237
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "rice_brown": {
+   "fdcId": 169704,
+   "usdaDescription": "Rice, brown, long-grain, cooked (Includes foods for USDA's Food Distribution Program)",
+   "per100g": {
+    "proteinG": 2.74,
+    "fatG": 0.97,
+    "carbsG": 25.58,
+    "kcal": 123
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "rice_white": {
+   "fdcId": 168878,
+   "usdaDescription": "Rice, white, long-grain, regular, enriched, cooked",
+   "per100g": {
+    "proteinG": 2.69,
+    "fatG": 0.28,
+    "carbsG": 28.17,
+    "kcal": 130
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "quinoa": {
+   "fdcId": 168917,
+   "usdaDescription": "Quinoa, cooked",
+   "per100g": {
+    "proteinG": 4.4,
+    "fatG": 1.92,
+    "carbsG": 21.3,
+    "kcal": 120
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "pasta_ww": {
+   "fdcId": 168910,
+   "usdaDescription": "Pasta, whole-wheat, cooked (Includes foods for USDA's Food Distribution Program)",
+   "per100g": {
+    "fatG": 1.71,
+    "carbsG": 30.07,
+    "kcal": 149,
+    "proteinG": 5.99
+   },
+   "allergens": [
+    "gluten"
+   ],
+   "animal": null
+  },
+  "sweet_potato": {
+   "fdcId": 168483,
+   "usdaDescription": "Sweet potato, cooked, baked in skin, flesh, without salt",
+   "per100g": {
+    "carbsG": 20.71,
+    "kcal": 90,
+    "fatG": 0.15,
+    "proteinG": 2.01
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "potato": {
+   "fdcId": 170093,
+   "usdaDescription": "Potatoes, baked, flesh and skin, without salt",
+   "per100g": {
+    "proteinG": 2.5,
+    "fatG": 0.13,
+    "carbsG": 21.15,
+    "kcal": 93
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "broccoli": {
+   "fdcId": 169967,
+   "usdaDescription": "Broccoli, cooked, boiled, drained, without salt",
+   "per100g": {
+    "fatG": 0.41,
+    "proteinG": 2.38,
+    "carbsG": 7.18,
+    "kcal": 35
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "spinach": {
+   "fdcId": 168462,
+   "usdaDescription": "Spinach, raw",
+   "per100g": {
+    "proteinG": 2.86,
+    "fatG": 0.39,
+    "carbsG": 3.63,
+    "kcal": 23
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "romaine": {
+   "fdcId": 169247,
+   "usdaDescription": "Lettuce, cos or romaine, raw",
+   "per100g": {
+    "carbsG": 3.29,
+    "kcal": 17,
+    "fatG": 0.3,
+    "proteinG": 1.23
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "tomato": {
+   "fdcId": 170457,
+   "usdaDescription": "Tomatoes, red, ripe, raw, year round average",
+   "per100g": {
+    "carbsG": 3.89,
+    "kcal": 18,
+    "fatG": 0.2,
+    "proteinG": 0.88
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "cucumber": {
+   "fdcId": 168409,
+   "usdaDescription": "Cucumber, with peel, raw",
+   "per100g": {
+    "carbsG": 3.63,
+    "kcal": 15,
+    "fatG": 0.11,
+    "proteinG": 0.65
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "bell_pepper": {
+   "fdcId": 170108,
+   "usdaDescription": "Peppers, sweet, red, raw",
+   "per100g": {
+    "kcal": 26,
+    "carbsG": 6.03,
+    "proteinG": 0.99,
+    "fatG": 0.3
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "carrot": {
+   "fdcId": 170393,
+   "usdaDescription": "Carrots, raw",
+   "per100g": {
+    "proteinG": 0.93,
+    "fatG": 0.24,
+    "carbsG": 9.58,
+    "kcal": 41
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "onion": {
+   "fdcId": 170000,
+   "usdaDescription": "Onions, raw",
+   "per100g": {
+    "fatG": 0.1,
+    "carbsG": 9.34,
+    "kcal": 40,
+    "proteinG": 1.1
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "mushroom": {
+   "fdcId": 169251,
+   "usdaDescription": "Mushrooms, white, raw",
+   "per100g": {
+    "fatG": 0.34,
+    "proteinG": 3.09,
+    "carbsG": 3.26,
+    "kcal": 22
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "zucchini": {
+   "fdcId": 169291,
+   "usdaDescription": "Squash, summer, zucchini, includes skin, raw",
+   "per100g": {
+    "fatG": 0.32,
+    "carbsG": 3.11,
+    "kcal": 17,
+    "proteinG": 1.21
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "olive_oil": {
+   "fdcId": 171413,
+   "usdaDescription": "Oil, olive, salad or cooking",
+   "per100g": {
+    "fatG": 100,
+    "carbsG": 0,
+    "kcal": 884,
+    "proteinG": 0
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "cheddar": {
+   "fdcId": 173414,
+   "usdaDescription": "Cheese, cheddar (Includes foods for USDA's Food Distribution Program)",
+   "per100g": {
+    "carbsG": 3.37,
+    "kcal": 403,
+    "proteinG": 22.87,
+    "fatG": 33.31
+   },
+   "allergens": [
+    "dairy"
+   ],
+   "animal": "dairy"
+  },
+  "feta": {
+   "fdcId": 173420,
+   "usdaDescription": "Cheese, feta",
+   "per100g": {
+    "fatG": 21.49,
+    "carbsG": 3.88,
+    "kcal": 265,
+    "proteinG": 14.21
+   },
+   "allergens": [
+    "dairy"
+   ],
+   "animal": "dairy"
+  },
+  "mozzarella": {
+   "fdcId": 170847,
+   "usdaDescription": "Cheese, mozzarella, part skim milk",
+   "per100g": {
+    "kcal": 254,
+    "fatG": 15.92,
+    "proteinG": 24.26,
+    "carbsG": 2.77
+   },
+   "allergens": [
+    "dairy"
+   ],
+   "animal": "dairy"
+  },
+  "parmesan": {
+   "fdcId": 171247,
+   "usdaDescription": "Cheese, parmesan, grated",
+   "per100g": {
+    "fatG": 27.84,
+    "carbsG": 13.91,
+    "kcal": 420,
+    "proteinG": 28.42
+   },
+   "allergens": [
+    "dairy"
+   ],
+   "animal": "dairy"
+  },
+  "cottage": {
+   "fdcId": 172182,
+   "usdaDescription": "Cheese, cottage, lowfat, 2% milkfat",
+   "per100g": {
+    "fatG": 2.27,
+    "carbsG": 4.76,
+    "kcal": 81,
+    "proteinG": 10.45
+   },
+   "allergens": [
+    "dairy"
+   ],
+   "animal": "dairy"
+  },
+  "tortilla_corn": {
+   "fdcId": 175036,
+   "usdaDescription": "Tortillas, ready-to-bake or -fry, corn",
+   "per100g": {
+    "proteinG": 5.7,
+    "fatG": 2.85,
+    "carbsG": 44.64,
+    "kcal": 218
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "tortilla_flour": {
+   "fdcId": 167535,
+   "usdaDescription": "Tortillas, ready-to-bake or -fry, flour, shelf stable",
+   "per100g": {
+    "fatG": 7.58,
+    "carbsG": 49.27,
+    "kcal": 297,
+    "proteinG": 8.01
+   },
+   "allergens": [
+    "gluten"
+   ],
+   "animal": null
+  },
+  "granola": {
+   "fdcId": 171646,
+   "usdaDescription": "Cereals ready-to-eat, granola, homemade",
+   "per100g": {
+    "fatG": 24.31,
+    "carbsG": 53.88,
+    "proteinG": 13.67,
+    "kcal": 489
+   },
+   "allergens": [
+    "gluten",
+    "nuts"
+   ],
+   "animal": "honey"
+  },
+  "salsa": {
+   "fdcId": 174524,
+   "usdaDescription": "Sauce, salsa, ready-to-serve",
+   "per100g": {
+    "proteinG": 1.52,
+    "carbsG": 6.64,
+    "kcal": 29,
+    "fatG": 0.17
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "marinara": {
+   "fdcId": 171192,
+   "usdaDescription": "Sauce, pasta, spaghetti/marinara, ready-to-serve",
+   "per100g": {
+    "fatG": 1.61,
+    "carbsG": 7.43,
+    "kcal": 50,
+    "proteinG": 1.39
+   },
+   "allergens": [],
+   "animal": null
+  },
+  "rice_cakes": {
+   "fdcId": 169679,
+   "usdaDescription": "Snacks, rice cakes, brown rice, corn",
+   "per100g": {
+    "fatG": 3.2,
+    "carbsG": 81.2,
+    "kcal": 385,
+    "proteinG": 8.4
+   },
+   "allergens": [],
+   "animal": null
+  }
+ }
+}

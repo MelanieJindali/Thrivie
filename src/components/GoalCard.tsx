@@ -15,7 +15,7 @@ export function GoalSummary({ goal, units }: { goal: GoalView; units: Units }) {
           <span aria-hidden>{st.icon}</span> {st.label}
         </span>
       </div>
-      <ProgressBar pct={goal.pct} expected={goal.status === "done" ? undefined : goal.expectedPct} tone={goal.status === "behind" ? "warn" : "primary"} />
+      <ProgressBar label={`${goal.title} progress`} pct={goal.pct} expected={goal.status === "done" ? undefined : goal.expectedPct} tone={goal.status === "behind" ? "warn" : "primary"} />
       <div className="mt-1 flex justify-between text-xs text-muted">
         <span>
           {d.current} / {d.target} {d.unit}

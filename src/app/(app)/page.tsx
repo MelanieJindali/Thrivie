@@ -14,6 +14,8 @@ import { ProgressRing } from "@/components/ProgressRing";
 import { RepeatLastButton } from "@/components/RepeatLastButton";
 import { goalDisplay } from "@/lib/goalDisplay";
 import { dayTotals, macroLine } from "@/lib/nutrition";
+import { getPlanContext, planCard } from "@/lib/nutrition/planStore";
+import { MealPlanCard } from "@/components/MealPlanCard";
 
 function greeting(name: string, timeZone: string) {
   let h = 12;
@@ -41,6 +43,7 @@ export default async function TodayPage() {
     vis.includes("nutrition") ? db.meal.findMany({ where: { date: today }, select: { date: true, calories: true, proteinG: true, carbsG: true, fatG: true } }) : [],
   ]);
   const food = dayTotals(todayMeals);
+  const plan = vis.includes("nutrition") ? await getPlanContext(db, user.id, today) : null;
   const todaysWorkouts = recentWorkouts.filter((w) => w.date === today);
   const lastWorkout = recentWorkouts.at(-1);
   const due = habits.filter((h) => h.dueToday);
@@ -84,7 +87,7 @@ export default async function TodayPage() {
           <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full font-display text-lg font-semibold text-[#3A2C10] shadow-[0_0_0_3px_var(--surface),0_0_24px_2px_rgb(212_178_106/0.55)] pop"
             style={{ background: "radial-gradient(circle at 35% 30%, #F4E3B5, #D4B26A 55%, #9C7A35)" }} aria-hidden>{milestone.streak}</span>
           <div>
-            <p className="font-display text-lg font-semibold">{milestone.streak}-{milestone.frequency === "weekly" ? "week" : "day"} streak!</p>
+            <p className="font-display text-lg font-semibold">{milestone.streak}-{milestone.streakUnit} streak!</p>
             <p className="text-sm text-muted">{milestone.name}: a real milestone. Well done.</p>
           </div>
         </div>
@@ -174,6 +177,8 @@ export default async function TodayPage() {
           </ul>
         </section>
       )}
+
+      {plan?.state === "ready" && <MealPlanCard plan={planCard(plan, settings.hideCalories)} compact />}
 
       {brief.insights.length > 0 && (
         <section className="card" aria-labelledby="hl-h">

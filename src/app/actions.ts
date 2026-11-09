@@ -7,8 +7,12 @@ import { logError } from "@/lib/log";
 import crypto from "node:crypto";
 import { loadSampleData } from "@/lib/sampleData";
 import { getSettings, getToday, ALL_MODULES } from "@/lib/settings";
-import { addDays, isDateStr, isValidTimezone } from "@/lib/dates";
+import { addDays, isDateStr, isValidTimezone, todayInTz } from "@/lib/dates";
 import { MEAL_SLOTS, WORKOUT_TYPES } from "@/lib/constants";
+import { InvalidScheduleError, parseSchedule } from "@/lib/habits/schedule";
+import { BodyProfileSchema } from "@/lib/nutrition/calculations";
+import { storeBodyProfile } from "@/lib/nutrition/profile";
+import { regeneratePlan, swapStoredMeal } from "@/lib/nutrition/planStore";
 import { displayToKg, displayToKm, displayToMl, displayToPace } from "@/lib/units";
 
 const dateStr = z.string().refine(isDateStr, "Invalid date");
@@ -222,6 +226,55 @@ export async function deleteMeal(id: string): Promise<ActionResult> {
   return { ok: true };
 }
 
+/** Body & Goals profile (encrypted). Validated strictly: unknown sex/diet/allergy values are rejected. */
+export async function saveBodyProfile(input: unknown): Promise<ActionResult> {
+  const { db, user } = await requireUser();
+  if (await tooFast(user.id)) return SLOW_DOWN;
+  try {
+    await storeBodyProfile(db, user.id, BodyProfileSchema.parse(input));
+    await db.mealPlan.deleteMany(); // plans regenerate from the new profile
+    done();
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/** Swap one meal in this week's plan (indices are validated; the plan is re-checked against the profile). */
+export async function swapPlanMeal(dayIndex: number, itemIndex: number): Promise<ActionResult> {
+  const { db, user } = await requireUser();
+  if (await tooFast(user.id)) return SLOW_DOWN;
+  if (![dayIndex, itemIndex].every((n) => Number.isInteger(n) && n >= 0 && n < 10)) return { ok: false, error: "Invalid meal." };
+  const ok = await swapStoredMeal(db, user.id, await getToday(), dayIndex, itemIndex);
+  done();
+  return ok ? { ok: true } : { ok: false, error: "No other meal fits your preferences for this slot yet." };
+}
+
+export async function newMealPlan(): Promise<ActionResult> {
+  const { db, user } = await requireUser();
+  if (await tooFast(user.id)) return SLOW_DOWN;
+  await regeneratePlan(db, user.id, await getToday());
+  done();
+  return { ok: true };
+}
+
+export async function clearBodyProfile(): Promise<ActionResult> {
+  const { db, user } = await requireUser();
+  if (await tooFast(user.id)) return SLOW_DOWN;
+  await db.bodyProfile.deleteMany();
+  await db.mealPlan.deleteMany();
+  done();
+  return { ok: true };
+}
+
+export async function setHideCalories(hide: boolean): Promise<ActionResult> {
+  const { db, user } = await requireUser();
+  if (await tooFast(user.id)) return SLOW_DOWN;
+  await db.settings.update({ where: { userId: user.id }, data: { hideCalories: hide === true } });
+  done();
+  return { ok: true };
+}
+
 const targetsInput = z.object({
   calorieTarget: z.number().int().min(500).max(10000).nullable(),
   proteinTargetG: z.number().int().min(10).max(500).nullable(),
@@ -247,8 +300,14 @@ const habitInput = z.object({
   id: z.string().optional(),
   name: z.string().trim().min(1, "Name is required").max(60),
   emoji: z.string().max(8).nullable().optional(),
-  frequency: z.enum(["daily", "weekly"]),
-  timesPerWeek: z.number().int().min(1).max(7).default(7),
+  schedule: z.unknown().transform((v, ctx) => {
+    try {
+      return parseSchedule(v);
+    } catch (e) {
+      ctx.addIssue({ code: "custom", message: e instanceof InvalidScheduleError ? e.message : "Invalid schedule." });
+      return z.NEVER;
+    }
+  }),
 });
 
 export async function saveHabit(input: z.input<typeof habitInput>): Promise<ActionResult> {
@@ -259,8 +318,7 @@ export async function saveHabit(input: z.input<typeof habitInput>): Promise<Acti
     const data = {
       name: v.name,
       emoji: v.emoji?.trim() || null,
-      frequency: v.frequency,
-      timesPerWeek: v.frequency === "daily" ? 7 : v.timesPerWeek,
+      schedule: v.schedule,
     };
     const id = v.id
       ? (await db.habit.update({ where: { id: v.id }, data })).id
@@ -270,17 +328,6 @@ export async function saveHabit(input: z.input<typeof habitInput>): Promise<Acti
   } catch (e) {
     return fail(e);
   }
-}
-
-export async function toggleHabit(habitId: string, date?: string): Promise<ActionResult> {
-  const { db, user } = await requireUser();
-  if (await tooFast(user.id)) return SLOW_DOWN;
-  const d = date && isDateStr(date) ? date : await getToday();
-  const existing = await db.habitCheckin.findUnique({ where: { habitId_date: { habitId, date: d } } });
-  if (existing) await db.habitCheckin.delete({ where: { id: existing.id } });
-  else await db.habitCheckin.create({ data: { habitId, date: d } });
-  done();
-  return { ok: true };
 }
 
 export async function archiveHabit(id: string, archived: boolean): Promise<ActionResult> {
@@ -454,6 +501,8 @@ export async function deleteAllData(confirm: string): Promise<ActionResult> {
     await tx.exercise.deleteMany();
     await tx.workout.deleteMany();
     await tx.meal.deleteMany();
+    await tx.mealPlan.deleteMany();
+    await tx.bodyProfile.deleteMany();
     await tx.healthLog.deleteMany();
     await tx.journalEntry.deleteMany();
     await tx.alias.deleteMany();
@@ -519,6 +568,7 @@ export async function dismissTip(id: string): Promise<ActionResult> {
 const onboardingInput = z.object({
   name: z.string().trim().max(60),
   units: z.enum(["metric", "imperial"]),
+  timezone: z.string().refine(isValidTimezone, "Unknown timezone"),
   habits: z.array(z.object({ name: z.string().trim().min(1).max(60), emoji: z.string().max(8).optional() })).max(3),
   goal: z
     .object({ title: z.string().trim().min(1).max(100), target: z.number().positive(), unit: z.string().max(20), days: z.number().int().min(7).max(365), linkType: z.enum(["manual", "workout", "habit"]), linkMeasure: z.enum(["count", "minutes", "distance"]).optional() })
@@ -530,11 +580,11 @@ export async function completeOnboarding(input: z.input<typeof onboardingInput>)
   try {
     const v = onboardingInput.parse(input);
     const { db, user } = await requireUser();
-    const today = await getToday();
-    await db.settings.update({ where: { userId: user.id }, data: { name: v.name, units: v.units, onboarded: true } });
+    await db.settings.update({ where: { userId: user.id }, data: { name: v.name, units: v.units, timezone: v.timezone, onboarded: true } });
+    const today = todayInTz(v.timezone);
     const created: string[] = [];
     for (const [i, h] of v.habits.entries()) {
-      created.push((await db.habit.create({ data: { userId: user.id, name: h.name, emoji: h.emoji ?? null, frequency: "daily", timesPerWeek: 7, order: i } })).id);
+      created.push((await db.habit.create({ data: { userId: user.id, name: h.name, emoji: h.emoji ?? null, order: i } })).id);
     }
     if (v.goal) {
       const g = v.goal;
@@ -554,9 +604,10 @@ export async function completeOnboarding(input: z.input<typeof onboardingInput>)
   }
 }
 
-export async function skipOnboarding(): Promise<ActionResult> {
+export async function skipOnboarding(timezone?: string): Promise<ActionResult> {
   const { db, user } = await requireUser();
-  await db.settings.update({ where: { userId: user.id }, data: { onboarded: true } });
+  const tz = timezone && isValidTimezone(timezone) ? { timezone } : {};
+  await db.settings.update({ where: { userId: user.id }, data: { onboarded: true, ...tz } });
   return { ok: true };
 }
 
@@ -568,6 +619,18 @@ export async function setHabitCheck(habitId: string, date: string, checked: bool
   if (!(await db.habit.findUnique({ where: { id: habitId } }))) return { ok: false, error: "Habit not found." };
   if (checked) await db.habitCheckin.upsert({ where: { habitId_date: { habitId, date } }, update: {}, create: { habitId, date } });
   else await db.habitCheckin.deleteMany({ where: { habitId, date } });
+  done();
+  return { ok: true };
+}
+
+/** Tap counter for "N times a day" habits. Sets the day's count (idempotent, safe to replay offline); 0 removes it. */
+export async function setHabitCount(habitId: string, date: string, count: number): Promise<ActionResult> {
+  const { db, user } = await requireUser();
+  if (await tooFast(user.id)) return SLOW_DOWN;
+  if (!isDateStr(date) || !Number.isInteger(count) || count < 0 || count > 100) return { ok: false, error: "Invalid count." };
+  if (!(await db.habit.findUnique({ where: { id: habitId } }))) return { ok: false, error: "Habit not found." };
+  if (count === 0) await db.habitCheckin.deleteMany({ where: { habitId, date } });
+  else await db.habitCheckin.upsert({ where: { habitId_date: { habitId, date } }, update: { count }, create: { habitId, date, count } });
   done();
   return { ok: true };
 }

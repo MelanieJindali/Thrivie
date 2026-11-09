@@ -5,6 +5,7 @@ import { loadSettings } from "./settings";
 import { getGoalViews, getHabitViews } from "./queries";
 import { mean, round } from "./stats";
 import { goalDisplay } from "./goalDisplay";
+import { progressInRange } from "./habits/schedule";
 import { kmToDisplay, distanceUnit } from "./units";
 
 export type WeekStats = Awaited<ReturnType<typeof weekStats>>;
@@ -54,8 +55,7 @@ export async function weekStats(db: ScopedDb, userId: string, weekStart: DateStr
     distance: distKm ? `${kmToDisplay(distKm, u)} ${distanceUnit(u)}` : null,
     journalDays: journalDays.length,
     habits: habits.map((h) => {
-      const done = h.dates.filter((d) => d >= weekStart && d <= end).length;
-      const target = h.frequency === "weekly" ? h.timesPerWeek : daysElapsed;
+      const { done, target } = progressInRange(h.schedule, h.logs, weekStart, daysElapsed >= 7 ? end : addDays(weekStart, daysElapsed - 1));
       return { name: h.name, emoji: h.emoji, done, target, pct: Math.min(100, Math.round((done / Math.max(1, target)) * 100)), streak: h.streak };
     }),
     goals: goals.map((g) => {

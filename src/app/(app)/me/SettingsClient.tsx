@@ -4,16 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { deleteAllData, saveSettings } from "@/app/actions";
 import { Field, FormStatus, useAction } from "@/components/ui";
+import { TimezonePicker } from "@/components/TimezonePicker";
 import { ALL_MODULES, type ModuleKey } from "@/lib/constants";
 import { MODULE_INFO } from "@/lib/constants";
 
 type S = { name: string; units: "metric" | "imperial"; timezone: string; visibleModules: ModuleKey[] };
 
-export function SettingsForm({ initial, timezones }: { initial: S; timezones: string[] }) {
+export function SettingsForm({ initial }: { initial: S }) {
   const [s, setS] = useState(initial);
-  const [deviceTz, setDeviceTz] = useState<string | null>(null);
   const { pending, error, message, run } = useAction();
-  useEffect(() => setDeviceTz(Intl.DateTimeFormat().resolvedOptions().timeZone), []);
   const toggle = (m: ModuleKey) =>
     setS((x) => ({ ...x, visibleModules: x.visibleModules.includes(m) ? x.visibleModules.filter((y) => y !== m) : [...x.visibleModules, m] }));
 
@@ -36,17 +35,7 @@ export function SettingsForm({ initial, timezones }: { initial: S; timezones: st
         </div>
         <p className="mt-1 text-xs text-muted">Changing units converts how existing data is shown — nothing is lost.</p>
       </div>
-      <Field label="Timezone" hint="Used to decide what “today” and “yesterday” mean.">
-        <div className="flex flex-wrap gap-2">
-          <select className="input min-w-0 flex-1" value={s.timezone} onChange={(e) => setS({ ...s, timezone: e.target.value })}>
-            {!timezones.includes(s.timezone) && <option value={s.timezone}>{s.timezone}</option>}
-            {timezones.map((tz) => <option key={tz} value={tz}>{tz.replace(/_/g, " ")}</option>)}
-          </select>
-          {deviceTz && deviceTz !== s.timezone && (
-            <button type="button" className="btn-soft text-xs" onClick={() => setS({ ...s, timezone: deviceTz })}>Use this device ({deviceTz})</button>
-          )}
-        </div>
-      </Field>
+      <TimezonePicker value={s.timezone} onChange={(timezone) => setS({ ...s, timezone })} hint="Used to decide what “today” and “yesterday” mean. Saved when you tap Save." />
       <div>
         <span className="label">Visible modules</span>
         <div className="flex flex-wrap gap-2">

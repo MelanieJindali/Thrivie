@@ -24,7 +24,7 @@ Two independent layers mean one user can never read or change another user's dat
 ## Encryption
 
 - **In transit:** HTTPS only, with HSTS (`max-age=2 years; includeSubDomains; preload`). Use `upgrade-insecure-requests`.
-- **At rest (application level):** journal text, meal names, health/workout/meal notes, goal-progress notes, photos and voice notes are encrypted with **AES-256-GCM** before they reach the database (`src/lib/crypto.ts`).
+- **At rest (application level):** the Body & Goals profile (height, weight, age, sex, pregnancy, diet, allergies), saved meal plans, journal text, meal names, health/workout/meal notes, goal-progress notes, photos and voice notes are encrypted with **AES-256-GCM** before they reach the database (`src/lib/crypto.ts`).
   - Each value gets a random IV.
   - The user id is bound as authenticated data, so a ciphertext copied into another user's row won't decrypt. Tampering is detected.
   - Keys live only in environment secrets (`ENCRYPTION_KEY`, plus `ENCRYPTION_KEY_PREVIOUS` for rotation). Production refuses to start without one.

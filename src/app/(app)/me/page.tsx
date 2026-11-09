@@ -16,7 +16,7 @@ export default async function SettingsPage() {
   const settings = await getSettings();
   const { db, user } = await requireUser();
   const habitCount = await db.habit.count({ where: { archived: false } });
-  const timezones = Intl.supportedValuesOf("timeZone");
+  const hasProfile = (await db.bodyProfile.count()) > 0;
 
   return (
     <div className="space-y-6">
@@ -24,7 +24,15 @@ export default async function SettingsPage() {
 
       <section className="card">
         <h2 className="h2 mb-4">Profile & units</h2>
-        <SettingsForm initial={settings} timezones={timezones} />
+        <SettingsForm initial={settings} />
+      </section>
+
+      <section className="card flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="h2">Body & Goals</h2>
+          <p className="text-sm text-muted">{hasProfile ? "Your profile powers your meal plan." : "Add height, goal and diet to get a simple daily meal plan."}</p>
+        </div>
+        <Link href="/me/body" className="btn-soft">{hasProfile ? "Edit" : "Set up"}</Link>
       </section>
 
       <ReminderCard on={settings.remindersOn} hour={settings.reminderHour} publicKey={(await getVapidKeys()).publicKey} />

@@ -25,10 +25,11 @@ The visual system pairs the Thrivie brand navy (#1E3A64) with Coastal Earth acce
 ## What's inside
 
 - **Today**: a daily brief (frosted glass with an iridescent edge), a habit progress ring, one-tap habits, quick-log buttons, goal rings and highlights.
-- **Log**: check-ins (weight, sleep and its quality, water, mood, energy, steps, custom metrics), workouts (with exercises or distance and pace, plus *Repeat last*), meals (breakfast, lunch, dinner or snack, with optional calories, protein, carbs and fat, one-tap *Have it again* and optional daily targets), habits (daily or X per week, streaks, heatmaps), goals (linked to a metric, workout type or habit so they update themselves) and a journal (prompts, mood, photos, voice notes, dictation, search).
+- **Log**: check-ins (weight, sleep and its quality, water, mood, energy, steps, custom metrics), workouts (with exercises or distance and pace, plus *Repeat last*), meals (breakfast, lunch, dinner or snack, with optional calories, protein, carbs and fat, one-tap *Have it again* and optional daily targets), habits (every day, specific days, or N times per day/week/month; tap counters; streaks; heatmaps), goals (linked to a metric, workout type or habit so they update themselves) and a journal (prompts, mood, photos, voice notes, dictation, search).
 - **Import**: Smart Import, explained below.
 - **Insights**: 7/30/90-day trends, weekly workout volume, habit heatmap, goal progress, highlights and a weekly review.
-- **Me**: profile and units, theme, visible modules, reminders, health sync (Apple Shortcuts / Android), two-step verification, Smart Import shorthand, export (JSON/CSV), restore, delete all data, delete account.
+- **Nutrition**: food diary plus a simple daily meal plan and 7-day view built from 44 meals calculated from USDA FoodData Central values (respects diet and allergies, one-tap swap, optional hidden calories, safety rules for under-18s, pregnancy and low BMI).
+- **Me**: profile and units, friendly timezone picker, Body & Goals, theme, visible modules, reminders, health sync (Apple Shortcuts / Android), two-step verification, Smart Import shorthand, export (JSON/CSV), restore, delete all data, delete account.
 - **On every screen**: a quick-add button on phones (2 taps to any entry), Undo toasts instead of confirm dialogs, skeleton loaders, offline logging with sync, installable as a PWA, light/dark/system themes, and reduced-motion support.
 
 ### Smart Import (free, on your device)
@@ -70,8 +71,8 @@ Demo logins: **demo@thrivie.app** and **demo2@thrivie.app**, both with the passw
 | `npm audit --omit=dev` | Dependency check (0 known vulnerabilities at release) |
 
 Latest results:
-- **Tests:** 132 passing.
-- **Responsive and accessibility matrix:** 103/103 checks clean.
+- **Tests:** 187 passing.
+- **Responsive and accessibility matrix:** 275/275 checks clean (9 viewports incl. iPad, light/dark, every screen, overflow detection).
 - **Lighthouse (mobile):**
   - Sign-in: Performance 100 · Accessibility 100 · Best Practices 100 · SEO 91
   - Today: 94 · 100 · 100 · 100

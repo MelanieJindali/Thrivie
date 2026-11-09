@@ -7,13 +7,16 @@ import { MEAL_SLOTS, type MealSlot } from "@/lib/constants";
 import { PageHeader, ProgressBar } from "@/components/ui";
 import { NutritionView, TargetsForm, type DayGroup } from "./NutritionView";
 import type { RecentMeal } from "./MealForm";
+import { MealPlanCard } from "@/components/MealPlanCard";
+import { getPlanContext, planCard } from "@/lib/nutrition/planStore";
 
 const str = (v: number | null) => (v == null ? "" : String(v));
 
 export default async function NutritionPage() {
   const settings = await getSettings();
-  const { db } = await requireUser();
+  const { db, user } = await requireUser();
   const today = todayInTz(settings.timezone);
+  const plan = await getPlanContext(db, user.id, today);
   const meals = await db.meal.findMany({ where: { date: { gte: addDays(today, -29) } }, orderBy: [{ date: "desc" }, { createdAt: "asc" }] });
   const slotOrder = (s: string) => MEAL_SLOTS.indexOf(s as MealSlot);
 
@@ -48,6 +51,8 @@ export default async function NutritionPage() {
       <PageHeader theme="nutrition" icon={<Utensils size={26} />} eyebrow="Nourish" title="Nutrition"
         subtitle={t.meals ? `${t.meals} ${t.meals === 1 ? "meal" : "meals"} logged today.` : "A simple, private food diary. Numbers are optional."} />
 
+      <MealPlanCard plan={planCard(plan, settings.hideCalories)} />
+
       <section className="card" aria-labelledby="today-food-h">
         <h2 id="today-food-h" className="h2 mb-4">Today</h2>
         {t.meals ? (
@@ -55,13 +60,13 @@ export default async function NutritionPage() {
             {calT ? (
               <div>
                 <p className="mb-1.5 flex justify-between text-sm"><span className="font-bold">Calories</span><span>{(t.calories ?? 0).toLocaleString("en-US")} / {calT.toLocaleString("en-US")} kcal</span></p>
-                <ProgressBar pct={Math.min(100, ((t.calories ?? 0) / calT) * 100)} />
+                <ProgressBar label="Calories toward today's target" pct={Math.min(100, ((t.calories ?? 0) / calT) * 100)} />
               </div>
             ) : null}
             {proT ? (
               <div>
                 <p className="mb-1.5 flex justify-between text-sm"><span className="font-bold">Protein</span><span>{t.proteinG ?? 0} / {proT} g</span></p>
-                <ProgressBar pct={Math.min(100, ((t.proteinG ?? 0) / proT) * 100)} tone="accent" />
+                <ProgressBar label="Protein toward today's target" pct={Math.min(100, ((t.proteinG ?? 0) / proT) * 100)} tone="accent" />
               </div>
             ) : null}
             <dl className="grid grid-cols-2 gap-2.5 text-center sm:grid-cols-4">

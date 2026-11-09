@@ -43,6 +43,8 @@ model User {
   goals         Goal[]
   journal       JournalEntry[]
   meals         Meal[]
+  bodyProfile   BodyProfile?
+  mealPlans     MealPlan[]
   attachments   Attachment[]
   pushSubs      PushSubscription[]
   apiTokens     ApiToken[]
@@ -96,6 +98,7 @@ model Settings {
   // Optional daily nutrition targets (never set by default).
   calorieTarget  Int?
   proteinTargetG Int?
+  hideCalories   Boolean  @default(false) // meal plans show portions, not numbers
   updatedAt      DateTime @updatedAt
 }
 
@@ -171,6 +174,27 @@ model Meal {
   @@index([userId, date])
 }
 
+/// Body & Goals profile: height, weight, age, sex, pregnancy, activity, goal,
+/// diet and allergies, stored as one AES-256-GCM encrypted JSON blob.
+model BodyProfile {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data      String // encrypted JSON (src/lib/nutrition/calculations.ts BodyProfileSchema)
+  updatedAt DateTime @updatedAt
+}
+
+/// A week's meal plan (meal ids and swaps). Encrypted because it can reveal diet and allergies.
+model MealPlan {
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekStart   String // YYYY-MM-DD (Monday)
+  data        String // encrypted JSON
+  profileHash String // regenerate when the profile or targets change
+  createdAt   DateTime @default(now())
+
+  @@id([userId, weekStart])
+}
+
 // ------------------------------------------------------------------ habits --
 
 model Habit {
@@ -179,8 +203,9 @@ model Habit {
   user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   name         String
   emoji        String?
-  frequency    String         @default("daily") // daily | weekly
-  timesPerWeek Int            @default(7)
+  // {"type":"daily"} | {"type":"specific_days","days":[1,3,5]} | {"type":"times_per_period","count":3,"period":"week"}
+  // Validated by src/lib/habits/schedule.ts and a CHECK constraint (thrivie_valid_schedule).
+  schedule     Json           @default("{\"type\":\"daily\"}")
   archived     Boolean        @default(false)
   order        Int            @default(0)
   createdAt    DateTime       @default(now())
@@ -195,6 +220,7 @@ model HabitCheckin {
   habitId String
   habit   Habit  @relation(fields: [habitId], references: [id], onDelete: Cascade)
   date    String
+  count   Int    @default(1) // > 1 only for "N times a day" habits (1-100)
 
   @@unique([habitId, date])
   @@index([date])

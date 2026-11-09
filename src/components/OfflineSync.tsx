@@ -2,11 +2,11 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { addGoalProgress, saveHealthLog, saveJournal, saveMeal, saveWorkout, setHabitCheck, type ActionResult } from "@/app/actions";
+import { addGoalProgress, saveHealthLog, saveJournal, saveMeal, saveWorkout, setHabitCheck, setHabitCount, type ActionResult } from "@/app/actions";
 import { allItems, clearQueue, enqueue, isNetworkError, remove } from "@/lib/offlineQueue";
 
 // Only idempotent or append-only actions may be queued offline.
-const ACTIONS = { saveHealthLog, saveWorkout, saveMeal, saveJournal, setHabitCheck, addGoalProgress } as const;
+const ACTIONS = { saveHealthLog, saveWorkout, saveMeal, saveJournal, setHabitCheck, setHabitCount, addGoalProgress } as const;
 export type OfflineAction = keyof typeof ACTIONS;
 
 type Runner = <K extends OfflineAction>(name: K, ...args: Parameters<(typeof ACTIONS)[K]>) => Promise<ActionResult & { queued?: boolean }>;

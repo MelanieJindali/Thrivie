@@ -350,8 +350,8 @@ function ReviewCard({
                   <>
                     <input className="input w-auto py-1 text-sm" value={item.data.habitName} onChange={(e) => setData({ habitName: e.target.value })} aria-label="New habit name" />
                     <select className="input w-auto py-1 text-sm" value={item.data.frequency} onChange={(e) => setData({ frequency: e.target.value })}>
-                      <option value="daily">Daily</option>
-                      <option value="weekly">Weekly</option>
+                      <option value="daily">Every day</option>
+                      <option value="weekly">3 times a week</option>
                     </select>
                   </>
                 )}
