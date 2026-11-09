@@ -4,7 +4,7 @@ import { composeBrief, type BriefFacts } from "@/lib/briefText";
 const base: BriefFacts = {
   seed: "u1:2026-11-07", weekday: "Saturday", name: "Alex",
   yesterday: { sleepHours: 7.4, workouts: [{ type: "cardio", minutes: 32 }], habitsDone: 3, logged: true },
-  atRisk: [{ name: "Meditate", streak: 12, weekly: false }], openToday: 2,
+  atRisk: [{ name: "Meditate", streak: 12, unit: "day" }], openToday: 2,
   goals: { total: 3, onTrack: 2, behind: ["Read 6 books"] }, week: { sleep: 7.2, workouts: 3, steps: 8200 },
 };
 const sentences = (s: string) => s.split(/(?<=[.!])\s+(?=[A-Z“])/).filter(Boolean);

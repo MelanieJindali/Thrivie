@@ -9,6 +9,7 @@ import { loadSampleData } from "@/lib/sampleData";
 import { getSettings, getToday, ALL_MODULES } from "@/lib/settings";
 import { addDays, isDateStr, isValidTimezone } from "@/lib/dates";
 import { MEAL_SLOTS, WORKOUT_TYPES } from "@/lib/constants";
+import { InvalidScheduleError, parseSchedule } from "@/lib/habits/schedule";
 import { displayToKg, displayToKm, displayToMl, displayToPace } from "@/lib/units";
 
 const dateStr = z.string().refine(isDateStr, "Invalid date");
@@ -247,8 +248,14 @@ const habitInput = z.object({
   id: z.string().optional(),
   name: z.string().trim().min(1, "Name is required").max(60),
   emoji: z.string().max(8).nullable().optional(),
-  frequency: z.enum(["daily", "weekly"]),
-  timesPerWeek: z.number().int().min(1).max(7).default(7),
+  schedule: z.unknown().transform((v, ctx) => {
+    try {
+      return parseSchedule(v);
+    } catch (e) {
+      ctx.addIssue({ code: "custom", message: e instanceof InvalidScheduleError ? e.message : "Invalid schedule." });
+      return z.NEVER;
+    }
+  }),
 });
 
 export async function saveHabit(input: z.input<typeof habitInput>): Promise<ActionResult> {
@@ -259,8 +266,7 @@ export async function saveHabit(input: z.input<typeof habitInput>): Promise<Acti
     const data = {
       name: v.name,
       emoji: v.emoji?.trim() || null,
-      frequency: v.frequency,
-      timesPerWeek: v.frequency === "daily" ? 7 : v.timesPerWeek,
+      schedule: v.schedule,
     };
     const id = v.id
       ? (await db.habit.update({ where: { id: v.id }, data })).id
@@ -270,17 +276,6 @@ export async function saveHabit(input: z.input<typeof habitInput>): Promise<Acti
   } catch (e) {
     return fail(e);
   }
-}
-
-export async function toggleHabit(habitId: string, date?: string): Promise<ActionResult> {
-  const { db, user } = await requireUser();
-  if (await tooFast(user.id)) return SLOW_DOWN;
-  const d = date && isDateStr(date) ? date : await getToday();
-  const existing = await db.habitCheckin.findUnique({ where: { habitId_date: { habitId, date: d } } });
-  if (existing) await db.habitCheckin.delete({ where: { id: existing.id } });
-  else await db.habitCheckin.create({ data: { habitId, date: d } });
-  done();
-  return { ok: true };
 }
 
 export async function archiveHabit(id: string, archived: boolean): Promise<ActionResult> {
@@ -534,7 +529,7 @@ export async function completeOnboarding(input: z.input<typeof onboardingInput>)
     await db.settings.update({ where: { userId: user.id }, data: { name: v.name, units: v.units, onboarded: true } });
     const created: string[] = [];
     for (const [i, h] of v.habits.entries()) {
-      created.push((await db.habit.create({ data: { userId: user.id, name: h.name, emoji: h.emoji ?? null, frequency: "daily", timesPerWeek: 7, order: i } })).id);
+      created.push((await db.habit.create({ data: { userId: user.id, name: h.name, emoji: h.emoji ?? null, order: i } })).id);
     }
     if (v.goal) {
       const g = v.goal;
@@ -568,6 +563,18 @@ export async function setHabitCheck(habitId: string, date: string, checked: bool
   if (!(await db.habit.findUnique({ where: { id: habitId } }))) return { ok: false, error: "Habit not found." };
   if (checked) await db.habitCheckin.upsert({ where: { habitId_date: { habitId, date } }, update: {}, create: { habitId, date } });
   else await db.habitCheckin.deleteMany({ where: { habitId, date } });
+  done();
+  return { ok: true };
+}
+
+/** Tap counter for "N times a day" habits. Sets the day's count (idempotent, safe to replay offline); 0 removes it. */
+export async function setHabitCount(habitId: string, date: string, count: number): Promise<ActionResult> {
+  const { db, user } = await requireUser();
+  if (await tooFast(user.id)) return SLOW_DOWN;
+  if (!isDateStr(date) || !Number.isInteger(count) || count < 0 || count > 100) return { ok: false, error: "Invalid count." };
+  if (!(await db.habit.findUnique({ where: { id: habitId } }))) return { ok: false, error: "Habit not found." };
+  if (count === 0) await db.habitCheckin.deleteMany({ where: { habitId, date } });
+  else await db.habitCheckin.upsert({ where: { habitId_date: { habitId, date } }, update: { count }, create: { habitId, date, count } });
   done();
   return { ok: true };
 }

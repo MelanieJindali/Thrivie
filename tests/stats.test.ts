@@ -1,40 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { computeGoal, currentStreak, isDueToday, longestStreak, streakAtRisk } from "@/lib/stats";
+import { computeGoal } from "@/lib/stats";
 import { computeInsights } from "@/lib/insights";
 import { addDays } from "@/lib/dates";
 
 const TODAY = "2026-11-07"; // Saturday; week starts Mon 2026-11-02
-const daily = { frequency: "daily", timesPerWeek: 7 };
-const weekly3 = { frequency: "weekly", timesPerWeek: 3 };
-const days = (...ago: number[]) => new Set(ago.map((n) => addDays(TODAY, -n)));
-
-describe("habit streaks", () => {
-  it("counts consecutive days, not breaking on an unchecked today", () => {
-    expect(currentStreak(daily, days(0, 1, 2), TODAY)).toBe(3);
-    expect(currentStreak(daily, days(1, 2, 3), TODAY)).toBe(3);
-    expect(currentStreak(daily, days(2, 3), TODAY)).toBe(0);
-  });
-  it("finds the longest run", () => {
-    expect(longestStreak(daily, days(0, 1, 5, 6, 7, 8))).toBe(4);
-  });
-  it("counts weekly streaks by weeks that hit the target", () => {
-    // this week: 3 (Mon, Tue, Wed) ✓, last week: 3 ✓, week before: 1 ✗
-    const d = new Set(["2026-11-02", "2026-11-03", "2026-11-04", "2026-10-26", "2026-10-28", "2026-10-30", "2026-10-20"]);
-    expect(currentStreak(weekly3, d, TODAY)).toBe(2);
-    expect(longestStreak(weekly3, d)).toBe(2);
-  });
-  it("hides weekly habits once the target is met", () => {
-    const d = new Set(["2026-11-02", "2026-11-03", "2026-11-04"]);
-    expect(isDueToday(weekly3, d, TODAY)).toBe(false);
-    expect(isDueToday(weekly3, new Set(["2026-11-02"]), TODAY)).toBe(true);
-  });
-  it("flags streaks at risk", () => {
-    expect(streakAtRisk(daily, days(1, 2), TODAY)).toBe(true);
-    expect(streakAtRisk(daily, days(0, 1, 2), TODAY)).toBe(false);
-    // weekly: Saturday, 1 of 3 done, 2 days left (Sat, Sun) → at risk
-    expect(streakAtRisk(weekly3, new Set(["2026-11-02"]), TODAY)).toBe(true);
-  });
-});
 
 describe("computeGoal", () => {
   const g = { target: 100, startValue: null, startDate: "2026-11-01", deadline: "2026-12-01" };
@@ -64,7 +33,7 @@ describe("computeInsights", () => {
     const workouts = health.filter((_, i) => i % 2 === 0).map((h) => ({ date: h.date, type: "cardio", durationMin: 30, distanceKm: 5 }));
     const out = computeInsights({
       today: TODAY, units: "imperial", health, workouts,
-      habits: [{ name: "Meditate", frequency: "daily", streak: 12, longest: 12, dates: [] }],
+      habits: [{ name: "Meditate", streakUnit: "day", streak: 12, longest: 12, dates: [] }],
       goals: [], journalDates: [],
     });
     const text = out.map((i) => i.text).join(" | ");

@@ -1,55 +1,59 @@
 import "server-only";
 import type { ScopedDb } from "./db";
-import { addDays, lastNDays, startOfWeek, type DateStr } from "./dates";
-import {
-  computeGoal,
-  currentStreak,
-  isDueToday,
-  longestStreak,
-  streakAtRisk,
-  weekCount,
-  type GoalComputed,
-} from "./stats";
+import { addDays, lastNDays, type DateStr } from "./dates";
+import { computeGoal, type GoalComputed } from "./stats";
+import { computeStreak, describeSchedule, getHabitStatus, isScheduledOn, readSchedule, streakAtRisk, targetOf, type HabitLog, type HabitSchedule, type HabitStatus, type Period } from "./habits/schedule";
 import type { Goal } from "@prisma/client";
 
 export type HabitView = {
   id: string;
   name: string;
   emoji: string | null;
-  frequency: string;
-  timesPerWeek: number;
+  schedule: HabitSchedule;
+  /** Plain-language schedule, e.g. "Mon, Wed, Fri" or "3 times a week". */
+  summary: string;
+  status: HabitStatus;
+  /** Done for today: the daily target is met (day habits) or there's a check-in today (week/month habits). */
   checkedToday: boolean;
+  dueToday: boolean;
   streak: number;
   longest: number;
-  thisWeek: number;
-  dueToday: boolean;
+  streakUnit: Period;
   atRisk: boolean;
-  dates: string[]; // all check-in dates
+  logs: HabitLog[];
+  dates: string[]; // dates with at least one check-in (oldest first)
 };
+
+export function toHabitView(h: { id: string; name: string; emoji: string | null; schedule: unknown; checkins: HabitLog[] }, today: DateStr): HabitView {
+  const schedule = readSchedule(h.schedule);
+  const logs = h.checkins.filter((c) => c.count > 0);
+  const status = getHabitStatus(schedule, logs, today);
+  const streak = computeStreak(schedule, logs, today);
+  return {
+    id: h.id,
+    name: h.name,
+    emoji: h.emoji,
+    schedule,
+    summary: describeSchedule(schedule),
+    status,
+    checkedToday: status.window === "day" ? status.complete : status.todayCount > 0,
+    dueToday: status.showToday,
+    streak: streak.current,
+    longest: streak.best,
+    streakUnit: streak.unit,
+    atRisk: streakAtRisk(schedule, logs, today),
+    logs,
+    dates: logs.map((l) => l.date).sort(),
+  };
+}
 
 export async function getHabitViews(db: ScopedDb, today: DateStr, includeArchived = false): Promise<HabitView[]> {
   const habits = await db.habit.findMany({
     where: includeArchived ? {} : { archived: false },
-    include: { checkins: { select: { date: true } } },
+    include: { checkins: { select: { date: true, count: true } } },
     orderBy: [{ order: "asc" }, { createdAt: "asc" }],
   });
-  return habits.map((h) => {
-    const dates = new Set(h.checkins.map((c) => c.date));
-    return {
-      id: h.id,
-      name: h.name,
-      emoji: h.emoji,
-      frequency: h.frequency,
-      timesPerWeek: h.timesPerWeek,
-      checkedToday: dates.has(today),
-      streak: currentStreak(h, dates, today),
-      longest: longestStreak(h, dates),
-      thisWeek: weekCount(dates, startOfWeek(today)),
-      dueToday: isDueToday(h, dates, today),
-      atRisk: streakAtRisk(h, dates, today),
-      dates: [...dates].sort(),
-    };
-  });
+  return habits.map((h) => toHabitView(h, today));
 }
 
 /** Current value of a goal based on its link. */
@@ -127,10 +131,17 @@ export async function getWorkoutsRange(db: ScopedDb, today: DateStr, days: numbe
 
 /** Share of active habits completed per day (for the dashboard heatmap). */
 export function habitCompletionByDay(habits: HabitView[], today: DateStr, days: number) {
-  const daily = habits.filter((h) => h.frequency !== "weekly");
-  const pool = daily.length ? daily : habits;
+  // Day-based habits judged on the days they're scheduled; week/month habits only if there are no day habits.
+  const dayHabits = habits.filter((h) => h.streakUnit === "day");
+  const pool = dayHabits.length ? dayHabits : habits;
+  const counts = pool.map((h) => new Map(h.logs.map((l) => [l.date, l.count])));
   return lastNDays(today, days).map((date) => {
-    const done = pool.filter((h) => h.dates.includes(date)).length;
-    return { date, value: pool.length ? done / pool.length : 0, count: done };
+    let due = 0, done = 0;
+    pool.forEach((h, i) => {
+      if (h.streakUnit === "day" && !isScheduledOn(h.schedule, date)) return;
+      due++;
+      if ((counts[i].get(date) ?? 0) >= (h.streakUnit === "day" ? targetOf(h.schedule) : 1)) done++;
+    });
+    return { date, value: due ? done / due : 0, count: done };
   });
 }

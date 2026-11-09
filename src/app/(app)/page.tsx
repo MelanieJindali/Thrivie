@@ -84,7 +84,7 @@ export default async function TodayPage() {
           <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full font-display text-lg font-semibold text-[#3A2C10] shadow-[0_0_0_3px_var(--surface),0_0_24px_2px_rgb(212_178_106/0.55)] pop"
             style={{ background: "radial-gradient(circle at 35% 30%, #F4E3B5, #D4B26A 55%, #9C7A35)" }} aria-hidden>{milestone.streak}</span>
           <div>
-            <p className="font-display text-lg font-semibold">{milestone.streak}-{milestone.frequency === "weekly" ? "week" : "day"} streak!</p>
+            <p className="font-display text-lg font-semibold">{milestone.streak}-{milestone.streakUnit} streak!</p>
             <p className="text-sm text-muted">{milestone.name}: a real milestone. Well done.</p>
           </div>
         </div>

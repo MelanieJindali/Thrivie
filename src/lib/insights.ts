@@ -8,7 +8,7 @@ export type Insight = { id: string; text: string; score: number; emoji: string }
 
 type HealthRow = { date: string; sleepHours: number | null; mood: number | null; energy: number | null; steps: number | null; weightKg: number | null };
 type WorkoutRow = { date: string; type: string; durationMin: number; distanceKm: number | null };
-type HabitRow = { name: string; frequency: string; streak: number; longest: number; dates: string[] };
+type HabitRow = { name: string; streakUnit: "day" | "week" | "month"; streak: number; longest: number; dates: string[] };
 type GoalRow = { title: string; status: string; pct: number; linkType: string; linkMetric: string | null; startValue: number | null; current: number; target: number };
 
 export type InsightInput = {
@@ -30,7 +30,7 @@ export function computeInsights(input: InsightInput): Insight[] {
 
   // 1. Habit streak records and notable streaks
   for (const h of habits) {
-    const unit = h.frequency === "weekly" ? "week" : "day";
+    const unit = h.streakUnit;
     if (h.streak >= 3 && h.streak >= h.longest) {
       out.push({ id: `streak-record-${h.name}`, emoji: "🏆", score: 90 + Math.min(h.streak, 30), text: `${h.name}: your longest streak yet — ${plural(h.streak, unit)}.` });
     } else if (h.streak >= 5) {

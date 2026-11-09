@@ -1,12 +1,15 @@
 import { getSettings } from "@/lib/settings";
 import { requireUser } from "@/lib/auth";
 import { todayInTz } from "@/lib/dates";
-import { getHabitViews, habitCompletionByDay } from "@/lib/queries";
+import { getHabitViews, habitCompletionByDay, type HabitView } from "@/lib/queries";
+import { streakUnitLabel } from "@/lib/habits/schedule";
 import { HabitCheckList } from "@/components/HabitCheckList";
 import { Heatmap } from "@/components/Heatmap";
-import { HabitManager } from "./HabitManager";
+import { HabitManager, type HabitRow } from "./HabitManager";
 import { PageHeader } from "@/components/ui";
 import { CircleCheck } from "lucide-react";
+
+const row = ({ id, name, emoji, schedule, summary }: HabitView, archived: boolean): HabitRow => ({ id, name, emoji, schedule, summary, archived });
 
 export default async function HabitsPage() {
   const settings = await getSettings();
@@ -30,25 +33,23 @@ export default async function HabitsPage() {
           <p className="mt-2 text-xs text-muted">Darker squares mean more of your daily habits were done.</p>
         </section>
       )}
-      <section className="grid gap-4 sm:grid-cols-2">
+      <section className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,19rem),1fr))] gap-4">
         {habits.map((h) => (
           <div key={h.id} className="card">
             <div className="mb-3 flex items-baseline justify-between gap-2">
               <h3 className="font-medium">{h.emoji} {h.name}</h3>
-              <span className="text-xs text-muted">
-                {h.frequency === "weekly" ? `${h.timesPerWeek}×/week` : "daily"}
-              </span>
+              <span className="text-xs text-muted">{h.summary}</span>
             </div>
             <Heatmap values={Object.fromEntries(h.dates.map((d) => [d, 1]))} today={today} weeks={17} label={`${h.name} check-ins`} />
-            <div className="mt-3 flex gap-4 text-xs text-muted">
-              <span>🔥 Current: <b className="text-text">{h.streak}</b> {h.frequency === "weekly" ? "wks" : "days"}</span>
+            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+              <span>🔥 Current: <b className="text-text">{h.streak}</b> {streakUnitLabel(h.streakUnit, h.streak)}</span>
               <span>🏆 Best: <b className="text-text">{h.longest}</b></span>
-              <span>✓ Total: <b className="text-text">{h.dates.length}</b></span>
+              <span>✓ Days done: <b className="text-text">{h.dates.length}</b></span>
             </div>
           </div>
         ))}
       </section>
-      <HabitManager habits={habits.map(({ id, name, emoji, frequency, timesPerWeek }) => ({ id, name, emoji, frequency, timesPerWeek, archived: false }))} archived={archived.map(({ id, name, emoji, frequency, timesPerWeek }) => ({ id, name, emoji, frequency, timesPerWeek, archived: true }))} />
+      <HabitManager habits={habits.map((h) => row(h, false))} archived={archived.map((h) => row(h, true))} />
     </div>
   );
 }

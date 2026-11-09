@@ -39,7 +39,7 @@ export async function buildBrief(db: ScopedDb, userId: string): Promise<{ today:
       habitsDone: habits.filter((h) => h.dates.includes(yesterday)).length,
       logged: !!y,
     },
-    atRisk: habits.filter((h) => h.atRisk && h.streak >= 2).map((h) => ({ name: h.name, streak: h.streak, weekly: h.frequency === "weekly" })),
+    atRisk: habits.filter((h) => h.atRisk && h.streak >= 2).map((h) => ({ name: h.name, streak: h.streak, unit: h.streakUnit })),
     openToday: habits.filter((h) => h.dueToday && !h.checkedToday).length,
     goals: { total: goals.length, onTrack: goals.filter((g) => g.status === "on-track" || g.status === "done").length, behind: goals.filter((g) => g.status === "behind").map((g) => g.title) },
     week: { sleep: avg(week.map((h) => h.sleepHours)), workouts: workouts.filter((w) => w.date >= addDays(today, -6)).length, steps: avg(week.map((h) => h.steps)) },

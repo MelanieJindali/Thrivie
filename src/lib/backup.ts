@@ -1,9 +1,11 @@
 import "server-only";
 import { z } from "zod";
 import type { ScopedDb } from "./db";
+import { describeSchedule, parseSchedule, readSchedule, scheduleFromLegacy } from "./habits/schedule";
 import { kgToDisplay, kmToDisplay, mlToDisplay, paceToDisplay, distanceUnit, weightUnit, waterUnit, type Units } from "./units";
 
-export const BACKUP_VERSION = 1;
+/** 2: habits carry a `schedule` and per-day check-in counts. Version 1 backups still restore. */
+export const BACKUP_VERSION = 2;
 
 export async function exportAll(db: ScopedDb, userId: string) {
   const [settings, healthLogs, workouts, meals, habits, goals, journal, aliases] = await Promise.all([
@@ -25,7 +27,7 @@ export async function exportAll(db: ScopedDb, userId: string) {
     healthLogs: healthLogs.map(({ createdAt, updatedAt, ...h }) => ({ ...h, custom: h.custom ? JSON.parse(h.custom) : null })),
     workouts: workouts.map(({ createdAt, exercises, ...w }) => ({ ...w, exercises: exercises.map(({ id, workoutId, ...e }) => e) })),
     meals: meals.map(({ id, userId, createdAt, ...m }) => m),
-    habits: habits.map(({ checkins, createdAt, ...h }) => ({ ...h, createdAt: createdAt.toISOString(), checkins: checkins.map((c) => c.date) })),
+    habits: habits.map(({ checkins, createdAt, ...h }) => ({ ...h, createdAt: createdAt.toISOString(), checkins: checkins.map((c) => ({ date: c.date, count: c.count })) })),
     goals: goals.map(({ progress, createdAt, ...g }) => ({ ...g, progress: progress.map(({ id, goalId, ...p }) => p) })),
     journal: journal.map(({ createdAt, updatedAt, ...j }) => ({ ...j, createdAt: createdAt.toISOString() })),
     aliases,
@@ -76,11 +78,11 @@ export async function exportCsv(db: ScopedDb, table: CsvTable, u: Units): Promis
     }
     case "habits": {
       const rows = await db.habit.findMany({ orderBy: { order: "asc" } });
-      return toCsv(rows.map((r) => ({ id: r.id, name: r.name, emoji: r.emoji, frequency: r.frequency, times_per_week: r.timesPerWeek, archived: r.archived })), ["id", "name", "emoji", "frequency", "times_per_week", "archived"]);
+      return toCsv(rows.map((r) => ({ id: r.id, name: r.name, emoji: r.emoji, schedule: describeSchedule(readSchedule(r.schedule)), archived: r.archived })), ["id", "name", "emoji", "schedule", "archived"]);
     }
     case "checkins": {
       const rows = await db.habitCheckin.findMany({ include: { habit: { select: { name: true } } }, orderBy: { date: "asc" } });
-      return toCsv(rows.map((r) => ({ date: r.date, habit: r.habit.name, habit_id: r.habitId })), ["date", "habit", "habit_id"]);
+      return toCsv(rows.map((r) => ({ date: r.date, habit: r.habit.name, habit_id: r.habitId, count: r.count })), ["date", "habit", "habit_id", "count"]);
     }
     case "goals": {
       const rows = await db.goal.findMany();
@@ -128,8 +130,11 @@ export const BackupSchema = z.object({
     notes: z.string().nullable().optional(),
   })).default([]),
   habits: z.array(z.object({
-    id: z.string(), name: z.string(), emoji: z.string().nullable().optional(), frequency: z.string(), timesPerWeek: z.number().int(),
-    archived: z.boolean().default(false), order: z.number().int().default(0), checkins: z.array(d).default([]),
+    id: z.string(), name: z.string(), emoji: z.string().nullable().optional(),
+    schedule: z.unknown().optional(), // v2
+    frequency: z.string().optional(), timesPerWeek: z.number().int().optional(), // v1
+    archived: z.boolean().default(false), order: z.number().int().default(0),
+    checkins: z.array(z.union([d, z.object({ date: d, count: z.number().int().min(1).max(100) })])).default([]),
   })).default([]),
   goals: z.array(z.object({
     id: z.string(), title: z.string(), target: z.number(), unit: z.string(), startDate: d, deadline: d, startValue: n,
@@ -179,8 +184,9 @@ export async function restoreBackup(db: ScopedDb, userId: string, raw: unknown) 
     const habitIdMap = new Map<string, string>();
     for (const h of b.habits) {
       const created = await tx.habit.create({ data: {
-        userId, name: h.name, emoji: h.emoji ?? null, frequency: h.frequency, timesPerWeek: h.timesPerWeek, archived: h.archived, order: h.order,
-        checkins: { create: [...new Set(h.checkins)].map((date) => ({ date })) },
+        userId, name: h.name, emoji: h.emoji ?? null, archived: h.archived, order: h.order,
+        schedule: h.schedule !== undefined ? parseSchedule(h.schedule) : scheduleFromLegacy(h.frequency ?? "daily", h.timesPerWeek ?? 7),
+        checkins: { create: [...new Map(h.checkins.map((c) => (typeof c === "string" ? [c, 1] : [c.date, c.count]) as [string, number])).entries()].map(([date, count]) => ({ date, count })) },
       } });
       habitIdMap.set(h.id, created.id);
     }

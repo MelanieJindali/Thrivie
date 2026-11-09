@@ -7,7 +7,7 @@ export type BriefFacts = {
   weekday: string;
   name: string;
   yesterday: { sleepHours: number | null; workouts: { type: string; minutes: number }[]; habitsDone: number; logged: boolean };
-  atRisk: { name: string; streak: number; weekly: boolean }[];
+  atRisk: { name: string; streak: number; unit: "day" | "week" | "month" }[];
   openToday: number;
   goals: { total: number; onTrack: number; behind: string[] };
   week: { sleep: number | null; workouts: number; steps: number | null };
@@ -47,7 +47,7 @@ export function composeBrief(f: BriefFacts): string {
   // 2. Streaks at risk
   if (f.atRisk.length) {
     const s = f.atRisk[0];
-    const unit = s.weekly ? "week" : "day";
+    const unit = s.unit;
     out.push(pick([
       `Your ${s.name.toLowerCase()} streak (${plural(s.streak, unit)}) is waiting for today's check-in.`,
       `${s.name} is on a ${s.streak}-${unit} run — one tap keeps it going.`,

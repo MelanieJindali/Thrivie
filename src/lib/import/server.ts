@@ -2,6 +2,7 @@ import "server-only";
 import { z } from "zod";
 import type { ScopedDb } from "../db";
 import { isDateStr } from "../dates";
+import { scheduleFromLegacy } from "../habits/schedule";
 
 export type { Decision, ReviewItemWithDup } from "./duplicates";
 
@@ -114,7 +115,7 @@ export async function commitItems(db: ScopedDb, userId: string, items: CommitIte
             habitId = createdHabits.get(key) ?? null;
             if (!habitId) {
               const h = await tx.habit.create({
-                data: { userId, name: it.data.habitName.trim(), frequency: it.data.frequency, timesPerWeek: it.data.frequency === "daily" ? 7 : 3, order: await tx.habit.count() },
+                data: { userId, name: it.data.habitName.trim(), schedule: scheduleFromLegacy(it.data.frequency, 3), order: await tx.habit.count() },
               });
               habitId = h.id;
               createdHabits.set(key, h.id);
