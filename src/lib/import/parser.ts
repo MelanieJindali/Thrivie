@@ -17,6 +17,8 @@ export type ParseContext = {
   habits: string[]; // existing habit names
   goals: { title: string; unit: string }[]; // existing manual goals
   aliases?: AliasRule[];
+  /** Layer 2: the user's own recent values and names (no note text). */
+  personal?: { recentWeightKg?: number | null; exerciseNames?: string[]; workoutTitles?: string[] };
 };
 /** `uncertain` lists snippets (with their date) that Tier 1 could not read confidently; only these go to the optional on-device AI. */
 export type ParseOutput = { entries: ImportEntry[]; unparsed: string[]; uncertain: { text: string; date: DateStr }[]; segments: number };
@@ -108,7 +110,7 @@ function resolveMarker(marker: string, today: DateStr): { date: DateStr | null; 
   return { date: null, text };
 }
 
-type Segment = { dateText: string | null; date: DateStr; body: string; dateConfidence: number };
+export type Segment = { dateText: string | null; date: DateStr; body: string; dateConfidence: number };
 
 /** Split notes into day segments at date markers ("Mon -", "Tues:", "11/3", "yesterday,"). */
 export function segmentByDay(input: string, today: DateStr): Segment[] {
@@ -195,7 +197,11 @@ function makeStemMatcher(habits: string[]) {
     const root = hw.replace(/(e|es|ed|ing|s)$/, "");
     return cw.startsWith(root.slice(0, Math.max(5, root.length - 1))) && cw.length <= hw.length + 5;
   };
+  const compact = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
   return (text: string): string | null => {
+    const flat = compact(text.replace(/\d+\s*(?:min|mins|minutes|x)?/gi, ""));
+    const exact = habits.find((h) => compact(h) && (compact(h) === flat || compact(h) === flat.replace(/(ed|ing|s)$/, "")));
+    if (exact) return exact;
     const cw = sig(text);
     if (!cw.length || cw.length > 5) return null;
     const hit = list.find((h) => h.words.every((w) => cw.some((c) => same(w, c))) && cw.length <= h.words.length + 2);
@@ -204,14 +210,37 @@ function makeStemMatcher(habits: string[]) {
 }
 
 export function parseNotes(text: string, ctx: ParseContext): ParseOutput {
+  const segments = segmentByDay(cleanText(text.slice(0, 20000)), ctx.today);
+  return finishParse([parseSegments(segments, ctx)], ctx, segments.length);
+}
+
+export type SegmentResult = { entries: ImportEntry[]; unparsed: string[]; uncertain: { text: string; date: DateStr }[] };
+
+/** Merge per-segment results into the final output (shared by the full and incremental parsers). */
+export function finishParse(parts: SegmentResult[], ctx: ParseContext, segments: number): ParseOutput {
+  const entries = parts.flatMap((p) => p.entries);
+  const unparsed = parts.flatMap((p) => p.unparsed);
+  const uncertain = parts.flatMap((p) => p.uncertain);
+  for (const e of entries) if (e.confidence < 0.7 && e.source_text && !uncertain.some((u) => u.text === e.source_text)) uncertain.push({ text: e.source_text, date: e.date ?? ctx.today });
+  return { entries, unparsed, uncertain: uncertain.slice(0, 20), segments };
+}
+
+/** Read already-segmented day blocks. */
+export function parseSegments(segments: Segment[], ctx: ParseContext): SegmentResult {
   const stemHabit = makeStemMatcher(ctx.habits);
+  // Layer 2: the user's own exercise names ("bench" -> their "Bench press"), matched leniently.
+  const exFuse = new Fuse((ctx.personal?.exerciseNames ?? []).map((name) => ({ name })), { keys: ["name"], threshold: 0.3, ignoreLocation: true, includeScore: true });
+  const ownExercise = (raw: string): string | null => {
+    if (raw.length < 3) return null;
+    const hit = exFuse.search(raw)[0];
+    return hit && (hit.score ?? 1) < 0.3 ? hit.item.name : null;
+  };
   const entries: ImportEntry[] = [];
   const unparsed: string[] = [];
   const uncertain: { text: string; date: DateStr }[] = [];
   const aliasMap = new Map((ctx.aliases ?? []).map((a) => [`${a.kind}:${a.alias.toLowerCase()}`, a.target]));
   const habitFuse = new Fuse(ctx.habits.map((name) => ({ name })), { keys: ["name"], threshold: 0.38, ignoreLocation: true, includeScore: true });
   const goalFuse = new Fuse(ctx.goals, { keys: ["title", "unit"], threshold: 0.35, ignoreLocation: true, includeScore: true });
-  const segments = segmentByDay(cleanText(text.slice(0, 20000)), ctx.today);
 
   for (const seg of segments) {
     const base = { date_text: seg.dateText, date: seg.date, source_text: null as string | null };
@@ -279,10 +308,27 @@ export function parseNotes(text: string, ctx: ParseContext): ParseOutput {
       const weight = lc.match(new RegExp(`\\b(?:weight|weighed|wt|scale)\\s*(?:in\\s+at|is|was|:|=)?\\s*${NUM}\\s*(lbs?|pounds|kg|kgs)?`)) ?? lc.match(new RegExp(`\\b${NUM}\\s*(lbs?|pounds|kg|kgs)\\b(?!.*\\b(?:bench|squat|deadlift|press|row|curl)\\b)`));
       if (weight) {
         const v = num(weight[1]);
-        const unit = weight[2] ? (weight[2].startsWith("k") ? "kg" : "lb") : null;
-        const plausible = unit === "kg" ? v >= 30 && v <= 250 : unit === "lb" ? v >= 70 && v <= 550 : ctx.units === "imperial" ? v >= 70 && v <= 550 : v >= 30 && v <= 250;
+        let unit: "kg" | "lb" | null = weight[2] ? (weight[2].startsWith("k") ? "kg" : "lb") : null;
+        let conf = unit ? 0.95 : 0.8;
+        if (!unit) {
+          // Layer 2: a bare number is read in whichever unit lands closest to the user's recent weights,
+          // then their learned preference, then their unit setting.
+          const recent = ctx.personal?.recentWeightKg;
+          const pref = aliasMap.get("metric:weight-unit");
+          if (recent) {
+            const asLb = v * 0.45359237, asKg = v;
+            const near = (x: number) => Math.abs(x - recent) / recent;
+            unit = near(asLb) <= near(asKg) ? "lb" : "kg";
+            conf = Math.min(near(asLb), near(asKg)) <= 0.1 ? 0.92 : 0.6;
+          } else if (pref === "kg" || pref === "lb") {
+            unit = pref;
+            conf = 0.9;
+          }
+        }
+        const eff = unit ?? (ctx.units === "imperial" ? "lb" : "kg");
+        const plausible = eff === "kg" ? v >= 30 && v <= 250 : v >= 70 && v <= 550;
         if (plausible && !/\d\s*[x×]\s*\d/.test(lc)) {
-          setH("weight", { value: v, unit }, unit ? 0.95 : 0.8);
+          setH("weight", { value: v, unit }, conf);
           used = true;
         }
       }
@@ -353,17 +399,19 @@ export function parseNotes(text: string, ctx: ParseContext): ParseOutput {
         // "great workout: 5x5 squats" names the session, not the exercise; the name comes after the numbers.
         if (/\b(workout|session|gym|lifting|lifted|training|today)$/.test(rawName)) continue;
         named++;
-        const name = aliasMap.get(`exercise:${rawName}`) ?? EXERCISE_NAMES[rawName] ?? cap(rawName);
+        const known = aliasMap.get(`exercise:${rawName}`) ?? EXERCISE_NAMES[rawName] ?? ownExercise(rawName);
+        const name = known ?? cap(rawName);
         strength.exercises.push({ name, sets: num(m[2]), reps: num(m[3]), weight: m[4] ? { value: num(m[4]), unit: m[5] ? (m[5].startsWith("k") ? "kg" : "lb") : null } : null });
-        if (!(aliasMap.has(`exercise:${rawName}`) || EXERCISE_NAMES[rawName])) strength.field_confidence[`exercises.${strength.exercises.length - 1}`] = 0.65;
+        if (!known) strength.field_confidence[`exercises.${strength.exercises.length - 1}`] = 0.65;
         used = true;
       }
       if (!named) {
         for (const m of clause.matchAll(new RegExp(`(?<![\\w.])(\\d{1,2})\\s*[x×]\\s*(\\d{1,3})\\s+(?:of\\s+)?([a-z][a-z' -]{2,30}?)(?:\\s*(?:@|at|w\\/|with)\\s*${NUM}\\s*(lbs?|kg)?)?(?=$|[,.;]|\\s+\\d)`, "gi"))) {
           const rawName = clean(m[3].toLowerCase());
-          const name = aliasMap.get(`exercise:${rawName}`) ?? EXERCISE_NAMES[rawName] ?? cap(rawName);
+          const known = aliasMap.get(`exercise:${rawName}`) ?? EXERCISE_NAMES[rawName] ?? ownExercise(rawName);
+          const name = known ?? cap(rawName);
           strength.exercises.push({ name, sets: num(m[1]), reps: num(m[2]), weight: m[4] ? { value: num(m[4]), unit: m[5] ? (m[5].startsWith("k") ? "kg" : "lb") : null } : null });
-          if (!(aliasMap.has(`exercise:${rawName}`) || EXERCISE_NAMES[rawName])) strength.field_confidence[`exercises.${strength.exercises.length - 1}`] = 0.65;
+          if (!known) strength.field_confidence[`exercises.${strength.exercises.length - 1}`] = 0.65;
           used = true;
         }
       }
@@ -481,6 +529,5 @@ export function parseNotes(text: string, ctx: ParseContext): ParseOutput {
       entries.push({ kind: "journal", ...base, source_text: content.slice(0, 120), confidence: Math.min(seg.dateConfidence, 0.85), field_confidence: mood ? { mood: 0.6 } : {}, content, mood });
     }
   }
-  for (const e of entries) if (e.confidence < 0.7 && e.source_text && !uncertain.some((u) => u.text === e.source_text)) uncertain.push({ text: e.source_text, date: e.date ?? ctx.today });
-  return { entries, unparsed, uncertain: uncertain.slice(0, 20), segments: segments.length };
+  return { entries, unparsed, uncertain };
 }

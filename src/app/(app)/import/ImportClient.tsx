@@ -1,5 +1,7 @@
 "use client";
 
+import type { PersonalContext } from "@/lib/import/personal";
+import { useImportParser } from "@/lib/import/useImportParser";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -12,7 +14,7 @@ import {
 } from "@/lib/units";
 import { flagDuplicates, type Decision, type Existing, type ReviewItemWithDup } from "@/lib/import/duplicates";
 import { LOW_CONFIDENCE, normalizeEntries, type ReviewItem } from "@/lib/import/normalize";
-import { parseNotes, type AliasRule } from "@/lib/import/parser";
+import type { AliasRule } from "@/lib/import/parser";
 import type { ImportEntry } from "@/lib/import/schema";
 import { Tip } from "@/components/Tip";
 import { useToast } from "@/components/Toast";
@@ -28,8 +30,8 @@ Tues: rest day, 8h sleep, journaled about work stress`;
 const KIND_LABEL: Record<Item["kind"], string> = { health: "Health", workout: "Workout", meal: "Meal", habit: "Habit", goal_update: "Goal progress", journal: "Journal" };
 const DECISION_LABEL: Record<Decision, string> = { add: "Add anyway", merge: "Keep existing, fill gaps", overwrite: "Overwrite existing", replace: "Replace existing", skip: "Skip" };
 
-export function ImportClient({ today, units, habits, goals, aliases, tipsSeen, onDeviceAi }: {
-  today: string; units: Units; habits: Opt[]; goals: (Opt & { unit: string })[]; aliases: AliasRule[]; tipsSeen: string[]; onDeviceAi: boolean;
+export function ImportClient({ today, units, habits, goals, aliases, tipsSeen, onDeviceAi, personal }: {
+  today: string; units: Units; habits: Opt[]; goals: (Opt & { unit: string })[]; aliases: AliasRule[]; tipsSeen: string[]; onDeviceAi: boolean; personal: PersonalContext;
 }) {
   const [text, setText] = useState("");
   const [phase, setPhase] = useState<"input" | "checking" | "review" | "saving" | "done">("input");
@@ -42,8 +44,9 @@ export function ImportClient({ today, units, habits, goals, aliases, tipsSeen, o
   const toast = useToast();
 
   // Tier 1: parse instantly on this device as the user types or pastes.
-  const ctx = useMemo(() => ({ today, units, habits: habits.map((h) => h.name), goals: goals.map((g) => ({ title: g.name, unit: g.unit })), aliases }), [today, units, habits, goals, aliases]);
-  const parsed = useMemo(() => (text.trim() ? parseNotes(text, ctx) : null), [text, ctx]);
+  const ctx = useMemo(() => ({ today, units, habits: habits.map((h) => h.name), goals: goals.map((g) => ({ title: g.name, unit: g.unit })), aliases, personal }), [today, units, habits, goals, aliases, personal]);
+  // Parsed in a Web Worker 250 ms after typing pauses; the main thread only renders results.
+  const { parsed } = useImportParser(text, ctx);
   const entries = enhanced ?? parsed?.entries ?? [];
   const preview = useMemo(() => {
     const items = normalizeEntries(entries, { today, units, habits, goals });
@@ -95,6 +98,12 @@ export function ImportClient({ today, units, habits, goals, aliases, tipsSeen, o
       if (it.kind === "habit" && o.kind === "habit" && !o.data.habitId && it.data.habitId) {
         const target = habits.find((h) => h.id === it.data.habitId)?.name;
         if (target) out.push({ kind: "habit", alias: o.data.habitName.toLowerCase().slice(0, 40), target });
+      }
+      // A corrected weight that's the original read in the other unit teaches the preferred unit.
+      if (it.kind === "health" && o.kind === "health" && it.data.weightKg && o.data.weightKg && Math.abs(it.data.weightKg - o.data.weightKg) > 1) {
+        const r = it.data.weightKg / o.data.weightKg;
+        if (Math.abs(r - 0.45359237) < 0.01) out.push({ kind: "metric", alias: "weight-unit", target: "lb" });
+        else if (Math.abs(r - 1 / 0.45359237) < 0.03) out.push({ kind: "metric", alias: "weight-unit", target: "kg" });
       }
       if (it.kind === "workout" && o.kind === "workout") {
         it.data.exercises.forEach((e, idx) => {
