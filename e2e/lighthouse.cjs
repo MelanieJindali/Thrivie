@@ -1,5 +1,6 @@
 /* Lighthouse (mobile) for the sign-in page and the signed-in Today screen.
  *   BASE_URL=http://localhost:3000 node e2e/lighthouse.cjs */
+if (!process.env.DEMO_PASSWORD) { console.error("Set DEMO_PASSWORD (the demo account password from your .env) to run this."); process.exit(1); }
 const { chromium } = require("playwright");
 const { execFileSync } = require("node:child_process");
 const BASE = process.env.BASE_URL || "http://localhost:3000";
@@ -11,7 +12,7 @@ const TARGETS = { performance: 90, accessibility: 90, "best-practices": 90, seo:
   const p = await ctx.newPage();
   await p.goto(BASE + "/login");
   await p.locator("input[name=email]").fill("demo@thrivie.app");
-  await p.locator("input[name=password]").fill(process.env.DEMO_PASSWORD || "thrivie-demo-2026");
+  await p.locator("input[name=password]").fill(process.env.DEMO_PASSWORD);
   await p.getByRole("button", { name: "Sign in" }).click();
   await p.waitForURL(BASE + "/");
   const cookie = (await ctx.cookies()).map((c) => `${c.name}=${c.value}`).join("; ");

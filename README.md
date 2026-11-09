@@ -56,16 +56,19 @@ Needs Node.js 20+ and PostgreSQL 14+.
 npm install
 cp .env.example .env            # point POSTGRES_PRISMA_URL / POSTGRES_URL_NON_POOLING at your local Postgres
 npm run gen:key                 # paste the output into ENCRYPTION_KEY in .env
+# add DEMO_PASSWORD=<12+ characters of your choice> to .env
 npm run setup                   # apply migrations (incl. RLS) + create two demo accounts
 npm run dev                     # http://localhost:3000
 ```
 
-Demo logins: **demo@thrivie.app** and **demo2@thrivie.app**, both with the password `thrivie-demo-2026`. Each has 30 days of sample data. Seeding refuses to run in production.
+Demo logins: **demo@thrivie.app** and **demo2@thrivie.app**, both with the `DEMO_PASSWORD` you set in `.env` (there is no built-in default). Each has 30 days of sample data. Seeding refuses to run in production.
+
+`npm install` also turns on the repo's pre-commit hook (`.githooks/pre-commit`), which blocks commits that contain secrets or key/env/log files. For a deeper scan, install [gitleaks](https://github.com/gitleaks/gitleaks) (`brew install gitleaks`); the hook uses it automatically when present.
 
 | Command | |
 |---|---|
-| `npm test` | Unit + integration tests (parser accuracy, dates, schemas, encryption, brief, streaks, **RLS isolation against Postgres**). Uses a database whose name must end in `_test`, e.g. `thrivie_test`. |
-| `node e2e/matrix.cjs` | Playwright: 7 viewports × light/dark × key screens, axe accessibility checks, no horizontal scroll, and 200% text size. Needs the app running and seeded. |
+| `npm test` | Unit + integration tests (parser accuracy, dates, schemas, encryption, brief, streaks, **RLS isolation against Postgres**). Uses a database whose name must end in `_test`, e.g. `thrivie_test`; put its URL in `TEST_DATABASE_URL`, in your shell or a git-ignored `.env.test`. |
+| `node e2e/matrix.cjs` | Playwright: 7 viewports × light/dark × key screens, axe accessibility checks, no horizontal scroll, and 200% text size. Needs the app running and seeded, and `DEMO_PASSWORD` set. |
 | `node e2e/lighthouse.cjs` | Lighthouse (mobile) for sign-in and Today |
 | `npm run db:new-migration` | Create a migration after you change `prisma/schema.prisma` |
 | `npm audit --omit=dev` | Dependency check (0 known vulnerabilities at release) |

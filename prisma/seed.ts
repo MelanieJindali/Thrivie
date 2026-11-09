@@ -1,8 +1,7 @@
 /* Creates (or resets) two demo accounts with ~30 days of sample data each.
  *   npm run db:seed
- * Logins (override with DEMO_PASSWORD):
- *   demo@thrivie.app  / thrivie-demo-2026
- *   demo2@thrivie.app / thrivie-demo-2026
+ * Logins: demo@thrivie.app and demo2@thrivie.app, password from DEMO_PASSWORD
+ * (set it in your git-ignored .env; there is no built-in default).
  * Only these two demo accounts are touched; other users are never modified.
  */
 import "dotenv/config";
@@ -19,7 +18,8 @@ async function main() {
   if (process.env.NODE_ENV === "production" && process.env.ALLOW_DEMO_SEED !== "yes") {
     throw new Error("Refusing to create demo accounts in production (set ALLOW_DEMO_SEED=yes to override).");
   }
-  const password = process.env.DEMO_PASSWORD || "thrivie-demo-2026";
+  const password = process.env.DEMO_PASSWORD;
+  if (!password || password.length < 12) throw new Error("Set DEMO_PASSWORD (12+ characters) in your .env before seeding.");
   const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const timezone = process.env.SEED_TZ || (detected && detected !== "UTC" ? detected : "America/New_York");
   const sys = systemDb();

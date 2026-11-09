@@ -4,7 +4,8 @@ import { execSync } from "node:child_process";
 import { Client } from "pg";
 
 export default async function setup() {
-  const url = process.env.TEST_DATABASE_URL || "postgresql://thrivie_owner:devpass@localhost:5432/thrivie_test";
+  const url = process.env.TEST_DATABASE_URL;
+  if (!url) throw new Error("Set TEST_DATABASE_URL (for example in a git-ignored .env.test) to a local database whose name ends in _test.");
   const dbName = new URL(url).pathname.slice(1);
   if (!dbName.endsWith("_test")) throw new Error(`Refusing to run tests against "${dbName}" (name must end in _test).`);
   execSync("npx prisma migrate deploy", { stdio: "ignore", env: { ...process.env, POSTGRES_PRISMA_URL: url, POSTGRES_URL_NON_POOLING: url } });
