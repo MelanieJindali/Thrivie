@@ -1,12 +1,12 @@
 import { getSettings } from "@/lib/settings";
 import { requireUser } from "@/lib/auth";
-import { todayInTz, formatDate, relativeLabel } from "@/lib/dates";
+import { todayInTz } from "@/lib/dates";
 import { getHealthRange } from "@/lib/queries";
 import { healthTrendSpecs } from "@/lib/trends";
 import { kgToDisplay, mlToDisplay, waterUnit, weightUnit } from "@/lib/units";
 import { TrendGroup } from "@/components/LazyCharts";
 import { HealthForm, type HealthPrefill } from "./HealthForm";
-import { HealthRowActions } from "./HealthRowActions";
+import { HealthHistory } from "./HealthHistory";
 import { MOOD_EMOJI } from "@/lib/constants";
 import { PageHeader } from "@/components/ui";
 import { HeartPulse } from "lucide-react";
@@ -52,22 +52,13 @@ export default async function HealthPage() {
       <TrendGroup specs={healthTrendSpecs(logs, today, u, ["weight", "sleep", "mood", "energy", "steps", "water"])} />
       <section className="card">
         <h2 className="h2 mb-3">Recent logs <span className="text-sm font-normal text-muted">({total} total)</span></h2>
-        <ul className="divide-y divide-border">
-          {[...logs].reverse().slice(0, 21).map((l) => (
-            <li key={l.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 py-2.5 text-sm">
-              <span className="w-24 font-medium">{relativeLabel(l.date, today)}</span>
-              {l.weightKg != null && <span>{kgToDisplay(l.weightKg, u)} {weightUnit(u)}</span>}
-              {l.sleepHours != null && <span>😴 {l.sleepHours}h{l.sleepQuality ? ` · ${l.sleepQuality}/5` : ""}</span>}
-              {l.mood != null && <span>{MOOD_EMOJI[l.mood - 1]} mood {l.mood}</span>}
-              {l.energy != null && <span>⚡ {l.energy}</span>}
-              {l.steps != null && <span>👟 {l.steps.toLocaleString()}</span>}
-              {l.waterMl != null && <span>💧 {mlToDisplay(l.waterMl, u)} {waterUnit(u)}</span>}
-              <span className="ml-auto"><HealthRowActions id={l.id} /></span>
-            </li>
-          ))}
-          {!logs.length && <li className="py-4 text-sm text-muted">Nothing logged yet. Start with today above.</li>}
-        </ul>
-        {logs.length > 21 && <p className="mt-2 text-xs text-muted">Showing the last 21 entries since {formatDate(logs[0].date)}. Export from Settings for everything.</p>}
+        <HealthHistory today={today} rows={[...logs].reverse().map((l) => ({
+          id: l.id, date: l.date,
+          weight: l.weightKg != null ? `${kgToDisplay(l.weightKg, u)} ${weightUnit(u)}` : null,
+          sleep: l.sleepHours != null ? `${l.sleepHours}h${l.sleepQuality ? ` · ${l.sleepQuality}/5` : ""}` : null, sleepHours: l.sleepHours,
+          mood: l.mood != null ? `${MOOD_EMOJI[l.mood - 1]} mood ${l.mood}` : null, moodValue: l.mood,
+          energy: l.energy, steps: l.steps, water: l.waterMl != null ? `${mlToDisplay(l.waterMl, u)} ${waterUnit(u)}` : null, notes: l.notes,
+        }))} />
       </section>
     </div>
   );

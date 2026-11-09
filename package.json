@@ -11,6 +11,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "setup": "prisma migrate deploy && tsx prisma/seed.ts",
     "postinstall": "prisma generate",
+    "prepare": "node scripts/install-hooks.mjs",
     "db:migrate": "prisma migrate deploy",
     "db:new-migration": "prisma migrate dev --create-only",
     "gen:key": "node -e \"console.log(require('crypto').randomBytes(32).toString('base64'))\""

@@ -6,6 +6,7 @@ import { streakUnitLabel } from "@/lib/habits/schedule";
 import { HabitCheckList } from "@/components/HabitCheckList";
 import { Heatmap } from "@/components/Heatmap";
 import { HabitManager, type HabitRow } from "./HabitManager";
+import { SortableCards } from "@/components/SortableCards";
 import { PageHeader } from "@/components/ui";
 import { CircleCheck } from "lucide-react";
 
@@ -33,9 +34,9 @@ export default async function HabitsPage() {
           <p className="mt-2 text-xs text-muted">Darker squares mean more of your daily habits were done.</p>
         </section>
       )}
-      <section className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,19rem),1fr))] gap-4">
-        {habits.map((h) => (
-          <div key={h.id} className="card">
+      <SortableCards preset="habits" label="habits" className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,19rem),1fr))] gap-4"
+        items={habits.map((h, i) => ({ key: h.id, title: h.name, meta: { order: i, streak: h.streak, best: h.longest, unit: h.streakUnit, dueToday: h.dueToday }, node: (
+          <div className="card">
             <div className="mb-3 flex items-baseline justify-between gap-2">
               <h3 className="font-medium">{h.emoji} {h.name}</h3>
               <span className="text-xs text-muted">{h.summary}</span>
@@ -47,8 +48,7 @@ export default async function HabitsPage() {
               <span>✓ Days done: <b className="text-text">{h.dates.length}</b></span>
             </div>
           </div>
-        ))}
-      </section>
+        ) }))} />
       <HabitManager habits={habits.map((h) => row(h, false))} archived={archived.map((h) => row(h, true))} />
     </div>
   );

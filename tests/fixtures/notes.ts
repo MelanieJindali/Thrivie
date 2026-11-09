@@ -9,7 +9,8 @@ export type Fact =
   | { k: "hab"; date: string; habit: string; done: boolean }
   | { k: "newhab"; date: string; name: string }
   | { k: "j"; date: string; contains: string }
-  | { k: "g"; date: string; goal: string; value: number };
+  | { k: "g"; date: string; goal: string; value: number }
+  | { k: "meal"; date: string; slot: string; contains: string };
 
 export const NOTES: { text: string; facts: Fact[] }[] = [
   {

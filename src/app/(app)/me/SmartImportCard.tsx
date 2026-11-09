@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ListControls, NoMatches, ShowMoreButton, useListView } from "@/components/ListControls";
 import { Wand2 } from "lucide-react";
 import { deleteAlias, setOnDeviceAi, updateAlias } from "@/app/actions";
 import { UndoDeleteButton, useToast } from "@/components/Toast";
@@ -11,6 +12,11 @@ export function SmartImportCard({ aliases, onDeviceAi }: { aliases: Alias[]; onD
   const [gpu, setGpu] = useState(false);
   const [on, setOn] = useState(onDeviceAi);
   const [cached, setCached] = useState(false);
+  const view = useListView(aliases, {
+    searchText: (a) => `${a.alias} ${a.target}`,
+    sorts: [{ key: "az", label: "A–Z", compare: (a, b) => a.alias.localeCompare(b.alias) }, { key: "kind", label: "By type", compare: (a, b) => a.kind.localeCompare(b.kind) || a.alias.localeCompare(b.alias) }],
+    pageSize: 10,
+  });
   const toast = useToast();
   useEffect(() => {
     import("@/lib/import/onDevice").then(async (m) => { setGpu(await m.webGpuAvailable()); setCached(await m.isModelCached()); }).catch(() => {});
@@ -36,9 +42,14 @@ export function SmartImportCard({ aliases, onDeviceAi }: { aliases: Alias[]; onD
       <div>
         <h3 className="label">Your shorthand</h3>
         {aliases.length ? (
+          <>
+          {aliases.length > 5 && <ListControls view={view} label="shorthand" searchPlaceholder="Search shorthand" />}
+          <NoMatches view={view} />
           <ul className="divide-y divide-border">
-            {aliases.map((a) => <AliasRow key={a.id} a={a} />)}
+            {view.visible.map((a) => <AliasRow key={a.id} a={a} />)}
           </ul>
+          <ShowMoreButton view={view} noun="more" />
+          </>
         ) : (
           <p className="text-sm text-muted">When you correct an import (for example “bb” → “Bench press”), Thrivie remembers it here for next time.</p>
         )}

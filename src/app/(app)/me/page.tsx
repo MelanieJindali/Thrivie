@@ -1,3 +1,4 @@
+import { systemDb } from "@/lib/db";
 import Link from "next/link";
 import { getSettings } from "@/lib/settings";
 import { requireUser } from "@/lib/auth";
@@ -83,7 +84,7 @@ export default async function SettingsPage() {
 
       <TwoFactorCard enabled={user.totpEnabled} />
 
-      <AccountSection email={user.email} />
+      <AccountSection email={user.email} recoveryKeyAt={(await systemDb().user.findUnique({ where: { id: user.id }, select: { recoveryKeyAt: true } }))?.recoveryKeyAt?.toISOString() ?? null} />
     </div>
   );
 }

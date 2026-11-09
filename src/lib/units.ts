@@ -39,6 +39,6 @@ export function toMetric(value: number, unit: string | null | undefined): { valu
   if (["oz", "fl oz"].includes(u)) return { value: value * ML_PER_OZ, kind: "water" };
   if (["ml"].includes(u)) return { value, kind: "water" };
   if (["l", "liter", "liters", "litre", "litres"].includes(u)) return { value: value * 1000, kind: "water" };
-  if (["glass", "glasses", "cup", "cups"].includes(u)) return { value: value * 250, kind: "water" };
+  if (["glass", "glasses", "cup", "cups"].includes(u)) return { value: value * 240, kind: "water" }; // a U.S. cup / 8 fl oz glass
   return { value, kind: "unknown" };
 }

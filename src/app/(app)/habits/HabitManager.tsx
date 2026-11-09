@@ -6,6 +6,7 @@ import { archiveHabit, deleteHabit, saveHabit } from "@/app/actions";
 import { Field, FormStatus, useAction } from "@/components/ui";
 import { DEFAULT_SCHEDULE, type HabitSchedule } from "@/lib/habits/schedule";
 import { FrequencyPicker } from "./FrequencyPicker";
+import { ListControls, NoMatches, ShowMoreButton, useListView } from "@/components/ListControls";
 
 export type HabitRow = { id: string; name: string; emoji: string | null; schedule: HabitSchedule; summary: string; archived: boolean };
 type H = HabitRow;
@@ -46,6 +47,12 @@ function HabitForm({ initial, onDone }: { initial?: H; onDone?: () => void }) {
 
 export function HabitManager({ habits, archived }: { habits: H[]; archived: H[] }) {
   const [editing, setEditing] = useState<string | null>(null);
+  const all = [...habits, ...archived];
+  const view = useListView(all, {
+    searchText: (h) => `${h.name} ${h.summary}`,
+    filters: [{ key: "active", label: "Active", test: (h) => !h.archived }, { key: "archived", label: "Archived", test: (h) => h.archived }],
+    pageSize: 15,
+  });
   const { run } = useAction();
   return (
     <section className="card scroll-mt-6 space-y-5" id="manage">
@@ -56,8 +63,10 @@ export function HabitManager({ habits, archived }: { habits: H[]; archived: H[] 
       {(habits.length > 0 || archived.length > 0) && (
         <div>
           <h2 className="h2 mb-2">Manage habits</h2>
+          {all.length > 4 && <ListControls view={view} label="habits" searchPlaceholder="Search habits" />}
+          <NoMatches view={view} />
           <ul className="divide-y divide-border">
-            {[...habits, ...archived].map((h) => (
+            {view.visible.map((h) => (
               <li key={h.id} className="py-2.5">
                 {editing === h.id ? (
                   <HabitForm initial={h} onDone={() => setEditing(null)} />
@@ -72,6 +81,7 @@ export function HabitManager({ habits, archived }: { habits: H[]; archived: H[] 
               </li>
             ))}
           </ul>
+          <ShowMoreButton view={view} noun="more habits" />
           <p className="mt-2 text-xs text-muted">Archiving hides a habit but keeps its history. Deleting removes its check-ins too.</p>
         </div>
       )}

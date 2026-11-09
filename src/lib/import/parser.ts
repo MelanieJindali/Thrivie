@@ -8,6 +8,7 @@ import Fuse from "fuse.js";
 import { addDays, isDateStr, resolveRelativeDate, type DateStr } from "../dates";
 import type { Units } from "../units";
 import type { ImportEntry } from "./schema";
+import { cleanText } from "./cleanText";
 
 export type AliasRule = { kind: "exercise" | "habit" | "workout" | "metric"; alias: string; target: string };
 export type ParseContext = {
@@ -16,6 +17,8 @@ export type ParseContext = {
   habits: string[]; // existing habit names
   goals: { title: string; unit: string }[]; // existing manual goals
   aliases?: AliasRule[];
+  /** Layer 2: the user's own recent values and names (no note text). */
+  personal?: { recentWeightKg?: number | null; exerciseNames?: string[]; workoutTitles?: string[] };
 };
 /** `uncertain` lists snippets (with their date) that Tier 1 could not read confidently; only these go to the optional on-device AI. */
 export type ParseOutput = { entries: ImportEntry[]; unparsed: string[]; uncertain: { text: string; date: DateStr }[]; segments: number };
@@ -30,7 +33,9 @@ const DAYNAME = `(?:(?:last|this|on)\\s+)?${WEEKDAY}`;
 // A weekday needs a separator after it ("Mon -", "Tues:", "Sun.", "Thursday⏎") so "sun is out" isn't a date.
 const SEP = `\\s*(?:[:\\-–—)]|,(?=\\s)|\\.(?=\\s)|\\n|$)`;
 // At the start of a line, relative words and numeric dates may be followed by just a space ("yday swam", "11/5 weighed").
-const LINE_MARKER = new RegExp(`(?:^|\\n)[ \\t>*-]*(?<marker>(?:${REL}|${NUMDATE})(?=[\\s:,.\\-–—)])|${DAYNAME}(?=${SEP}))[ \\t]*(?:[:\\-–—),.](?!\\d))?`, "gi");
+const LINE_MARKER = new RegExp(`(?:^|\\n)[ \\t>*-]*(?<marker>(?:${REL}|${NUMDATE})(?=[\\s:,.\\-–—)]|$)|${DAYNAME}(?:[ \\t,]+(?:${NUMDATE}))?(?=${SEP}|[ \\t]))[ \\t]*(?:[:\\-–—),.](?!\\d))?`, "gi");
+/** Bare "sat", "sun" and "wed" are also English words; as a line-start header they need a date, a separator or capitals after them. */
+const AMBIGUOUS_DAY = /^(?:sat|sun|wed)$/i;
 const MID_MARKER = new RegExp(`(?:[.;!?]\\s+|\\s{2,})(?<marker>${REL}|${NUMDATE}|${DAYNAME})${SEP}`, "gi");
 
 const CHECK_DONE = /(✅|✔️?|☑️?|✓|\[x\]|\(x\)|\bdone\b|\bcompleted?\b|\bchecked\b)/i;
@@ -39,10 +44,10 @@ const CHECK_MISSED = /(❌|✗|✘|✖️?|\[ \]|\bmissed\b|\bskipped\b|\bdidn'?
 const CARDIO: Record<string, string> = {
   ran: "Run", run: "Run", running: "Run", jog: "Jog", jogged: "Jog", jogging: "Jog", walked: "Walk", walk: "Walk", walking: "Walk",
   hiked: "Hike", hike: "Hike", hiking: "Hike", biked: "Bike ride", bike: "Bike ride", cycled: "Bike ride", cycling: "Bike ride", rode: "Bike ride",
-  swam: "Swim", swim: "Swim", swimming: "Swim", rowed: "Row", rowing: "Row", elliptical: "Elliptical", spin: "Spin class", spinning: "Spin class",
+  swam: "Swim", swim: "Swim", swimming: "Swim", hiit: "HIIT", circuits: "Circuits", circuit: "Circuits", zumba: "Zumba", dance: "Dance", danced: "Dance", dancing: "Dance", stairmaster: "Stair climber", rowed: "Row", rowing: "Row", elliptical: "Elliptical", spin: "Spin class", spinning: "Spin class",
 };
 const MOBILITY: Record<string, string> = { yoga: "Yoga", pilates: "Pilates", stretching: "Stretching", stretched: "Stretching", mobility: "Mobility" };
-const SPORT: Record<string, string> = { tennis: "Tennis", soccer: "Soccer", football: "Football", basketball: "Basketball", golf: "Golf", climbing: "Climbing", climbed: "Climbing", pickleball: "Pickleball", volleyball: "Volleyball", boxing: "Boxing" };
+const SPORT: Record<string, string> = { tennis: "Tennis", soccer: "Soccer", football: "Football", basketball: "Basketball", golf: "Golf", climbing: "Climbing", climbed: "Climbing", skiing: "Skiing", skied: "Skiing", snowboarding: "Snowboarding", surfing: "Surfing", surfed: "Surfing", kayaking: "Kayaking", kayaked: "Kayaking", pickleball: "Pickleball", volleyball: "Volleyball", boxing: "Boxing" };
 const STRENGTH_WORDS = /\b(gym|lifted|lifting|weights|strength|leg day|legs day|push day|pull day|upper body|lower body|full body|deadlifts?|squats?|bench(?:ed)?|crossfit)\b/i;
 const EXERCISE_NAMES: Record<string, string> = {
   pushups: "Push-ups", pushup: "Push-ups", "push ups": "Push-ups", "push-ups": "Push-ups", situps: "Sit-ups", "sit ups": "Sit-ups", pullups: "Pull-ups", "pull ups": "Pull-ups",
@@ -78,6 +83,8 @@ const NUM = "(\\d+(?:[.,]\\d+)?)";
 const MEAL_WORD = "(breakfast|brunch|lunch|dinner|supper|snacks?|dessert)";
 const MEAL_LINE = new RegExp(`^[ \\t>*•-]*${MEAL_WORD}\\s*[:\\-–—=]\\s*(.+)$`, "i");
 const MEAL_ATE = new RegExp(`\\b(?:had|ate|eaten)\\s+([^,;.!?\\n]+?)\\s+(?:for|at)\\s+${MEAL_WORD}\\b([^,;!?\\n]*)`, "gi");
+/** "turkey wrap 480 cal for lunch": no "ate", but the calories make it clearly food. */
+const MEAL_CAL_FOR = new RegExp(`(?<=^|[,;.\\n])\\s*([^,;.!?\\n]*?\\b\\d+\\s*(?:k?cals?|calories)\\b[^,;.!?\\n]*?)\\s+(?:for|at)\\s+${MEAL_WORD}\\b([^,;!?\\n]*)`, "gi");
 const MACROS: [keyof Pick<Meal, "calories" | "protein_g" | "carbs_g" | "fat_g">, RegExp[]][] = [
   ["calories", [/(\d{2,4}(?:,\d{3})?)\s*(?:kcals?|cals?|calories)\b/i, /\b(?:kcal|cals?|calories)\s*[:=]?\s*(\d{2,4})/i]],
   ["protein_g", [/(\d{1,3}(?:\.\d)?)\s*g(?:rams?)?\s*(?:of\s+)?protein\b/i, /\bprotein\s*[:=]?\s*(\d{1,3}(?:\.\d)?)\s*g?\b/i]],
@@ -93,6 +100,8 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 function resolveMarker(marker: string, today: DateStr): { date: DateStr | null; text: string } {
   const text = clean(marker).replace(/[.:,\-–—)]+$/, "");
+  const numeric = text.match(new RegExp(`(${NUMDATE})$`, "i"));
+  if (numeric && numeric[1] !== text) return { ...resolveMarker(numeric[1], today), text };
   const det = resolveRelativeDate(text, today);
   if (det) return { date: det, text };
   const parsed = chrono.parseDate(text, new Date(`${today}T12:00:00`), { forwardDate: false });
@@ -103,7 +112,7 @@ function resolveMarker(marker: string, today: DateStr): { date: DateStr | null; 
   return { date: null, text };
 }
 
-type Segment = { dateText: string | null; date: DateStr; body: string; dateConfidence: number };
+export type Segment = { dateText: string | null; date: DateStr; body: string; dateConfidence: number };
 
 /** Split notes into day segments at date markers ("Mon -", "Tues:", "11/3", "yesterday,"). */
 export function segmentByDay(input: string, today: DateStr): Segment[] {
@@ -112,6 +121,11 @@ export function segmentByDay(input: string, today: DateStr): Segment[] {
   for (const re of [LINE_MARKER, MID_MARKER]) {
     for (const m of text.matchAll(re)) {
       const marker = m.groups!.marker;
+      if (re === LINE_MARKER && AMBIGUOUS_DAY.test(marker.trim())) {
+        const after = text.slice(m.index! + m[0].length, m.index! + m[0].length + 2);
+        const sep = /[:\-–—).,]/.test(m[0].slice(m[0].indexOf(marker) + marker.length)) || /^\s*($|\n|\d)/.test(after);
+        if (!sep && marker !== marker.toUpperCase()) continue; // "sun is out", "sat with friends"
+      }
       const start = m.index! + m[0].indexOf(marker);
       if (!marks.some((x) => Math.abs(x.index - start) < 3)) marks.push({ index: start, end: m.index! + m[0].length, marker });
     }
@@ -134,7 +148,7 @@ export function splitClauses(body: string): string[] {
   return body
     // Each checkmark ends an item ("no sugar ✅ meditated ✅").
     .replace(/(✅|✔️?|☑️?|✓|❌|✗|✘|✖️?)/g, "$1\n")
-    .split(/\n|[;•·]|[.!?]+(?=\s|$)|,(?!\d{3}\b)(?=\s)|\s+-\s+|\s+(?:and|then|also|plus)\s+(?=[a-z])/i)
+    .split(/\n|[;•·]|[.!?]+(?=\s|$)|,(?!\d{3}\b)(?=\s)|\s+-\s+|\s+(?:and|then|also|plus)\s+(?=[a-z])|\s+(?:and|then|plus)\s+(?=\d+(?:\.\d+)?\s*(?:min|mins|minutes|h|hr|hrs|hours?|mi|miles?|km|k)\b\s+(?:of\s+)?[a-z])/i)
     .map(clean)
     .filter((c) => c.length > 0);
 }
@@ -175,14 +189,60 @@ function wordScore(clause: string, table: [RegExp, number][]): number | null {
   return null;
 }
 
+const HABIT_STOP = new Set(["min", "mins", "minutes", "the", "a", "an", "my", "to", "of", "for", "daily"]);
+/** Matches a clause to one of the user's habits by word stem ("stretched" -> Stretch, "15 min meditation" -> Meditate). */
+function makeStemMatcher(habits: string[]) {
+  const sig = (s: string) => s.toLowerCase().split(/[^a-z']+/).filter((w) => w && !HABIT_STOP.has(w) && !/^\d/.test(w));
+  const list = habits.map((name) => ({ name, words: sig(name) })).filter((h) => h.words.length);
+  const same = (hw: string, cw: string) => {
+    if (hw.length <= 4) return cw === hw || cw === hw + "s" || cw === hw + "ing" || cw === hw + "ed";
+    const root = hw.replace(/(e|es|ed|ing|s)$/, "");
+    return cw.startsWith(root.slice(0, Math.max(5, root.length - 1))) && cw.length <= hw.length + 5;
+  };
+  const compact = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
+  return (text: string): string | null => {
+    const flat = compact(text.replace(/\d+\s*(?:min|mins|minutes|x)?/gi, ""));
+    const exact = habits.find((h) => compact(h) && (compact(h) === flat || compact(h) === flat.replace(/(ed|ing|s)$/, "")));
+    if (exact) return exact;
+    const cw = sig(text);
+    if (!cw.length || cw.length > 5) return null;
+    const hit = list.find((h) => h.words.every((w) => cw.some((c) => same(w, c))) && cw.length <= h.words.length + 2);
+    return hit?.name ?? null;
+  };
+}
+
 export function parseNotes(text: string, ctx: ParseContext): ParseOutput {
+  const segments = segmentByDay(cleanText(text.slice(0, 20000)), ctx.today);
+  return finishParse([parseSegments(segments, ctx)], ctx, segments.length);
+}
+
+export type SegmentResult = { entries: ImportEntry[]; unparsed: string[]; uncertain: { text: string; date: DateStr }[] };
+
+/** Merge per-segment results into the final output (shared by the full and incremental parsers). */
+export function finishParse(parts: SegmentResult[], ctx: ParseContext, segments: number): ParseOutput {
+  const entries = parts.flatMap((p) => p.entries);
+  const unparsed = parts.flatMap((p) => p.unparsed);
+  const uncertain = parts.flatMap((p) => p.uncertain);
+  for (const e of entries) if (e.confidence < 0.7 && e.source_text && !uncertain.some((u) => u.text === e.source_text)) uncertain.push({ text: e.source_text, date: e.date ?? ctx.today });
+  return { entries, unparsed, uncertain: uncertain.slice(0, 20), segments };
+}
+
+/** Read already-segmented day blocks. */
+export function parseSegments(segments: Segment[], ctx: ParseContext): SegmentResult {
+  const stemHabit = makeStemMatcher(ctx.habits);
+  // Layer 2: the user's own exercise names ("bench" -> their "Bench press"), matched leniently.
+  const exFuse = new Fuse((ctx.personal?.exerciseNames ?? []).map((name) => ({ name })), { keys: ["name"], threshold: 0.3, ignoreLocation: true, includeScore: true });
+  const ownExercise = (raw: string): string | null => {
+    if (raw.length < 3) return null;
+    const hit = exFuse.search(raw)[0];
+    return hit && (hit.score ?? 1) < 0.3 ? hit.item.name : null;
+  };
   const entries: ImportEntry[] = [];
   const unparsed: string[] = [];
   const uncertain: { text: string; date: DateStr }[] = [];
   const aliasMap = new Map((ctx.aliases ?? []).map((a) => [`${a.kind}:${a.alias.toLowerCase()}`, a.target]));
   const habitFuse = new Fuse(ctx.habits.map((name) => ({ name })), { keys: ["name"], threshold: 0.38, ignoreLocation: true, includeScore: true });
   const goalFuse = new Fuse(ctx.goals, { keys: ["title", "unit"], threshold: 0.35, ignoreLocation: true, includeScore: true });
-  const segments = segmentByDay(text.slice(0, 20000), ctx.today);
 
   for (const seg of segments) {
     const base = { date_text: seg.dateText, date: seg.date, source_text: null as string | null };
@@ -195,21 +255,24 @@ export function parseNotes(text: string, ctx: ParseContext): ParseOutput {
       type: "strength", title: null, duration_min: null, intensity: null, distance: null, pace_min_per_unit: null, exercises: [],
     };
     const journal: string[] = [];
+    let journalOpen = false;
     let healthTouched = false;
     let lastWorkout: Workout | null = null;
 
     // Whole lines that describe a meal are read first, so "and"/commas inside them don't split the food.
-    const body = seg.body.split("\n").filter((line) => {
+    const withoutMealLines = seg.body.split("\n").filter((line) => {
       const m = line.match(MEAL_LINE);
       const meal = m && parseMeal(m[1], m[2], base, clean(line), seg.dateConfidence);
       if (meal) entries.push(meal);
       return !meal;
-    }).join("\n").replace(MEAL_ATE, (all, food: string, slot: string, rest: string) => {
+    }).join("\n");
+    const readMeal = (all: string, food: string, slot: string, rest: string) => {
       const meal = parseMeal(slot, `${food} ${rest}`, base, clean(all), seg.dateConfidence);
       if (!meal) return all;
       entries.push(meal);
       return "";
-    });
+    };
+    const body = withoutMealLines.replace(MEAL_ATE, readMeal).replace(MEAL_CAL_FOR, readMeal);
 
     for (const raw of splitClauses(body)) {
       let clause = raw;
@@ -249,10 +312,27 @@ export function parseNotes(text: string, ctx: ParseContext): ParseOutput {
       const weight = lc.match(new RegExp(`\\b(?:weight|weighed|wt|scale)\\s*(?:in\\s+at|is|was|:|=)?\\s*${NUM}\\s*(lbs?|pounds|kg|kgs)?`)) ?? lc.match(new RegExp(`\\b${NUM}\\s*(lbs?|pounds|kg|kgs)\\b(?!.*\\b(?:bench|squat|deadlift|press|row|curl)\\b)`));
       if (weight) {
         const v = num(weight[1]);
-        const unit = weight[2] ? (weight[2].startsWith("k") ? "kg" : "lb") : null;
-        const plausible = unit === "kg" ? v >= 30 && v <= 250 : unit === "lb" ? v >= 70 && v <= 550 : ctx.units === "imperial" ? v >= 70 && v <= 550 : v >= 30 && v <= 250;
+        let unit: "kg" | "lb" | null = weight[2] ? (weight[2].startsWith("k") ? "kg" : "lb") : null;
+        let conf = unit ? 0.95 : 0.8;
+        if (!unit) {
+          // Layer 2: a bare number is read in whichever unit lands closest to the user's recent weights,
+          // then their learned preference, then their unit setting.
+          const recent = ctx.personal?.recentWeightKg;
+          const pref = aliasMap.get("metric:weight-unit");
+          if (recent) {
+            const asLb = v * 0.45359237, asKg = v;
+            const near = (x: number) => Math.abs(x - recent) / recent;
+            unit = near(asLb) <= near(asKg) ? "lb" : "kg";
+            conf = Math.min(near(asLb), near(asKg)) <= 0.1 ? 0.92 : 0.6;
+          } else if (pref === "kg" || pref === "lb") {
+            unit = pref;
+            conf = 0.9;
+          }
+        }
+        const eff = unit ?? (ctx.units === "imperial" ? "lb" : "kg");
+        const plausible = eff === "kg" ? v >= 30 && v <= 250 : v >= 70 && v <= 550;
         if (plausible && !/\d\s*[x×]\s*\d/.test(lc)) {
-          setH("weight", { value: v, unit }, unit ? 0.95 : 0.8);
+          setH("weight", { value: v, unit }, conf);
           used = true;
         }
       }
@@ -269,7 +349,7 @@ export function parseNotes(text: string, ctx: ParseContext): ParseOutput {
       }
 
       // Steps: "10k steps", "8,500 steps"
-      const steps = lc.match(/(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?k?)\s*steps/);
+      const steps = lc.match(/(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?k?)\s*steps/) ?? lc.match(/\bsteps?\s*[:=]?\s*(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?k?)\b/);
       if (steps) {
         const s = steps[1].replace(/,/g, "");
         const v = s.endsWith("k") ? Math.round(num(s.slice(0, -1)) * 1000) : Math.round(num(s));
@@ -300,27 +380,55 @@ export function parseNotes(text: string, ctx: ParseContext): ParseOutput {
       if ((done || missed) && habitText && !isWorkoutish) {
         entries.push({
           kind: "habit", ...base, source_text: raw, confidence: Math.min(seg.dateConfidence, fuzzy ? 0.9 : 0.8), field_confidence: {},
-          habit_name: cap(aliasHabit ?? habitText), matched_habit: aliasHabit ?? (fuzzy && (fuzzy.score ?? 1) < 0.38 ? fuzzy.item.name : null), completed: !missed,
+          habit_name: cap(aliasHabit ?? stemHabit(habitText) ?? habitText), matched_habit: aliasHabit ?? (fuzzy && (fuzzy.score ?? 1) < 0.38 ? fuzzy.item.name : stemHabit(habitText)), completed: !missed,
         });
         used = true;
         continue;
       }
+      const byStem = !isWorkoutish && !REFLECTIVE.test(lc) && habitText.split(" ").length <= 6 ? stemHabit(habitText) : null;
       if (fuzzy && (fuzzy.score ?? 1) < 0.22 && habitText.split(" ").length <= 4 && !isWorkoutish && !REFLECTIVE.test(lc)) {
         entries.push({ kind: "habit", ...base, source_text: raw, confidence: 0.6, field_confidence: { habit_name: 0.6 }, habit_name: cap(habitText), matched_habit: fuzzy.item.name, completed: true });
         used = true;
+      } else if (byStem) {
+        entries.push({ kind: "habit", ...base, source_text: raw, confidence: 0.7, field_confidence: { habit_name: 0.7 }, habit_name: byStem, matched_habit: byStem, completed: true });
+        used = true;
+        // "stretched" is the habit; only also log a workout when a duration was written.
+        if (!/\d/.test(lc)) continue;
       }
 
       // Strength sets: "pushups 3x15", "bench 3x8 @ 135", "bb 5x5 185lb"
+      let named = 0;
       for (const m of clause.matchAll(new RegExp(`([a-z][a-z' -]{1,30}?)\\s*:?\\s*(\\d{1,2})\\s*[x×]\\s*(\\d{1,3})(?:\\s*(?:@|at|w\\/|with)?\\s*${NUM}\\s*(lbs?|kg)?)?`, "gi"))) {
         const rawName = clean(m[1].toLowerCase().replace(/^(did|then|and|some)\s+/, ""));
-        const name = aliasMap.get(`exercise:${rawName}`) ?? EXERCISE_NAMES[rawName] ?? cap(rawName);
+        // "great workout: 5x5 squats" names the session, not the exercise; the name comes after the numbers.
+        if (/\b(workout|session|gym|lifting|lifted|training|today)$/.test(rawName)) continue;
+        named++;
+        const known = aliasMap.get(`exercise:${rawName}`) ?? EXERCISE_NAMES[rawName] ?? ownExercise(rawName);
+        const name = known ?? cap(rawName);
         strength.exercises.push({ name, sets: num(m[2]), reps: num(m[3]), weight: m[4] ? { value: num(m[4]), unit: m[5] ? (m[5].startsWith("k") ? "kg" : "lb") : null } : null });
-        if (!(aliasMap.has(`exercise:${rawName}`) || EXERCISE_NAMES[rawName])) strength.field_confidence[`exercises.${strength.exercises.length - 1}`] = 0.65;
+        if (!known) strength.field_confidence[`exercises.${strength.exercises.length - 1}`] = 0.65;
         used = true;
+      }
+      if (!named) {
+        for (const m of clause.matchAll(new RegExp(`(?<![\\w.])(\\d{1,2})\\s*[x×]\\s*(\\d{1,3})\\s+(?:of\\s+)?([a-z][a-z' -]{2,30}?)(?:\\s*(?:@|at|w\\/|with)\\s*${NUM}\\s*(lbs?|kg)?)?(?=$|[,.;]|\\s+\\d)`, "gi"))) {
+          const rawName = clean(m[3].toLowerCase());
+          const known = aliasMap.get(`exercise:${rawName}`) ?? EXERCISE_NAMES[rawName] ?? ownExercise(rawName);
+          const name = known ?? cap(rawName);
+          strength.exercises.push({ name, sets: num(m[1]), reps: num(m[2]), weight: m[4] ? { value: num(m[4]), unit: m[5] ? (m[5].startsWith("k") ? "kg" : "lb") : null } : null });
+          if (!known) strength.field_confidence[`exercises.${strength.exercises.length - 1}`] = 0.65;
+          used = true;
+        }
+      }
+      // A duration on its own right after exercises ("squats 4x8, lunges 3x12, 50 min") belongs to that session.
+      const lone = lc.match(/^(?:about|around|for|took|in|total|~)?\s*(\d{1,3}(?:\.\d+)?)\s*(min|mins|minutes|m|h|hr|hrs|hours?)\b(?:\s+total)?$/);
+      if (lone && !used && (strength.exercises.length || strength.title) && strength.duration_min == null && (!lastWorkout || lastWorkout.duration_min != null)) {
+        strength.duration_min = /^h/.test(lone[2]) ? Math.round(num(lone[1]) * 60) : num(lone[1]);
+        used = true;
+        continue;
       }
       if (STRENGTH_WORDS.test(lc)) {
         strength.title ??= cap(lc.match(STRENGTH_WORDS)![1]);
-        const dur = lc.match(/(\d{1,3})\s*(?:min|mins|minutes|m)\b/);
+        const dur = lc.match(/(?<![\d.])(\d{1,3})\s*(?:min|mins|minutes|m)\b(?!\s*(?:i|ile|iles))/);
         if (dur) strength.duration_min = num(dur[1]);
         used = true;
       }
@@ -333,7 +441,7 @@ export function parseNotes(text: string, ctx: ParseContext): ParseOutput {
         const aliased = aliasMap.get(`workout:${verb}`);
         const type = CARDIO[verb] ? "cardio" : MOBILITY[verb] ? "mobility" : SPORT[verb] ? "sport" : "other";
         const dist = lc.match(new RegExp(`${NUM}\\s*(k|km|kms|mi|mile|miles|m|meters|metres)\\b(?!\\s*(?:steps|min))`));
-        const durMin = lc.match(/(\d{1,3})\s*(?:min|mins|minutes|m)\b(?!\s*(?:i|ile|iles))/);
+        const durMin = lc.match(/(?<![\d.])(\d{1,3})\s*(?:min|mins|minutes|m)\b(?!\s*(?:i|ile|iles))/);
         const durH = lc.match(new RegExp(`${NUM}\\s*(?:h|hr|hrs|hours?)\\b`));
         const hhmm = lc.match(/\b(\d{1,2}):(\d{2})(?::(\d{2}))?\b/);
         let duration: number | null = durMin ? num(durMin[1]) : durH && !sleep ? Math.round(num(durH[1]) * 60) : null;
@@ -394,7 +502,15 @@ export function parseNotes(text: string, ctx: ParseContext): ParseOutput {
         clause = clause.replace(/^journal(?:ed|led|ing)?\s+about\s+/i, "Journaled about ");
         journal.push(cap(clause.replace(/[.\s]+$/, "")) + ".");
         used = true;
+        journalOpen = true;
+        continue;
       }
+      // A short follow-on sentence to a reflection ("stressed about money, need to budget better") joins it.
+      if (!used && journalOpen && wordCount >= 2) {
+        journal[journal.length - 1] = journal[journal.length - 1].replace(/\.$/, ", ") + clause.replace(/[.\s]+$/, "") + ".";
+        continue;
+      }
+      journalOpen = false;
       if (!used && clause.length > 2) {
         unparsed.push(raw);
         uncertain.push({ text: raw, date: seg.date });
@@ -417,6 +533,5 @@ export function parseNotes(text: string, ctx: ParseContext): ParseOutput {
       entries.push({ kind: "journal", ...base, source_text: content.slice(0, 120), confidence: Math.min(seg.dateConfidence, 0.85), field_confidence: mood ? { mood: 0.6 } : {}, content, mood });
     }
   }
-  for (const e of entries) if (e.confidence < 0.7 && e.source_text && !uncertain.some((u) => u.text === e.source_text)) uncertain.push({ text: e.source_text, date: e.date ?? ctx.today });
-  return { entries, unparsed, uncertain: uncertain.slice(0, 20), segments: segments.length };
+  return { entries, unparsed, uncertain };
 }

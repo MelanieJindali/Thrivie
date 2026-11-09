@@ -1,4 +1,5 @@
 "use client";
+import { ListControls, NoMatches, ShowMoreButton, ShowMoreText, useListView } from "@/components/ListControls";
 import { useOfflineAction } from "@/components/OfflineSync";
 
 import { UndoDeleteButton } from "@/components/Toast";
@@ -97,6 +98,22 @@ export function JournalList({ entries, today, query }: { entries: Entry[]; today
   const router = useRouter();
   const path = usePathname();
   const { run } = useAction();
+  const view = useListView(entries, {
+    sorts: [
+      { key: "new", label: "Newest", compare: (a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0) },
+      { key: "old", label: "Oldest", compare: (a, b) => (a.date > b.date ? 1 : a.date < b.date ? -1 : 0) },
+      { key: "mood-hi", label: "Best mood", compare: (a, b) => (b.mood ?? 0) - (a.mood ?? 0) },
+      { key: "mood-lo", label: "Hardest days", compare: (a, b) => (a.mood ?? 6) - (b.mood ?? 6) },
+    ],
+    filters: [
+      { key: "photo", label: "With photos", test: (e) => (e.attachments ?? []).some((a) => a.kind === "photo") },
+      { key: "audio", label: "With voice notes", test: (e) => (e.attachments ?? []).some((a) => a.kind === "audio") },
+      { key: "mood", label: "Mood logged", test: (e) => e.mood != null },
+      { key: "prompt", label: "From a prompt", test: (e) => !!e.prompt },
+    ],
+    filterMode: "all",
+    pageSize: 10,
+  });
 
   // Debounced search via the URL so results come from the database.
   useEffect(() => {
@@ -115,9 +132,12 @@ export function JournalList({ entries, today, query }: { entries: Entry[]; today
           <input className="input py-2 pl-9 text-sm" placeholder="Search entries" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search journal" />
         </label>
       </div>
+      {entries.length > 0 && <ListControls view={view} label="journal entries" />}
+      <NoMatches view={view} />
       {entries.length ? (
+        <>
         <ul className="space-y-4">
-          {entries.map((e) => (
+          {view.visible.map((e) => (
             <li key={e.id} className="rounded-xl bg-surface-2 p-4">
               {editing === e.id ? (
                 <JournalComposer today={today} initial={e} onDone={() => setEditing(null)} />
@@ -132,7 +152,7 @@ export function JournalList({ entries, today, query }: { entries: Entry[]; today
                       <UndoDeleteButton what="Journal entry" action={() => deleteJournal(e.id)} />
                     </span>
                   </div>
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{highlight(e.content, query)}</p>
+                  <ShowMoreText lines={6} className="text-sm leading-relaxed">{highlight(e.content, query)}</ShowMoreText>
                   <AttachmentGallery
                     items={e.attachments ?? []}
                     onDelete={(id) => run(async () => { await fetch(`/api/attachments/${id}`, { method: "DELETE" }); return { ok: true }; })}
@@ -142,6 +162,8 @@ export function JournalList({ entries, today, query }: { entries: Entry[]; today
             </li>
           ))}
         </ul>
+        <ShowMoreButton view={view} noun="more entries" />
+        </>
       ) : (
         <Empty>{query ? `No entries matching “${query}”.` : "No entries yet."}</Empty>
       )}

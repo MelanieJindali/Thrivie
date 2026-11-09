@@ -25,29 +25,32 @@ datasource db {
 // ---------------------------------------------------------------- accounts --
 
 model User {
-  id             String   @id @default(cuid())
-  email          String   @unique
-  passwordHash   String
+  id              String    @id @default(cuid())
+  email           String    @unique
+  passwordHash    String
   // Two-factor authentication (TOTP). Secret is encrypted; recovery codes are hashed.
-  totpSecret     String?
-  totpEnabled    Boolean  @default(false)
-  recoveryCodes  String? // JSON array of sha256 hashes
-  createdAt      DateTime @default(now())
+  totpSecret      String?
+  totpEnabled     Boolean   @default(false)
+  recoveryCodes   String? // JSON array of sha256 hashes
+  // Account recovery key (shown once; only its sha256 is stored). Resets a forgotten password without email.
+  recoveryKeyHash String?
+  recoveryKeyAt   DateTime?
+  createdAt       DateTime  @default(now())
 
-  aliases       Alias[]
-  sessions      Session[]
-  settings      Settings?
-  healthLogs    HealthLog[]
-  workouts      Workout[]
-  habits        Habit[]
-  goals         Goal[]
-  journal       JournalEntry[]
-  meals         Meal[]
-  bodyProfile   BodyProfile?
-  mealPlans     MealPlan[]
-  attachments   Attachment[]
-  pushSubs      PushSubscription[]
-  apiTokens     ApiToken[]
+  aliases     Alias[]
+  sessions    Session[]
+  settings    Settings?
+  healthLogs  HealthLog[]
+  workouts    Workout[]
+  habits      Habit[]
+  goals       Goal[]
+  journal     JournalEntry[]
+  meals       Meal[]
+  bodyProfile BodyProfile?
+  mealPlans   MealPlan[]
+  attachments Attachment[]
+  pushSubs    PushSubscription[]
+  apiTokens   ApiToken[]
 }
 
 model Session {
@@ -56,7 +59,7 @@ model Session {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   mfaVerified Boolean  @default(false) // false until the 2FA code is entered (when 2FA is on)
   expiresAt   DateTime
-  createdAt DateTime @default(now())
+  createdAt   DateTime @default(now())
 
   @@index([userId])
 }
@@ -70,10 +73,11 @@ model RateEvent {
   @@index([key, createdAt])
 }
 
-/// One-time sign-in links. Only the token hash is stored.
+/// One-time email links (sign-in or password reset). Only the token hash is stored.
 model MagicLink {
   id        String    @id // sha256 of the token
   email     String
+  purpose   String    @default("signin") // "signin" | "reset"
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())
@@ -198,19 +202,19 @@ model MealPlan {
 // ------------------------------------------------------------------ habits --
 
 model Habit {
-  id           String         @id @default(cuid())
-  userId       String
-  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name         String
-  emoji        String?
+  id        String         @id @default(cuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  emoji     String?
   // {"type":"daily"} | {"type":"specific_days","days":[1,3,5]} | {"type":"times_per_period","count":3,"period":"week"}
   // Validated by src/lib/habits/schedule.ts and a CHECK constraint (thrivie_valid_schedule).
-  schedule     Json           @default("{\"type\":\"daily\"}")
-  archived     Boolean        @default(false)
-  order        Int            @default(0)
-  createdAt    DateTime       @default(now())
-  checkins     HabitCheckin[]
-  goals        Goal[]
+  schedule  Json           @default("{\"type\":\"daily\"}")
+  archived  Boolean        @default(false)
+  order     Int            @default(0)
+  createdAt DateTime       @default(now())
+  checkins  HabitCheckin[]
+  goals     Goal[]
 
   @@index([userId])
 }

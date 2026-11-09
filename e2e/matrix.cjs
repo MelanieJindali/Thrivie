@@ -5,6 +5,7 @@
  *   BASE_URL=http://localhost:3000 node e2e/matrix.cjs
  * Requires the demo account (npm run db:seed).
  */
+if (!process.env.DEMO_PASSWORD) { console.error("Set DEMO_PASSWORD (the demo account password from your .env) to run this."); process.exit(1); }
 const { chromium } = require("playwright");
 const { AxeBuilder } = require("@axe-core/playwright");
 const fs = require("node:fs");
@@ -38,7 +39,7 @@ async function signIn(ctx) {
   const p = await ctx.newPage();
   await p.goto(BASE + "/login");
   await p.locator("input[name=email]").fill("demo@thrivie.app");
-  await p.locator("input[name=password]").fill(process.env.DEMO_PASSWORD || "thrivie-demo-2026");
+  await p.locator("input[name=password]").fill(process.env.DEMO_PASSWORD);
   await p.getByRole("button", { name: "Sign in" }).click();
   await p.waitForURL(BASE + "/");
   storageState = await ctx.storageState();

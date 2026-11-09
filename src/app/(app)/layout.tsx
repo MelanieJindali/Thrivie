@@ -1,3 +1,4 @@
+import { BackToTop } from "@/components/BackToTop";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Nav } from "@/components/Nav";
@@ -28,6 +29,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </main>
       </div>
       <QuickAddFab />
+      <BackToTop />
       </OfflineSync>
     </ToastProvider>
   );

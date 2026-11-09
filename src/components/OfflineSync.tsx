@@ -5,8 +5,15 @@ import { useRouter } from "next/navigation";
 import { addGoalProgress, saveHealthLog, saveJournal, saveMeal, saveWorkout, setHabitCheck, setHabitCount, type ActionResult } from "@/app/actions";
 import { allItems, clearQueue, enqueue, isNetworkError, remove } from "@/lib/offlineQueue";
 
+/** Smart Import save. A plain fetch, so a dropped connection throws and the reviewed entries are queued. */
+async function importCommit(body: { items: unknown[]; aliases: unknown[] }): Promise<ActionResult & { saved?: Record<string, number> }> {
+  const res = await fetch("/api/import/commit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const json = (await res.json().catch(() => ({}))) as { error?: string; saved?: Record<string, number> };
+  return res.ok ? { ok: true, saved: json.saved } : { ok: false, error: json.error ?? "Saving failed. Nothing was changed." };
+}
+
 // Only idempotent or append-only actions may be queued offline.
-const ACTIONS = { saveHealthLog, saveWorkout, saveMeal, saveJournal, setHabitCheck, setHabitCount, addGoalProgress } as const;
+const ACTIONS = { saveHealthLog, saveWorkout, saveMeal, saveJournal, setHabitCheck, setHabitCount, addGoalProgress, importCommit } as const;
 export type OfflineAction = keyof typeof ACTIONS;
 
 type Runner = <K extends OfflineAction>(name: K, ...args: Parameters<(typeof ACTIONS)[K]>) => Promise<ActionResult & { queued?: boolean }>;

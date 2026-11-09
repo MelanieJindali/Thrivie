@@ -48,7 +48,12 @@ Two independent layers mean one user can never read or change another user's dat
   - Single-use, valid for 15 minutes, stored as hashes.
   - The token travels in the URL *fragment*, so it never appears in server logs. It's consumed by a button press, not on page load, so email link scanners can't use it up.
   - Requests always get the same response, so they never reveal whether an account exists.
-- **Account enumeration:** sign-in shows the same message and does the same work whether or not the email exists.
+- **Forgotten passwords:**
+  - *Reset link by email* (needs an email provider): single-use, valid for 30 minutes, stored as a hash, carried in the URL fragment like magic links. Using one also cancels any other open reset links for that account. A sign-in link can't be used as a reset link, or the other way round.
+  - *Recovery key* (works without email): 20 random characters (100 bits), created from Me → Account after re-entering the password, shown once and stored only as a SHA-256 hash. Using it to reset issues a new key, so each key works once. Failed attempts are rate-limited per email and per network.
+  - Both ways reset the password inside one database transaction that also signs out every device, and both are safe against two requests racing to use the same link or key. Two-step verification is still required at the next sign-in, so a reset never bypasses it.
+  - When email is set up, the account gets a "your password was changed" notice after any change or reset.
+- **Account enumeration:** sign-in, reset-link requests and recovery-key resets give the same answer whether or not the email exists, and sign-in does the same work either way.
 - **Sign-ups:** can be invite-only (`SIGNUP_CODE`) or closed (`ALLOW_SIGNUP=false`).
 
 ## Request protection
@@ -56,7 +61,8 @@ Two independent layers mean one user can never read or change another user's dat
 - **Rate limits** are stored in the database, so they work across serverless instances, and their keys are hashed:
   - failed sign-ins per email and per network (only failures count)
   - two-step codes
-  - magic-link requests
+  - magic-link and reset-link requests
+  - recovery-key resets and new recovery keys
   - sign-ups per network
   - writes per user
   - uploads per user
