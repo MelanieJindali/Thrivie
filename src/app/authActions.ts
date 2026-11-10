@@ -11,7 +11,7 @@ import { checkPassword } from "@/lib/passwordPolicy";
 import { newRecoveryCodes, newTotpSetup, useRecoveryCode, verifyTotp } from "@/lib/totp";
 import { clientIp } from "@/lib/request";
 import { isValidTimezone } from "@/lib/dates";
-import { magicLinksEnabled, sendMagicLinkEmail, sendPasswordChangedEmail, sendPasswordResetEmail } from "@/lib/email";
+import { logEmailFailure, magicLinksEnabled, sendMagicLinkEmail, sendPasswordChangedEmail, sendPasswordResetEmail } from "@/lib/email";
 import { newRecoveryKey, recoveryKeyMatches } from "@/lib/recoveryKey";
 
 export type AuthState = { error?: string; ok?: string; email?: string; name?: string; recoveryKey?: string } | undefined;
@@ -121,7 +121,7 @@ export async function requestMagicLink(_: AuthState, form: FormData): Promise<Au
   if (user) {
     const token = crypto.randomBytes(32).toString("base64url");
     await sys.magicLink.create({ data: { id: sha256(token), email: e, expiresAt: new Date(Date.now() + 15 * 60_000) } });
-    await sendMagicLinkEmail(e, token).catch(() => null); // never reveal delivery problems (or account existence)
+    await sendMagicLinkEmail(e, token).catch(logEmailFailure("sign-in link")); // never reveal delivery problems (or account existence)
   }
   return generic;
 }
@@ -142,7 +142,7 @@ export async function consumeMagicLink(_: AuthState, form: FormData): Promise<Au
 
 // ---------------------------------------------------------- password reset --
 
-const notifyChanged = (to: string) => (magicLinksEnabled() ? sendPasswordChangedEmail(to).catch(() => null) : null);
+const notifyChanged = (to: string) => (magicLinksEnabled() ? sendPasswordChangedEmail(to).catch(logEmailFailure("password-changed notice")) : null);
 
 function newPasswordPair(form: FormData): { pw: string } | { error: string } {
   const pw = String(form.get("password") ?? "");
@@ -166,7 +166,7 @@ export async function requestPasswordReset(_: AuthState, form: FormData): Promis
   if (user) {
     const token = crypto.randomBytes(32).toString("base64url");
     await sys.magicLink.create({ data: { id: sha256(token), email: e, purpose: "reset", expiresAt: new Date(Date.now() + 30 * 60_000) } });
-    await sendPasswordResetEmail(e, token).catch(() => null); // never reveal delivery problems (or account existence)
+    await sendPasswordResetEmail(e, token).catch(logEmailFailure("reset link")); // never reveal delivery problems (or account existence)
   }
   return generic;
 }
