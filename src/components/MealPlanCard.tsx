@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { ChevronRight, HeartHandshake, RefreshCw, Salad } from "lucide-react";
-import { newMealPlan, swapPlanMeal } from "@/app/actions";
+import { Check, ChevronRight, HeartHandshake, Plus, RefreshCw, Salad } from "lucide-react";
+import { logPlanMeal, newMealPlan, swapPlanMeal } from "@/app/actions";
 import { formatPortion, getMeal, type DayPlan } from "@/lib/nutrition/mealPlan";
 import { NOT_MEDICAL_ADVICE } from "@/lib/nutrition/calculations";
 import { useToast } from "./Toast";
@@ -14,12 +14,14 @@ const SLOT_LABEL = { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", s
 export type PlanCardState =
   | { state: "no-profile" }
   | { state: "blocked"; message: string }
-  | { state: "ready"; day: DayPlan; dayIndex: number; hideCalories: boolean; warnings: string[] };
+  | { state: "ready"; day: DayPlan; dayIndex: number; hideCalories: boolean; warnings: string[]; logged?: boolean[] };
 
 /** One day of the meal plan with one-tap swaps. `compact` is the Today-page version. */
-export function MealPlanDay({ day, dayIndex, hideCalories, compact = false, title }: { day: DayPlan; dayIndex: number; hideCalories: boolean; compact?: boolean; title?: string }) {
+export function MealPlanDay({ day, dayIndex, hideCalories, compact = false, title, logged = [] }: { day: DayPlan; dayIndex: number; hideCalories: boolean; compact?: boolean; title?: string; logged?: boolean[] }) {
   const [pending, start] = useTransition();
   const [busy, setBusy] = useState<number | null>(null);
+  const [logging, setLogging] = useState<number | null>(null);
+  const [justLogged, setJustLogged] = useState<string[]>([]);
   const toast = useToast();
   function swap(i: number) {
     setBusy(i);
@@ -27,6 +29,17 @@ export function MealPlanDay({ day, dayIndex, hideCalories, compact = false, titl
       const r = await swapPlanMeal(dayIndex, i);
       if (!r.ok) toast({ message: r.error, tone: "error" });
       setBusy(null);
+    });
+  }
+  function log(i: number, name: string) {
+    setLogging(i);
+    start(async () => {
+      const r = await logPlanMeal(dayIndex, i);
+      if (r.ok) {
+        setJustLogged((xs) => [...xs, `${i}:${day.items[i].mealId}`]);
+        toast({ message: `${name} added to your food log` });
+      } else toast({ message: r.error, tone: "error" });
+      setLogging(null);
     });
   }
   return (
@@ -41,6 +54,7 @@ export function MealPlanDay({ day, dayIndex, hideCalories, compact = false, titl
         {day.items.map((it, i) => {
           const meal = getMeal(it.mealId);
           if (!meal) return null;
+          const isLogged = logged[i] || justLogged.includes(`${i}:${it.mealId}`);
           return (
             <li key={`${it.mealId}-${i}`} className="flex flex-wrap items-start gap-3 py-3">
               <div className="min-w-[min(12rem,100%)] flex-1">
@@ -52,9 +66,20 @@ export function MealPlanDay({ day, dayIndex, hideCalories, compact = false, titl
                 </p>
                 {!compact && <ShowMoreText lines={2} className="mt-0.5 text-xs text-muted">{meal.ingredients.map((g) => g.label).join(", ")}{it.portion !== 1 ? " (per serving)" : ""}</ShowMoreText>}
               </div>
-              <button type="button" className="btn-ghost min-h-11 shrink-0 px-3 text-xs" disabled={pending} onClick={() => swap(i)} aria-label={`Swap ${SLOT_LABEL[it.slot].toLowerCase()}: ${meal.name}`}>
-                <RefreshCw size={14} className={busy === i ? "animate-spin" : ""} aria-hidden /> Swap
-              </button>
+              <div className="flex shrink-0 flex-wrap items-center gap-1">
+                {isLogged ? (
+                  <span className="inline-flex min-h-11 items-center gap-1 px-2 text-xs font-bold text-sage-ink"><Check size={14} aria-hidden /> Logged</span>
+                ) : (
+                  <button type="button" className="btn-soft min-h-11 px-3 text-xs" disabled={pending} onClick={() => log(i, meal.name)} aria-label={`Log it: ${SLOT_LABEL[it.slot].toLowerCase()}, ${meal.name}`}>
+                    <Plus size={14} className={logging === i ? "animate-pulse" : ""} aria-hidden /> Log it
+                  </button>
+                )}
+                {!isLogged && (
+                  <button type="button" className="btn-ghost min-h-11 px-3 text-xs" disabled={pending} onClick={() => swap(i)} aria-label={`Swap ${SLOT_LABEL[it.slot].toLowerCase()}: ${meal.name}`}>
+                    <RefreshCw size={14} className={busy === i ? "animate-spin" : ""} aria-hidden /> Swap
+                  </button>
+                )}
+              </div>
             </li>
           );
         })}
@@ -90,7 +115,7 @@ export function MealPlanCard({ plan, compact = false }: { plan: PlanCardState; c
         <>
           {!plan.hideCalories && <p className="text-sm text-muted">{plan.day.totals.kcal.toLocaleString("en-US")} kcal planned for a {plan.day.targetCalories.toLocaleString("en-US")} kcal day.</p>}
           {plan.warnings.map((w) => <p key={w} className="mt-1 text-sm text-terracotta-ink">{w}</p>)}
-          <MealPlanDay day={plan.day} dayIndex={plan.dayIndex} hideCalories={plan.hideCalories} compact={compact} />
+          <MealPlanDay day={plan.day} dayIndex={plan.dayIndex} hideCalories={plan.hideCalories} compact={compact} logged={plan.logged} />
           {!compact && <p className="mt-2 text-xs text-muted">{NOT_MEDICAL_ADVICE}</p>}
         </>
       )}

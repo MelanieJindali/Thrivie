@@ -16,7 +16,7 @@ export type DayGroup = { date: string; calories: number | null; proteinG: number
 
 const n = (s: string) => (s === "" ? null : Number(s));
 
-export function NutritionView({ today, days, recent }: { today: string; days: DayGroup[]; recent: RecentMeal[] }) {
+export function NutritionView({ today, days, recent, allMeals }: { today: string; days: DayGroup[]; recent: RecentMeal[]; allMeals: RecentMeal[] }) {
   const [editing, setEditing] = useState<MealDraft | null>(null);
   // Filter and sort individual meals, then regroup what's visible by day (day totals stay whole-day).
   const meals = days.flatMap((d) => d.meals);
@@ -39,7 +39,7 @@ export function NutritionView({ today, days, recent }: { today: string; days: Da
   return (
     <>
       <div id="log" className="scroll-mt-6">
-        <MealForm key={editing?.id ?? "new"} today={today} recent={recent} editing={editing} onDone={() => setEditing(null)} />
+        <MealForm key={editing?.id ?? "new"} today={today} recent={recent} allMeals={allMeals} editing={editing} onDone={() => setEditing(null)} />
       </div>
       <section className="card" aria-labelledby="meal-history-h">
         <h2 id="meal-history-h" className="h2 mb-3">Recent meals</h2>

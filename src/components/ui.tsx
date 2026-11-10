@@ -1,9 +1,37 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { ActionResult } from "@/app/actions";
 import { THEME, type ThemeKey } from "@/lib/constants";
+
+export type Crumb = { href: string; label: string };
+
+/**
+ * Where you are and a way back. Phones get one large "‹ Parent" link (an easy tap target);
+ * wider screens show the whole trail.
+ */
+export function Breadcrumbs({ trail, current }: { trail: Crumb[]; current: string }) {
+  const parent = trail[trail.length - 1];
+  return (
+    <nav aria-label="Breadcrumb" className="-mb-2 basis-full">
+      <Link href={parent.href} aria-label={`Back to ${parent.label}`} className="-ml-1 inline-flex min-h-11 items-center gap-0.5 rounded-xl pr-2 text-sm font-semibold text-primary sm:hidden">
+        <ChevronLeft size={18} aria-hidden /> {parent.label}
+      </Link>
+      <ol className="hidden flex-wrap items-center gap-1 text-sm text-muted sm:flex">
+        {trail.map((c) => (
+          <li key={c.href} className="flex items-center gap-1">
+            <Link href={c.href} className="inline-flex min-h-11 items-center rounded-lg font-semibold text-primary hover:underline">{c.label}</Link>
+            <ChevronRight size={14} aria-hidden />
+          </li>
+        ))}
+        <li aria-current="page" className="min-w-0 truncate font-semibold text-text">{current}</li>
+      </ol>
+    </nav>
+  );
+}
 
 export function PageHeader({
   title,
@@ -12,6 +40,7 @@ export function PageHeader({
   theme = "today",
   icon,
   children,
+  crumbs,
 }: {
   title: string;
   subtitle?: string;
@@ -19,10 +48,13 @@ export function PageHeader({
   theme?: ThemeKey;
   icon?: React.ReactNode;
   children?: React.ReactNode;
+  /** Parent pages, top level first (e.g. Log › Nutrition). The current page is added automatically. */
+  crumbs?: Crumb[];
 }) {
   const t = THEME[theme];
   return (
     <header className="mb-2 flex flex-wrap items-end justify-between gap-4">
+      {crumbs && crumbs.length > 0 && <Breadcrumbs trail={crumbs} current={title} />}
       <div className="flex min-w-0 items-center gap-4">
         {icon && (
           <span className={`grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-linear-to-br ${t.grad} text-white shadow-lg ring-4 ${t.ring}`}>
