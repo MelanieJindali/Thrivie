@@ -14,7 +14,7 @@ import { ProgressRing } from "@/components/ProgressRing";
 import { RepeatLastButton } from "@/components/RepeatLastButton";
 import { goalDisplay } from "@/lib/goalDisplay";
 import { dayTotals, macroLine } from "@/lib/nutrition";
-import { getPlanContext, planCard } from "@/lib/nutrition/planStore";
+import { getPlanContext, loggedFromPlan, planCard } from "@/lib/nutrition/planStore";
 import { MealPlanCard } from "@/components/MealPlanCard";
 
 function greeting(name: string, timeZone: string) {
@@ -178,7 +178,7 @@ export default async function TodayPage() {
         </section>
       )}
 
-      {plan?.state === "ready" && <MealPlanCard plan={planCard(plan, settings.hideCalories)} compact />}
+      {plan?.state === "ready" && <MealPlanCard plan={planCard(plan, settings.hideCalories, await loggedFromPlan(db, plan, today))} compact />}
 
       {brief.insights.length > 0 && (
         <section className="card" aria-labelledby="hl-h">

@@ -21,7 +21,7 @@ export default async function GoalsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader theme="goals" icon={<Target size={26} />} eyebrow="Ambitions" title="Goals" subtitle="Link a goal to your logs and it updates itself. The thin marker shows a steady pace." />
+      <PageHeader theme="goals" icon={<Target size={26} />} eyebrow="Ambitions" title="Goals" crumbs={[{ href: "/log", label: "Log" }]} subtitle="Link a goal to your logs and it updates itself. The thin marker shows a steady pace." />
       <section className="scroll-mt-6 space-y-3" id="progress">
         {active.length ? (
           <SortableCards preset="goals" label="goals" items={active.map((g) => {

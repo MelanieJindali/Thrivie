@@ -23,6 +23,8 @@ import {
 import type { Units } from "@/lib/units";
 
 const SEX_OPTIONS: { value: Sex; label: string }[] = [{ value: "female", label: "Female" }, { value: "male", label: "Male" }, { value: "unspecified", label: "Prefer not to say" }];
+
+
 const GOAL_OPTIONS: { value: Goal; label: string }[] = [{ value: "lose", label: "Lose weight" }, { value: "maintain", label: "Maintain" }, { value: "gain", label: "Gain muscle" }];
 const DIET_OPTIONS: { value: DietType; label: string }[] = [{ value: "none", label: "No preference" }, { value: "vegetarian", label: "Vegetarian" }, { value: "vegan", label: "Vegan" }, { value: "pescatarian", label: "Pescatarian" }];
 const ALLERGEN_LABEL: Record<Allergen, string> = { dairy: "Dairy", gluten: "Gluten", nuts: "Nuts", eggs: "Eggs", soy: "Soy", shellfish: "Shellfish", fish: "Fish" };
@@ -30,12 +32,13 @@ const ALLERGEN_LABEL: Record<Allergen, string> = { dairy: "Dairy", gluten: "Glut
 const num = (s: string) => (s.trim() === "" ? NaN : Number(s.replace(",", ".")));
 
 /** A row of radio "chips" with a visible group label. */
-function Choice<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: { value: T; label: string }[]; onChange: (v: T) => void }) {
+function Choice<T extends string>({ label, value, options, onChange, hint }: { label: string; value: T; options: { value: T; label: string }[]; onChange: (v: T) => void; hint?: string }) {
   const id = useId();
   return (
     <div>
       <span className="label" id={id}>{label}</span>
-      <div className="flex flex-wrap gap-2" role="radiogroup" aria-labelledby={id}>
+      {hint && <p id={`${id}-hint`} className="-mt-0.5 mb-2 text-xs text-muted">{hint}</p>}
+      <div className="flex flex-wrap gap-2" role="radiogroup" aria-labelledby={id} aria-describedby={hint ? `${id}-hint` : undefined}>
         {options.map((o) => (
           <button key={o.value} type="button" role="radio" aria-checked={value === o.value} className={`chip min-h-11 ${value === o.value ? "chip-on" : ""}`} onClick={() => onChange(o.value)}>
             {o.label}
@@ -85,7 +88,10 @@ export function BodyGoalsForm({ initial, units, prefillWeightKg, hideCalories: h
       }}
     >
       <section className="card space-y-5" aria-labelledby="body-h">
-        <h2 id="body-h" className="h2">About you</h2>
+        <div>
+          <h2 id="body-h" className="h2">Your details</h2>
+          <p className="mt-1 text-sm text-muted">Used only to estimate your daily energy needs for meal planning.</p>
+        </div>
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,10rem),1fr))] gap-3">
           {imperial ? (
             <fieldset className="min-w-0">
@@ -103,11 +109,12 @@ export function BodyGoalsForm({ initial, units, prefillWeightKg, hideCalories: h
           </Field>
           <Field label="Age"><input className="input" inputMode="numeric" value={age} onChange={(e) => setAge(e.target.value)} /></Field>
         </div>
-        <Choice label="Sex (for the calorie formula)" value={sex} options={SEX_OPTIONS} onChange={setSex} />
+        <Choice label="Sex assigned at birth" value={sex} options={SEX_OPTIONS} onChange={setSex}
+          hint="Optional. The standard energy equation (Mifflin–St Jeor) has separate values for female and male physiology. If you prefer not to say, a neutral average is used." />
         {sex !== "male" && (
           <label className="flex min-h-11 items-center gap-3 text-sm">
             <input type="checkbox" className="h-5 w-5 accent-[var(--primary)]" checked={pregnant} onChange={(e) => setPregnant(e.target.checked)} />
-            I&apos;m pregnant or breastfeeding
+            Currently pregnant or breastfeeding
           </label>
         )}
         <div>
@@ -146,7 +153,7 @@ export function BodyGoalsForm({ initial, units, prefillWeightKg, hideCalories: h
       <section className="card space-y-3" aria-labelledby="targets-h" aria-live="polite">
         <h2 id="targets-h" className="h2">Your daily target</h2>
         {!result ? (
-          <p className="text-sm text-muted">{firstIssue ?? "Add your height, weight and age to see your daily target."}</p>
+          <p className="text-sm text-muted">{firstIssue ?? "Enter your height, weight and age to calculate your daily target."}</p>
         ) : result.ok ? (
           <>
             {hideCalories ? (
@@ -191,7 +198,7 @@ export function BodyGoalsForm({ initial, units, prefillWeightKg, hideCalories: h
         )}
         <FormStatus error={error} message={message} />
       </div>
-      <p className="text-xs text-muted">Height, weight, age, sex, pregnancy and diet details are encrypted before they&apos;re stored, and included in your export.</p>
+      <p className="text-xs text-muted">Your measurements and health details are encrypted before they&apos;re stored and are included in your data export.</p>
     </form>
   );
 }

@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import type { ScopedDb } from "../db";
 import { startOfWeek, type DateStr } from "../dates";
 import { calculateTargets, type BodyProfile, type NutritionTargets } from "./calculations";
-import { fromStored, generateWeekPlan, swapMeal, toStored, type PlanPreferences, type StoredPlan, type WeekPlan } from "./mealPlan";
+import { fromStored, generateWeekPlan, getMeal, swapMeal, toStored, type PlanPreferences, type StoredPlan, type WeekPlan } from "./mealPlan";
 import { loadBodyProfile } from "./profile";
 
 export type PlanContext =
@@ -58,8 +58,20 @@ export async function regeneratePlan(db: ScopedDb, userId: string, today: DateSt
   await db.mealPlan.deleteMany({ where: { weekStart: startOfWeek(today) } });
 }
 
+/**
+ * Which planned meals are already in the food log, per day and item (matched by date, meal and
+ * name). A future day counts as today, matching how logPlanMeal records it.
+ */
+export async function loggedFromPlan(db: ScopedDb, ctx: PlanContext, today: DateStr): Promise<boolean[][]> {
+  if (ctx.state !== "ready") return [];
+  const days = ctx.plan.days;
+  const rows = await db.meal.findMany({ where: { date: { gte: days[0].date, lte: today } }, select: { date: true, slot: true, name: true } });
+  const have = new Set(rows.map((r) => `${r.date}|${r.slot}|${r.name.trim().toLowerCase()}`));
+  return days.map((d) => d.items.map((it) => have.has(`${d.date > today ? today : d.date}|${it.slot}|${(getMeal(it.mealId)?.name ?? "").trim().toLowerCase()}`)));
+}
+
 /** The props for MealPlanCard (today's day only). */
-export function planCard(ctx: PlanContext, hideCalories: boolean) {
+export function planCard(ctx: PlanContext, hideCalories: boolean, logged: boolean[][] = []) {
   if (ctx.state !== "ready") return ctx;
-  return { state: "ready" as const, day: ctx.plan.days[ctx.todayIndex], dayIndex: ctx.todayIndex, hideCalories, warnings: ctx.plan.warnings };
+  return { state: "ready" as const, day: ctx.plan.days[ctx.todayIndex], dayIndex: ctx.todayIndex, hideCalories, warnings: ctx.plan.warnings, logged: logged[ctx.todayIndex] ?? [] };
 }

@@ -24,7 +24,7 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
   ];
   return (
     <div className="space-y-6">
-      <PageHeader theme="today" icon={<CalendarHeart size={26} />} eyebrow={s.complete ? "Week in review" : "This week so far"} title={s.label}>
+      <PageHeader theme="today" icon={<CalendarHeart size={26} />} eyebrow={s.complete ? "Week in review" : "This week so far"} title={s.label} crumbs={[{ href: "/insights", label: "Insights" }]}>
         <Link href={`/review?week=${addDays(weekStart, -7)}`} className="btn-ghost px-3" aria-label="Previous week"><ChevronLeft size={18} /></Link>
         {!isLatest && <Link href={`/review?week=${addDays(weekStart, 7)}`} className="btn-ghost px-3" aria-label="Next week"><ChevronRight size={18} /></Link>}
       </PageHeader>

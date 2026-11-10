@@ -41,7 +41,7 @@ export default async function HealthPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader theme="health" icon={<HeartPulse size={26} />} eyebrow="Body & mind" title="Health" subtitle="Log just what you know — every field is optional." />
+      <PageHeader theme="health" icon={<HeartPulse size={26} />} eyebrow="Body & mind" title="Health" crumbs={[{ href: "/log", label: "Log" }]} subtitle="Log just what you know — every field is optional." />
       <HealthForm
         today={today}
         units={u}

@@ -22,7 +22,7 @@ export default async function HabitsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader theme="habits" icon={<CircleCheck size={26} />} eyebrow="Daily rituals" title="Habits" subtitle="Tap to check off. Small and steady wins." />
+      <PageHeader theme="habits" icon={<CircleCheck size={26} />} eyebrow="Daily rituals" title="Habits" crumbs={[{ href: "/log", label: "Log" }]} subtitle="Tap to check off. Small and steady wins." />
       <section className="card scroll-mt-6" id="today">
         <h2 className="h2 mb-3">Today</h2>
         <HabitCheckList habits={habits} today={today} showAll />

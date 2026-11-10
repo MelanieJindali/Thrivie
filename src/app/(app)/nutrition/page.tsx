@@ -8,7 +8,7 @@ import { PageHeader, ProgressBar } from "@/components/ui";
 import { NutritionView, TargetsForm, type DayGroup } from "./NutritionView";
 import type { RecentMeal } from "./MealForm";
 import { MealPlanCard } from "@/components/MealPlanCard";
-import { getPlanContext, planCard } from "@/lib/nutrition/planStore";
+import { getPlanContext, loggedFromPlan, planCard } from "@/lib/nutrition/planStore";
 
 const str = (v: number | null) => (v == null ? "" : String(v));
 
@@ -30,15 +30,23 @@ export default async function NutritionPage() {
     })),
   }));
 
-  // Distinct recent meals, most recent first, for one-tap re-logging.
-  const seen = new Set<string>();
-  const recent: RecentMeal[] = [];
-  for (const m of meals) {
+  // Every distinct meal from the past year, most recent first, with how often it was had,
+  // so repeat meals can be re-entered with one tap. The first four show as quick chips.
+  const history = await db.meal.findMany({
+    where: { date: { gte: addDays(today, -365) } },
+    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+    select: { name: true, slot: true, calories: true, proteinG: true, carbsG: true, fatG: true },
+    take: 3000,
+  });
+  const byName = new Map<string, RecentMeal>();
+  for (const m of history) {
     const key = m.name.trim().toLowerCase();
-    if (seen.has(key) || recent.length >= 4) continue;
-    seen.add(key);
-    recent.push({ slot: m.slot as MealSlot, name: m.name, calories: str(m.calories), proteinG: str(m.proteinG), carbsG: str(m.carbsG), fatG: str(m.fatG) });
+    const had = byName.get(key);
+    if (had) had.times = (had.times ?? 1) + 1;
+    else if (byName.size < 400) byName.set(key, { slot: m.slot as MealSlot, name: m.name, calories: str(m.calories), proteinG: str(m.proteinG), carbsG: str(m.carbsG), fatG: str(m.fatG), times: 1 });
   }
+  const allMeals = [...byName.values()];
+  const recent = allMeals.slice(0, 4);
 
   const t = dayTotals(meals.filter((m) => m.date === today));
   const { calorieTarget: calT, proteinTargetG: proT } = settings;
@@ -48,10 +56,10 @@ export default async function NutritionPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader theme="nutrition" icon={<Utensils size={26} />} eyebrow="Nourish" title="Nutrition"
+      <PageHeader theme="nutrition" icon={<Utensils size={26} />} eyebrow="Nourish" title="Nutrition" crumbs={[{ href: "/log", label: "Log" }]}
         subtitle={t.meals ? `${t.meals} ${t.meals === 1 ? "meal" : "meals"} logged today.` : "A simple, private food diary. Numbers are optional."} />
 
-      <MealPlanCard plan={planCard(plan, settings.hideCalories)} />
+      <MealPlanCard plan={planCard(plan, settings.hideCalories, await loggedFromPlan(db, plan, today))} />
 
       <section className="card" aria-labelledby="today-food-h">
         <h2 id="today-food-h" className="h2 mb-4">Today</h2>
@@ -83,7 +91,7 @@ export default async function NutritionPage() {
         )}
       </section>
 
-      <NutritionView today={today} days={days} recent={recent} />
+      <NutritionView today={today} days={days} recent={recent} allMeals={allMeals} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <section className="card" aria-labelledby="week-food-h">

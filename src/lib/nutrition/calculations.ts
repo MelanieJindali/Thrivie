@@ -94,9 +94,9 @@ export function calculateTargets(input: BodyProfile): TargetsResult {
   const carbsG = Math.max(0, Math.round((calories - proteinG * 4 - fatG * 9) / 4));
 
   const notes: string[] = [];
-  if (floorApplied) notes.push("Your target is set at a healthy minimum, so progress may be gradual. That's okay.");
-  if (p.sex === "unspecified") notes.push("Without sex, the formula uses an average, so your target is a little less precise.");
-  if (bmi < 18.5 && p.goal !== "lose") notes.push("Consider checking in with a doctor or registered dietitian about your goals.");
+  if (floorApplied) notes.push("Your target is set at a safe minimum intake, so changes may be gradual.");
+  if (p.sex === "unspecified") notes.push("This target uses a neutral average in the energy equation. You can add sex assigned at birth in Body & Goals for a more precise estimate.");
+  if (bmi < 18.5 && p.goal !== "lose") notes.push("Based on your current height and weight, a doctor or registered dietitian can help confirm the right goal for you.");
   return { ok: true, targets: { bmr: Math.round(bmr), tdee: Math.round(tdee), calories, proteinG, carbsG, fatG, floorApplied }, notes };
 }
 

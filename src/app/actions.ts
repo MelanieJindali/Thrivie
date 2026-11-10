@@ -12,7 +12,8 @@ import { MEAL_SLOTS, WORKOUT_TYPES } from "@/lib/constants";
 import { InvalidScheduleError, parseSchedule } from "@/lib/habits/schedule";
 import { BodyProfileSchema } from "@/lib/nutrition/calculations";
 import { storeBodyProfile } from "@/lib/nutrition/profile";
-import { regeneratePlan, swapStoredMeal } from "@/lib/nutrition/planStore";
+import { getPlanContext, regeneratePlan, swapStoredMeal } from "@/lib/nutrition/planStore";
+import { formatPortion, getMeal } from "@/lib/nutrition/mealPlan";
 import { displayToKg, displayToKm, displayToMl, displayToPace } from "@/lib/units";
 
 const dateStr = z.string().refine(isDateStr, "Invalid date");
@@ -248,6 +249,33 @@ export async function swapPlanMeal(dayIndex: number, itemIndex: number): Promise
   const ok = await swapStoredMeal(db, user.id, await getToday(), dayIndex, itemIndex);
   done();
   return ok ? { ok: true } : { ok: false, error: "No other meal fits your preferences for this slot yet." };
+}
+
+/**
+ * Adds a planned meal to the food log, with nutrition scaled to its portion. A future day in
+ * the plan is logged as today (you're eating it now); past and current days keep their date.
+ */
+export async function logPlanMeal(dayIndex: number, itemIndex: number): Promise<ActionResult> {
+  const { db, user } = await requireUser();
+  if (await tooFast(user.id)) return SLOW_DOWN;
+  if (![dayIndex, itemIndex].every((n) => Number.isInteger(n) && n >= 0 && n < 10)) return { ok: false, error: "Invalid meal." };
+  const today = await getToday();
+  const ctx = await getPlanContext(db, user.id, today);
+  if (ctx.state !== "ready") return { ok: false, error: "Set up Body & Goals to get a meal plan first." };
+  const day = ctx.plan.days[dayIndex];
+  const item = day?.items[itemIndex];
+  const meal = item && getMeal(item.mealId);
+  if (!day || !item || !meal) return { ok: false, error: "That meal isn't in this week's plan anymore. Refresh and try again." };
+  const date = day.date > today ? today : day.date;
+  const row = await db.meal.create({
+    data: {
+      userId: user.id, date, slot: item.slot, name: meal.name.slice(0, 200),
+      calories: item.kcal, proteinG: item.proteinG, carbsG: item.carbsG, fatG: item.fatG,
+      notes: item.portion !== 1 ? `From your meal plan (${formatPortion(item.portion)})` : "From your meal plan",
+    },
+  });
+  done();
+  return { ok: true, id: row.id };
 }
 
 export async function newMealPlan(): Promise<ActionResult> {

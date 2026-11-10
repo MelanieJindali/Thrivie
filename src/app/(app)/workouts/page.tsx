@@ -48,7 +48,7 @@ export default async function WorkoutsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader theme="workouts" icon={<Dumbbell size={26} />} eyebrow="Movement" title="Workouts" subtitle={weekMinutes ? `${weekMinutes} active minutes so far this week.` : "Every bit of movement counts."} />
+      <PageHeader theme="workouts" icon={<Dumbbell size={26} />} eyebrow="Movement" title="Workouts" crumbs={[{ href: "/log", label: "Log" }]} subtitle={weekMinutes ? `${weekMinutes} active minutes so far this week.` : "Every bit of movement counts."} />
       <WorkoutsView today={today} units={u} rows={rows} exerciseNames={names.map((n) => n.name)} lastSummary={last ? describeWorkout(last, u) : null} />
       <section className="card">
         <h2 className="h2 mb-3">Weekly volume (minutes)</h2>
