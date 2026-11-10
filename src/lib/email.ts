@@ -21,7 +21,30 @@ async function send(to: string, subject: string, lines: string[], link?: { href:
     body: JSON.stringify({ from: process.env.EMAIL_FROM, to, subject, text, html }),
     signal: AbortSignal.timeout(8000),
   });
-  if (!res.ok) throw new Error(`email failed (${res.status})`);
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { name?: string; message?: string };
+    throw new EmailError(res.status, body.name ?? "unknown", body.message ?? "");
+  }
+}
+
+class EmailError extends Error {
+  constructor(readonly status: number, readonly reason: string, readonly detail: string) {
+    super(`email failed (${status})`);
+  }
+}
+
+/**
+ * Records why an email couldn't be sent, for the server logs only. The person using the app
+ * still sees the same message either way, so nothing reveals whether an account exists.
+ * Email addresses are blanked out; the recipient is never logged.
+ */
+export function logEmailFailure(kind: "sign-in link" | "reset link" | "password-changed notice") {
+  return (e: unknown) => {
+    const scrub = (t: string) => t.replace(/[^\s@<>"']+@[^\s@<>"']+/g, "[email]").slice(0, 300);
+    if (e instanceof EmailError) console.error(`[email] ${kind} not sent: HTTP ${e.status} ${e.reason}: ${scrub(e.detail)}`);
+    else console.error(`[email] ${kind} not sent: ${e instanceof Error ? scrub(e.name + " " + e.message) : "unknown error"}`);
+    return null;
+  };
 }
 
 // Tokens go in the URL fragment, which browsers never send to servers,
