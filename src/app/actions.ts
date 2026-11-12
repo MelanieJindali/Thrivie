@@ -8,6 +8,7 @@ import crypto from "node:crypto";
 import { loadSampleData } from "@/lib/sampleData";
 import { getSettings, getToday, ALL_MODULES } from "@/lib/settings";
 import { addDays, isDateStr, isValidTimezone, todayInTz } from "@/lib/dates";
+import { getHabitViews } from "@/lib/queries";
 import { MEAL_SLOTS, WORKOUT_TYPES } from "@/lib/constants";
 import { InvalidScheduleError, parseSchedule } from "@/lib/habits/schedule";
 import { BodyProfileSchema } from "@/lib/nutrition/calculations";
@@ -642,10 +643,13 @@ export async function skipOnboarding(timezone?: string): Promise<ActionResult> {
 }
 
 /** Idempotent habit check (safe to replay from the offline queue). */
+const FUTURE_DAY = "Habits can be logged for today or a past day, not a future one.";
+
 export async function setHabitCheck(habitId: string, date: string, checked: boolean): Promise<ActionResult> {
   const { db, user } = await requireUser();
   if (await tooFast(user.id)) return SLOW_DOWN;
   if (!isDateStr(date)) return { ok: false, error: "Invalid date." };
+  if (date > addDays(await getToday(), 1)) return { ok: false, error: FUTURE_DAY }; // one day of slack for travel across time zones
   if (!(await db.habit.findUnique({ where: { id: habitId } }))) return { ok: false, error: "Habit not found." };
   if (checked) await db.habitCheckin.upsert({ where: { habitId_date: { habitId, date } }, update: {}, create: { habitId, date } });
   else await db.habitCheckin.deleteMany({ where: { habitId, date } });
@@ -658,6 +662,7 @@ export async function setHabitCount(habitId: string, date: string, count: number
   const { db, user } = await requireUser();
   if (await tooFast(user.id)) return SLOW_DOWN;
   if (!isDateStr(date) || !Number.isInteger(count) || count < 0 || count > 100) return { ok: false, error: "Invalid count." };
+  if (date > addDays(await getToday(), 1)) return { ok: false, error: FUTURE_DAY };
   if (!(await db.habit.findUnique({ where: { id: habitId } }))) return { ok: false, error: "Habit not found." };
   if (count === 0) await db.habitCheckin.deleteMany({ where: { habitId, date } });
   else await db.habitCheckin.upsert({ where: { habitId_date: { habitId, date } }, update: { count }, create: { habitId, date, count } });
@@ -685,4 +690,47 @@ export async function deleteAlias(id: string): Promise<ActionResult> {
   await db.alias.deleteMany({ where: { id } });
   done();
   return { ok: true };
+}
+
+const quickCheckinInput = z.object({
+  mood: rating.nullable().optional(),
+  sleepHours: z.number().min(0).max(24).nullable().optional(),
+  water: optNum, // display units
+});
+
+/**
+ * Quick check-in for today: saves only the values given and leaves everything else in
+ * today's check-in as it is (safe to repeat, so it can be queued offline).
+ */
+export async function quickCheckin(input: z.input<typeof quickCheckinInput>): Promise<ActionResult> {
+  const { db, user } = await requireUser();
+  if (await tooFast(user.id)) return SLOW_DOWN;
+  try {
+    const v = quickCheckinInput.parse(input);
+    const { units } = await getSettings();
+    const data = {
+      ...(v.mood != null && { mood: v.mood }),
+      ...(v.sleepHours != null && { sleepHours: v.sleepHours }),
+      ...(v.water != null && { waterMl: displayToMl(v.water, units) }),
+    };
+    if (!Object.keys(data).length) return { ok: false, error: "Add at least one value." };
+    const date = await getToday();
+    await db.healthLog.upsert({ where: { userId_date: { userId: user.id, date } }, update: data, create: { userId: user.id, date, ...data } });
+    done();
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/** What the quick-log sheet needs, fetched only when it is opened. */
+export async function getQuickLogData() {
+  const { db } = await requireUser();
+  const settings = await getSettings();
+  const today = await getToday();
+  const [habits, goals] = await Promise.all([
+    settings.visibleModules.includes("habits") ? getHabitViews(db, today) : [],
+    settings.visibleModules.includes("goals") ? db.goal.findMany({ where: { archived: false, linkType: "manual" }, select: { id: true, title: true, unit: true }, orderBy: { createdAt: "asc" } }) : [],
+  ]);
+  return { today, units: settings.units, visible: settings.visibleModules as string[], habits, goals };
 }

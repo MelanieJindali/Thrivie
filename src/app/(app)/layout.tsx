@@ -2,7 +2,7 @@ import { BackToTop } from "@/components/BackToTop";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Nav } from "@/components/Nav";
-import { QuickAddFab } from "@/components/QuickAddFab";
+import { QuickLogProvider } from "@/components/QuickLog";
 import { ToastProvider } from "@/components/Toast";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { OfflineSync } from "@/components/OfflineSync";
@@ -24,6 +24,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <ToastProvider>
       <OfflineSync owner={sha256(`owner:${user.id}`).slice(0, 16)}>
+      <QuickLogProvider>
       <a href="#main" className="sr-only z-50 rounded-full bg-surface px-4 py-2 font-bold focus:not-sr-only focus:fixed focus:top-3 focus:left-3">Skip to content</a>
       <div className="mx-auto flex min-h-dvh max-w-[90rem]">
         <Nav visible={settings.visibleModules} email={user.email} />
@@ -34,7 +35,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <p className="mt-12 text-center text-xs text-muted">{MEDICAL_NOTE} <a href="/privacy" className="underline">Privacy</a></p>
         </main>
       </div>
-      <QuickAddFab />
+      </QuickLogProvider>
       <BackToTop />
       </OfflineSync>
     </ToastProvider>

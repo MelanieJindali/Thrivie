@@ -3,7 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { todayInTz } from "@/lib/dates";
 import { getHabitViews, habitCompletionByDay, type HabitView } from "@/lib/queries";
 import { streakUnitLabel } from "@/lib/habits/schedule";
-import { HabitCheckList } from "@/components/HabitCheckList";
+import { HabitDayLogger } from "@/components/HabitDayLogger";
 import { Heatmap } from "@/components/Heatmap";
 import { HabitManager, type HabitRow } from "./HabitManager";
 import { SortableCards } from "@/components/SortableCards";
@@ -24,8 +24,8 @@ export default async function HabitsPage() {
     <div className="space-y-6">
       <PageHeader theme="habits" icon={<CircleCheck size={26} />} eyebrow="Daily rituals" title="Habits" crumbs={[{ href: "/log", label: "Log" }]} subtitle="Tap to check off. Small and steady wins." />
       <section className="card scroll-mt-6" id="today">
-        <h2 className="h2 mb-3">Today</h2>
-        <HabitCheckList habits={habits} today={today} showAll />
+        <h2 className="h2 mb-3">Check off</h2>
+        <HabitDayLogger habits={habits} today={today} showAll />
       </section>
       {habits.length > 0 && (
         <section className="card">
