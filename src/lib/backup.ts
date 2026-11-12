@@ -10,7 +10,7 @@ import { kgToDisplay, kmToDisplay, mlToDisplay, paceToDisplay, distanceUnit, wei
 export const BACKUP_VERSION = 2;
 
 export async function exportAll(db: ScopedDb, userId: string) {
-  const [settings, healthLogs, workouts, meals, habits, goals, journal, aliases, bodyProfile] = await Promise.all([
+  const [settings, healthLogs, workouts, meals, habits, goals, journal, aliases, bodyProfile, foods, favorites] = await Promise.all([
     db.settings.findUnique({ where: { userId } }),
     db.healthLog.findMany({ orderBy: { date: "asc" } }),
     db.workout.findMany({ include: { exercises: { orderBy: { order: "asc" } } }, orderBy: { date: "asc" } }),
@@ -20,7 +20,10 @@ export async function exportAll(db: ScopedDb, userId: string) {
     db.journalEntry.findMany({ orderBy: { date: "asc" } }),
     db.alias.findMany({ select: { kind: true, alias: true, target: true } }),
     loadBodyProfile(db, userId),
+    db.food.findMany({ orderBy: { createdAt: "asc" } }), // only the foods you created; shared product data isn't yours to export
+    db.favoriteFood.findMany({ include: { food: { select: { name: true, brand: true, barcode: true } } }, orderBy: { createdAt: "asc" } }),
   ]);
+  const json = (s: string | null) => (s ? JSON.parse(s) : null);
   return {
     app: "thrivie",
     version: BACKUP_VERSION,
@@ -29,7 +32,12 @@ export async function exportAll(db: ScopedDb, userId: string) {
     settings: settings && { name: settings.name, units: settings.units, timezone: settings.timezone, visibleModules: settings.visibleModules },
     healthLogs: healthLogs.map(({ createdAt, updatedAt, ...h }) => ({ ...h, custom: h.custom ? JSON.parse(h.custom) : null })),
     workouts: workouts.map(({ createdAt, exercises, ...w }) => ({ ...w, exercises: exercises.map(({ id, workoutId, ...e }) => e) })),
-    meals: meals.map(({ id, userId, createdAt, ...m }) => m),
+    meals: meals.map(({ id, userId, createdAt, foodId, nutrients, ...m }) => ({ ...m, nutrients: json(nutrients) })),
+    customFoods: foods.map((f) => ({
+      source: f.source, barcode: f.barcode, name: f.name, brand: f.brand, servingSize: f.servingSize, servingGrams: f.servingGrams,
+      perServing: json(f.perServing), per100g: json(f.per100g), allergens: f.allergens ? f.allergens.split(",") : [], traces: f.traces ? f.traces.split(",") : [],
+    })),
+    favoriteFoods: favorites.map((f) => ({ name: f.food.name, brand: f.food.brand, barcode: f.food.barcode })),
     habits: habits.map(({ checkins, createdAt, ...h }) => ({ ...h, createdAt: createdAt.toISOString(), checkins: checkins.map((c) => ({ date: c.date, count: c.count })) })),
     goals: goals.map(({ progress, createdAt, ...g }) => ({ ...g, progress: progress.map(({ id, goalId, ...p }) => p) })),
     journal: journal.map(({ createdAt, updatedAt, ...j }) => ({ ...j, createdAt: createdAt.toISOString() })),

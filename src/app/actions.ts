@@ -529,6 +529,8 @@ export async function deleteAllData(confirm: string): Promise<ActionResult> {
     await tx.exercise.deleteMany();
     await tx.workout.deleteMany();
     await tx.meal.deleteMany();
+    await tx.favoriteFood.deleteMany();
+    await tx.food.deleteMany(); // your own foods only; shared product data isn't personal
     await tx.mealPlan.deleteMany();
     await tx.bodyProfile.deleteMany();
     await tx.healthLog.deleteMany();
