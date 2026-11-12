@@ -80,7 +80,7 @@ export function LogPanel({ food, day, slot, onSlot, favorite, pending, onLog, on
           <div className="flex items-center gap-3" role="group" aria-label="Number of servings">
             <button type="button" className="grid h-12 w-12 place-items-center rounded-full bg-surface-2 text-text" onClick={() => step(-0.5)} disabled={servings <= 0.5} aria-label="Half a serving less"><Minus size={18} aria-hidden /></button>
             <output className="min-w-24 text-center" aria-live="polite"><span className="font-display text-2xl font-semibold">{servings}</span> <span className="text-sm text-muted">{servings === 1 ? "serving" : "servings"}</span></output>
-            <button type="button" className="grid h-12 w-12 place-items-center rounded-full bg-primary text-on-primary" onClick={() => step(0.5)} aria-label="Half a serving more"><Plus size={18} aria-hidden /></button>
+            <button type="button" className="grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-text" onClick={() => step(0.5)} aria-label="Half a serving more"><Plus size={18} aria-hidden /></button>
           </div>
         ) : (
           <label className="flex max-w-48 items-center gap-2">
