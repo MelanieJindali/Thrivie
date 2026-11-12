@@ -149,3 +149,11 @@ describe("adjusting planned portions", () => {
     expect(fitPortions([], 500)).toEqual([]);
   });
 });
+
+describe("serving weight", () => {
+  it("is read even when the reader turns the g into a 9", () => {
+    expect(parseLabel("Nutrition Facts\nServing size 2/3 cup (559)\nCalories 230").servingGrams).toBe(55);
+    expect(parseLabel("Nutrition Facts\nServing size 2/3 cup (55g)\nCalories 230").servingGrams).toBe(55);
+    expect(parseLabel("Nutrition Facts\nServing size 1 cup\nCalories 230").servingGrams).toBeNull();
+  });
+});

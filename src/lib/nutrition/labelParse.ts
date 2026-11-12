@@ -142,7 +142,8 @@ export function parseLabel(input: string): LabelRead {
   if (sizeLine) {
     const rest = sizeLine.replace(/^.*?(serving size|portionsgr[oö][sß]e|taille de la portion|tama[ñn]o de (la )?porci[oó]n|portion|per serving)\s*[:(]?\s*/, "").replace(/\)\s*$/, "").trim();
     servingSize = rest.slice(0, 60) || null;
-    const g = rest.match(/(\d+(?:\.\d+)?)\s?(g|ml)\b/);
+    // The weight is usually in brackets: "2/3 cup (55g)". A reader may turn that "g" into a "9".
+    const g = rest.match(/(\d+(?:\.\d+)?)\s?(g|ml)\b/) ?? rest.match(/\((\d{1,3})9\)?$/);
     if (g) servingGrams = Number(g[1]);
   }
   const perCont = lower.match(/(?:about |approx\.? )?(\d+(?:\.\d+)?)\s+servings? per (?:container|package|pack)/) ?? lower.match(/servings? per (?:container|package|pack)[:\s]+(?:about |approx\.? )?(\d+(?:\.\d+)?)/);

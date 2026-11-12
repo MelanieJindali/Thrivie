@@ -12,7 +12,9 @@ export const MACRO_LABEL: Record<Macro, string> = { calories: "calories", protei
 /** Each meal's usual share of the day (snacks share what's left). */
 export const MEAL_SHARE: Record<MealSlot, number> = { breakfast: 0.25, lunch: 0.3, dinner: 0.35, snack: 0.1 };
 
-export function sum(items: Nutrients[]): Required<Pick<Nutrients, Macro>> {
+export type Totals = { calories: number; proteinG: number; carbsG: number; fatG: number };
+
+export function sum(items: Pick<Nutrients, Macro>[]): Totals {
   const t = { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 };
   for (const n of items) for (const k of MACROS) t[k] += n[k] ?? 0;
   return { calories: Math.round(t.calories), proteinG: Math.round(t.proteinG), carbsG: Math.round(t.carbsG), fatG: Math.round(t.fatG) };

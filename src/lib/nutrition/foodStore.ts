@@ -4,6 +4,8 @@ import type { ScopedDb } from "../db";
 import { ALLERGENS, type Allergen } from "./calculations";
 import { NutrientsSchema, type Food, type FoodData, type FoodSource, type Nutrients } from "./food";
 import { OFF_FIELDS, parseOffProduct, type OffResult } from "./openFoodFacts";
+import { parseBarcode } from "./barcode";
+import { searchGeneric } from "./genericFoods";
 
 // Product lookups with a shared cache. The only thing that leaves Thrivie is the barcode
 // number, sent to Open Food Facts with no account details. Shared cache rows hold public
@@ -84,4 +86,70 @@ export async function lookupBarcode(
     ? await sys.food.update({ where: { id: cached.id }, data })
     : await sys.food.create({ data }).catch(async () => (await sys.food.findFirst({ where: { userId: null, barcode } }))!);
   return saved.found ? { status: "found", food: toFood(saved), cached: false } : { status: "not_found" };
+}
+
+/** Asks Open Food Facts for products by name (strictly rate-limited by them: used only on request). */
+export async function searchOffProducts(query: string): Promise<FoodData[]> {
+  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=12&fields=${OFF_FIELDS}`;
+  const res = await fetch(url, { headers: { "User-Agent": userAgent(), Accept: "application/json" }, signal: AbortSignal.timeout(OFF_TIMEOUT_MS + 2000), cache: "no-store" });
+  if (!res.ok) throw new Error(`Open Food Facts answered ${res.status}`);
+  const body = (await res.json()) as { products?: unknown[] };
+  const out: FoodData[] = [];
+  for (const p of Array.isArray(body.products) ? body.products : []) {
+    const parsed = parseBarcode(String((p as { code?: unknown })?.code ?? ""));
+    if (!parsed.ok) continue;
+    const r = parseOffProduct({ status: 1, product: p }, parsed.lookup);
+    if (r.found) out.push(r.food);
+  }
+  return out;
+}
+
+/** Stores searched products in the shared cache (so they can be logged and found again) and returns them with ids. */
+export async function cacheProducts(sys: PrismaClient, products: FoodData[]): Promise<Food[]> {
+  const out: Food[] = [];
+  for (const f of products) {
+    if (!f.barcode) continue;
+    const data = { ...toRow(f), found: true, fetchedAt: new Date() };
+    const existing = await sys.food.findFirst({ where: { userId: null, barcode: f.barcode } });
+    const row = existing ? (existing.found ? existing : await sys.food.update({ where: { id: existing.id }, data })) : await sys.food.create({ data }).catch(() => sys.food.findFirst({ where: { userId: null, barcode: f.barcode } }));
+    if (row) out.push(toFood(row));
+  }
+  return out;
+}
+
+export type FoodSearchResult = { favorites: Food[]; recents: Food[]; results: Food[] };
+
+/**
+ * Local food search: favorites and recently logged foods first, then the person's own foods,
+ * generic foods and cached products whose name matches. No outside requests.
+ */
+export async function searchFoods(db: ScopedDb, sys: PrismaClient, query: string, since: string): Promise<FoodSearchResult> {
+  const q = query.trim().toLowerCase().slice(0, 80);
+  const [favRows, recentMeals, own] = await Promise.all([
+    db.favoriteFood.findMany({ include: { food: true }, orderBy: { createdAt: "desc" }, take: 30 }),
+    db.meal.findMany({ where: { foodId: { not: null }, date: { gte: since } }, include: { food: true }, orderBy: [{ date: "desc" }, { createdAt: "desc" }], take: 80 }),
+    db.food.findMany({ orderBy: { createdAt: "desc" }, take: 300 }), // names are encrypted, so they're matched here after decryption
+  ]);
+  // Favorites and recents may point at shared products, whose names are stored as plain text and read back unchanged.
+  const visible = (f: FoodRow | null): f is FoodRow => !!f && f.found;
+  const match = (f: Food) => !q || f.name.toLowerCase().includes(q) || (f.brand ?? "").toLowerCase().includes(q);
+  const favorites = favRows.map((r) => r.food).filter(visible).map(toFood).filter(match);
+  const seen = new Set(favorites.map((f) => f.id));
+  const recents: Food[] = [];
+  for (const m of recentMeals) {
+    if (!visible(m.food) || seen.has(m.food.id)) continue;
+    seen.add(m.food.id);
+    const f = toFood(m.food);
+    if (match(f)) recents.push(f);
+    if (recents.length >= 12) break;
+  }
+  const results: Food[] = [];
+  if (q.length >= 2) {
+    const add = (f: Food) => { if (!seen.has(f.id) && results.length < 30) { seen.add(f.id); results.push(f); } };
+    own.map(toFood).filter(match).forEach(add);
+    searchGeneric(q).forEach(add);
+    const cached = await sys.food.findMany({ where: { userId: null, found: true, source: "open_food_facts", OR: [{ name: { contains: q, mode: "insensitive" } }, { brand: { contains: q, mode: "insensitive" } }] }, orderBy: { fetchedAt: "desc" }, take: 15 });
+    cached.map(toFood).forEach(add);
+  }
+  return { favorites, recents, results };
 }
