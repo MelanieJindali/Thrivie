@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/ui";
 import { SettingsForm, ThemePicker, BackupRestore, DangerZone } from "./SettingsClient";
 import { AccountSection } from "./AccountClient";
 import { TwoFactorCard } from "./TwoFactorCard";
+import { PasskeysCard } from "./PasskeysCard";
 import { SmartImportCard } from "./SmartImportCard";
 import { ReminderCard } from "./ReminderCard";
 import { getVapidKeys } from "@/lib/push";
@@ -17,6 +18,11 @@ export default async function SettingsPage() {
   const settings = await getSettings();
   const { db, user } = await requireUser();
   const habitCount = await db.habit.count({ where: { archived: false } });
+  // Sign-in details live behind the auth system role; only what this page shows is read.
+  const account = await systemDb().user.findUniqueOrThrow({
+    where: { id: user.id },
+    select: { hasPassword: true, recoveryKeyAt: true, passkeys: { orderBy: { createdAt: "asc" }, select: { id: true, name: true, backedUp: true, createdAt: true, lastUsedAt: true } } },
+  });
   const hasProfile = (await db.bodyProfile.count()) > 0;
 
   return (
@@ -82,9 +88,11 @@ export default async function SettingsPage() {
 
       <DangerZone />
 
+      <PasskeysCard passkeys={account.passkeys.map((k) => ({ id: k.id, name: k.name, backedUp: k.backedUp, createdAt: k.createdAt.toISOString(), lastUsedAt: k.lastUsedAt?.toISOString() ?? null }))} />
+
       <TwoFactorCard enabled={user.totpEnabled} />
 
-      <AccountSection email={user.email} recoveryKeyAt={(await systemDb().user.findUnique({ where: { id: user.id }, select: { recoveryKeyAt: true } }))?.recoveryKeyAt?.toISOString() ?? null} />
+      <AccountSection email={user.email} hasPassword={account.hasPassword} recoveryKeyAt={account.recoveryKeyAt?.toISOString() ?? null} />
     </div>
   );
 }

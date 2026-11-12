@@ -40,16 +40,24 @@ Two independent layers mean one user can never read or change another user's dat
 - **Sessions:**
   - A random 256-bit token in an `httpOnly`, `Secure`, `SameSite=Lax`, `__Host-` prefixed cookie. Only its SHA-256 is stored.
   - Sessions last 30 days. Changing your password signs out all other devices, and "Sign out everywhere" is available.
+  - The token is replaced once a day (rotation), renewing the 30 days. The previous token keeps working for one minute so requests already in flight aren't signed out.
 - **Two-step verification (optional):**
   - Authenticator-app codes (TOTP), with the secret stored encrypted.
   - Each code is single-use, and failed attempts are rate-limited.
   - 8 one-time recovery codes, stored as hashes.
-- **Magic links (optional, needs an email provider):**
-  - Single-use, valid for 15 minutes, stored as hashes.
-  - The token travels in the URL *fragment*, so it never appears in server logs. It's consumed by a button press, not on page load, so email link scanners can't use it up.
+- **Passkeys (Face ID, Touch ID, screen lock):**
+  - WebAuthn, verified with the SimpleWebAuthn library. The private key never leaves the device; the server stores only the public key.
+  - Biometric or screen-lock confirmation is required every time, and the signature is bound to this site's address, so a passkey can't be phished or replayed on another site.
+  - Each challenge is random, stored server-side, expires in 5 minutes and is deleted on first use.
+  - A passkey sign-in already proves both the device and its owner, so it doesn't ask for a second code.
+- **Emailed sign-in codes (optional, needs an email provider):**
+  - Six digits, valid for 10 minutes, single-use, stored only as a hash. A new code cancels the previous one.
+  - A code is cancelled after 5 wrong guesses; requests and failed attempts are also rate-limited per email and per network.
+  - Two-step verification, when turned on, is still required after a code.
   - Requests always get the same response, so they never reveal whether an account exists.
+- **Passwords remain supported.** Existing accounts sign in exactly as before; nothing about stored password hashes changed. New accounts may skip the password, in which case no password can sign in to them until one is set.
 - **Forgotten passwords:**
-  - *Reset link by email* (needs an email provider): single-use, valid for 30 minutes, stored as a hash, carried in the URL fragment like magic links. Using one also cancels any other open reset links for that account. A sign-in link can't be used as a reset link, or the other way round.
+  - *Reset link by email* (needs an email provider): single-use, valid for 30 minutes, stored as a hash, carried in the URL fragment so it never appears in server logs, and used by a button press so email link scanners can't use it up. Using one also cancels any other open reset links for that account. A reset link can only reset a password; it can't sign anyone in.
   - *Recovery key* (works without email): 20 random characters (100 bits), created from Me → Account after re-entering the password, shown once and stored only as a SHA-256 hash. Using it to reset issues a new key, so each key works once. Failed attempts are rate-limited per email and per network.
   - Both ways reset the password inside one database transaction that also signs out every device, and both are safe against two requests racing to use the same link or key. Two-step verification is still required at the next sign-in, so a reset never bypasses it.
   - When email is set up, the account gets a "your password was changed" notice after any change or reset.
@@ -61,7 +69,8 @@ Two independent layers mean one user can never read or change another user's dat
 - **Rate limits** are stored in the database, so they work across serverless instances, and their keys are hashed:
   - failed sign-ins per email and per network (only failures count)
   - two-step codes
-  - magic-link and reset-link requests
+  - sign-in code requests and guesses, and reset-link requests
+  - passkey sign-in attempts
   - recovery-key resets and new recovery keys
   - sign-ups per network
   - writes per user

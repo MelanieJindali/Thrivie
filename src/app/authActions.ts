@@ -1,6 +1,9 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { cookies, headers } from "next/headers";
+import type { AuthenticationResponseJSON, PublicKeyCredentialCreationOptionsJSON, PublicKeyCredentialRequestOptionsJSON, RegistrationResponseJSON } from "@simplewebauthn/server";
 import crypto from "node:crypto";
 import { z } from "zod";
 import { systemDb } from "@/lib/db";
@@ -11,7 +14,9 @@ import { checkPassword } from "@/lib/passwordPolicy";
 import { newRecoveryCodes, newTotpSetup, useRecoveryCode, verifyTotp } from "@/lib/totp";
 import { clientIp } from "@/lib/request";
 import { isValidTimezone } from "@/lib/dates";
-import { logEmailFailure, magicLinksEnabled, sendMagicLinkEmail, sendPasswordChangedEmail, sendPasswordResetEmail } from "@/lib/email";
+import { emailEnabled, logEmailFailure, sendPasswordChangedEmail, sendPasswordResetEmail, sendSignInCodeEmail } from "@/lib/email";
+import { checkEmailCode, issueEmailCode } from "@/lib/emailCode";
+import { finishLogin, finishRegistration, startLogin, startRegistration, type RelyingParty } from "@/lib/passkeys";
 import { newRecoveryKey, recoveryKeyMatches } from "@/lib/recoveryKey";
 
 export type AuthState = { error?: string; ok?: string; email?: string; name?: string; recoveryKey?: string } | undefined;
@@ -37,11 +42,14 @@ export async function signUp(_: AuthState, form: FormData): Promise<AuthState> {
   if (!(await rateLimit(`signup:${await clientIp()}`, 10, 3600))) return { error: "Too many sign-ups from this network. Try again later.", ...keep };
   const parsed = z
     .object({ email, password: z.string(), name: z.string().trim().max(60), code: z.string().trim().max(100), timezone: z.string().max(64) })
-    .safeParse({ email: form.get("email"), password: form.get("password"), name: form.get("name") ?? "", code: form.get("code") ?? "", timezone: form.get("timezone") ?? "" });
+    .safeParse({ email: form.get("email"), password: form.get("password") ?? "", name: form.get("name") ?? "", code: form.get("code") ?? "", timezone: form.get("timezone") ?? "" });
   if (!parsed.success) return { error: parsed.error.issues[0].message, ...keep };
   const v = parsed.data;
   if (policy.code && v.code !== policy.code) return { error: "That invite code isn't right.", ...keep };
-  const weak = await checkPassword(v.password, v.email);
+  // A password is optional: without one, the account signs in with a passkey or an emailed code.
+  const hasPassword = v.password.length > 0;
+  if (!hasPassword && !emailEnabled()) return { error: "Choose a password. This server can't email sign-in codes.", ...keep };
+  const weak = hasPassword ? await checkPassword(v.password, v.email) : null;
   if (weak) return { error: weak, ...keep };
   const sys = systemDb();
   if (await sys.user.findUnique({ where: { email: v.email }, select: { id: true } })) {
@@ -50,11 +58,13 @@ export async function signUp(_: AuthState, form: FormData): Promise<AuthState> {
   const user = await sys.user.create({
     data: {
       email: v.email,
-      passwordHash: await hashPassword(v.password),
+      // With no password, the stored hash is of 32 random bytes nobody knows, so password sign-in can't succeed.
+      passwordHash: await hashPassword(hasPassword ? v.password : crypto.randomBytes(32).toString("base64url")),
+      hasPassword,
       settings: { create: { name: v.name, timezone: isValidTimezone(v.timezone) ? v.timezone : "America/New_York" } },
     },
   });
-  await createSession(user.id, true);
+  await createSession(user.id, true, hasPassword ? "password" : "code");
   redirect("/welcome");
 }
 
@@ -107,42 +117,116 @@ export async function verifyMfa(_: AuthState, form: FormData): Promise<AuthState
   redirect(safeNext(form.get("next")));
 }
 
-// --------------------------------------------------------------- magic link --
+// ---------------------------------------------------------------- passkeys --
 
-export async function requestMagicLink(_: AuthState, form: FormData): Promise<AuthState> {
-  if (!magicLinksEnabled()) return { error: "Email sign-in links aren't set up on this server." };
+const CHALLENGE_COOKIE = "thrivie_wa";
+
+/** The site passkeys belong to. APP_URL when set; otherwise the address this request came in on. */
+async function relyingParty(): Promise<RelyingParty> {
+  const h = await headers();
+  const url = process.env.APP_URL ? new URL(process.env.APP_URL) : new URL(`${h.get("x-forwarded-proto") ?? "http"}://${h.get("host") ?? "localhost"}`);
+  return { id: url.hostname, origin: url.origin, name: "Thrivie" };
+}
+
+async function rememberChallenge(id: string) {
+  (await cookies()).set(CHALLENGE_COOKIE, id, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", path: "/", maxAge: 300 });
+}
+async function takeChallengeCookie(): Promise<string> {
+  const jar = await cookies();
+  const id = jar.get(CHALLENGE_COOKIE)?.value ?? "";
+  jar.delete(CHALLENGE_COOKIE);
+  return id;
+}
+
+type Start<T> = { ok: true; options: T } | { ok: false; error: string };
+
+/** Step 1 of passkey sign-in: a fresh challenge. No account is named, so nothing is revealed. */
+export async function passkeyLoginStart(): Promise<Start<PublicKeyCredentialRequestOptionsJSON>> {
+  if (!(await rateLimit(`pk-start:${await clientIp()}`, 60, 900))) return { ok: false, error: "Too many attempts. Please wait a few minutes." };
+  const { options, challengeId } = await startLogin(systemDb(), await relyingParty());
+  await rememberChallenge(challengeId);
+  return { ok: true, options };
+}
+
+/** Step 2: check the device's signature. A passkey proves both the device and its owner, so no second code is asked for. */
+export async function passkeyLoginFinish(response: AuthenticationResponseJSON, next?: string): Promise<{ ok: true; redirectTo: string } | { ok: false; error: string }> {
+  const ip = await clientIp();
+  if (await isRateLimited(`pk-ip:${ip}`, 20, 900)) return { ok: false, error: "Too many attempts. Please wait 15 minutes and try again." };
+  const userId = await finishLogin(systemDb(), await takeChallengeCookie(), response, await relyingParty());
+  if (!userId) {
+    await recordRateHit(`pk-ip:${ip}`);
+    return { ok: false, error: "That passkey didn't work here. Try again, or sign in another way." };
+  }
+  await createSession(userId, true, "passkey");
+  return { ok: true, redirectTo: safeNext(next) };
+}
+
+/** Add a passkey to the signed-in account (also the one-tap upgrade for password users). */
+export async function passkeyRegisterStart(): Promise<Start<PublicKeyCredentialCreationOptionsJSON>> {
+  const { user } = await requireUser();
+  if (!(await rateLimit(`pk-reg:${user.id}`, 20, 900))) return { ok: false, error: "Too many attempts. Please wait a few minutes." };
+  const { options, challengeId } = await startRegistration(systemDb(), user, await relyingParty());
+  await rememberChallenge(challengeId);
+  return { ok: true, options };
+}
+
+export async function passkeyRegisterFinish(response: RegistrationResponseJSON, name: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { user } = await requireUser();
+  const ok = await finishRegistration(systemDb(), user.id, await takeChallengeCookie(), response, await relyingParty(), String(name ?? ""));
+  if (ok) revalidatePath("/", "layout"); // the passkey list and the upgrade banner depend on this
+  return ok ? { ok: true } : { ok: false, error: "Couldn't save that passkey. Please try again." };
+}
+
+export async function removePasskey(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { user } = await requireUser();
+  await systemDb().passkey.deleteMany({ where: { id: String(id), userId: user.id } });
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+// ------------------------------------------------------------- emailed code --
+
+/** Emails a six-digit sign-in code. The answer is the same whether or not the account exists. */
+export async function requestEmailCode(_: AuthState, form: FormData): Promise<AuthState> {
+  if (!emailEnabled()) return { error: "Email sign-in codes aren't set up on this server." };
   const parsed = email.safeParse(form.get("email"));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const e = parsed.data;
-  const generic = { ok: "If an account exists for that email, a sign-in link is on its way. It works once, for 15 minutes.", email: e };
-  if (!(await rateLimit(`magic:${e}`, 3, 900)) || !(await rateLimit(`magic-ip:${await clientIp()}`, 10, 900))) return generic;
+  const generic = { ok: "If an account exists for that email, a 6-digit code is on its way. It works once, for 10 minutes.", email: e };
+  if (!(await rateLimit(`code-req:${e}`, 3, 900)) || !(await rateLimit(`code-req-ip:${await clientIp()}`, 10, 900))) return generic;
   const sys = systemDb();
-  const user = await sys.user.findUnique({ where: { email: e }, select: { id: true } });
-  if (user) {
-    const token = crypto.randomBytes(32).toString("base64url");
-    await sys.magicLink.create({ data: { id: sha256(token), email: e, expiresAt: new Date(Date.now() + 15 * 60_000) } });
-    await sendMagicLinkEmail(e, token).catch(logEmailFailure("sign-in link")); // never reveal delivery problems (or account existence)
+  if (await sys.user.findUnique({ where: { email: e }, select: { id: true } })) {
+    await sendSignInCodeEmail(e, await issueEmailCode(sys, e)).catch(logEmailFailure("sign-in code"));
   }
   return generic;
 }
 
-/** Consumed from a button press on /login/magic (not on GET, so link scanners can't use it up). */
-export async function consumeMagicLink(_: AuthState, form: FormData): Promise<AuthState> {
-  const token = String(form.get("token") ?? "");
-  if (!/^[A-Za-z0-9_-]{30,60}$/.test(token)) return { error: "This sign-in link isn't valid. Request a new one." };
+/** Signs in with an emailed code. Two-step verification (if on) is still asked for afterwards. */
+export async function verifyEmailCode(_: AuthState, form: FormData): Promise<AuthState> {
+  const parsed = z.object({ email, code: z.string().trim().min(1, "Enter the 6-digit code.").max(20) }).safeParse({ email: form.get("email"), code: form.get("code") });
+  if (!parsed.success) return { error: parsed.error.issues[0].message, email: String(form.get("email") ?? "").slice(0, 200), ok: "sent" };
+  const { email: e, code } = parsed.data;
+  const ip = await clientIp();
+  // Only failed attempts count. Each code also cancels itself after 5 wrong guesses.
+  if ((await isRateLimited(`code-ip:${ip}`, 20, 900)) || (await isRateLimited(`code:${e}`, 10, 900))) {
+    return { error: "Too many attempts. Please wait 15 minutes and try again.", email: e, ok: "sent" };
+  }
   const sys = systemDb();
-  const link = await sys.magicLink.findUnique({ where: { id: sha256(token) } });
-  if (!link || link.purpose !== "signin" || link.usedAt || link.expiresAt < new Date()) return { error: "This sign-in link has expired or was already used. Request a new one." };
-  await sys.magicLink.update({ where: { id: link.id }, data: { usedAt: new Date() } });
-  const user = await sys.user.findUnique({ where: { email: link.email } });
-  if (!user) return { error: "This sign-in link isn't valid. Request a new one." };
-  await createSession(user.id, !user.totpEnabled);
-  redirect(user.totpEnabled ? "/login/verify" : "/");
+  const user = (await checkEmailCode(sys, e, code)) ? await sys.user.findUnique({ where: { email: e }, select: { id: true, totpEnabled: true } }) : null;
+  if (!user) {
+    await recordRateHit(`code-ip:${ip}`);
+    await recordRateHit(`code:${e}`);
+    return { error: "That code isn't right or has expired. Check it, or request a new one.", email: e, ok: "sent" };
+  }
+  await clearRateLimit(`code:${e}`);
+  await createSession(user.id, !user.totpEnabled, "code");
+  const next = safeNext(form.get("next"));
+  redirect(user.totpEnabled ? `/login/verify?next=${encodeURIComponent(next)}` : next);
 }
 
 // ---------------------------------------------------------- password reset --
 
-const notifyChanged = (to: string) => (magicLinksEnabled() ? sendPasswordChangedEmail(to).catch(logEmailFailure("password-changed notice")) : null);
+const notifyChanged = (to: string) => (emailEnabled() ? sendPasswordChangedEmail(to).catch(logEmailFailure("password-changed notice")) : null);
 
 function newPasswordPair(form: FormData): { pw: string } | { error: string } {
   const pw = String(form.get("password") ?? "");
@@ -155,7 +239,7 @@ function newPasswordPair(form: FormData): { pw: string } | { error: string } {
 
 /** Emails a one-time reset link. The answer is the same whether or not the account exists. */
 export async function requestPasswordReset(_: AuthState, form: FormData): Promise<AuthState> {
-  if (!magicLinksEnabled()) return { error: "Reset by email isn't set up on this server. Use your recovery key instead." };
+  if (!emailEnabled()) return { error: "Reset by email isn't set up on this server. Use your recovery key instead." };
   const parsed = email.safeParse(form.get("email"));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const e = parsed.data;
@@ -191,7 +275,7 @@ export async function resetPasswordWithLink(_: AuthState, form: FormData): Promi
     const claimed = await tx.magicLink.updateMany({ where: { id: link.id, usedAt: null }, data: { usedAt: new Date() } });
     if (claimed.count !== 1) return false; // a parallel request used it first
     await tx.magicLink.updateMany({ where: { email: user.email, purpose: "reset", usedAt: null }, data: { usedAt: new Date() } });
-    await tx.user.update({ where: { id: user.id }, data: { passwordHash } });
+    await tx.user.update({ where: { id: user.id }, data: { passwordHash, hasPassword: true } });
     await tx.session.deleteMany({ where: { userId: user.id } });
     return true;
   });
@@ -228,7 +312,7 @@ export async function resetPasswordWithRecoveryKey(_: AuthState, form: FormData)
   const passwordHash = await hashPassword(pair.pw);
   // Only succeeds if the key is still the one that was checked, so two parallel requests can't both use it.
   const done = await sys.$transaction(async (tx) => {
-    const r = await tx.user.updateMany({ where: { id: user.id, recoveryKeyHash: user.recoveryKeyHash }, data: { passwordHash, recoveryKeyHash: fresh.hash, recoveryKeyAt: new Date() } });
+    const r = await tx.user.updateMany({ where: { id: user.id, recoveryKeyHash: user.recoveryKeyHash }, data: { passwordHash, hasPassword: true, recoveryKeyHash: fresh.hash, recoveryKeyAt: new Date() } });
     if (r.count !== 1) return false;
     await tx.session.deleteMany({ where: { userId: user.id } });
     return true;
@@ -256,11 +340,12 @@ export async function changePassword(_: AuthState, form: FormData): Promise<Auth
   const next = String(form.get("next") ?? "");
   const sys = systemDb();
   const row = await sys.user.findUniqueOrThrow({ where: { id: user.id } });
-  if (!(await verifyPassword(current, row.passwordHash))) return { error: "Current password is incorrect." };
+  // An account created without a password has none to confirm; it can set its first one.
+  if (row.hasPassword && !(await verifyPassword(current, row.passwordHash))) return { error: "Current password is incorrect." };
   const weak = await checkPassword(next, row.email);
   if (weak) return { error: weak };
   if (next !== String(form.get("confirm") ?? "")) return { error: "The new passwords don't match." };
-  await sys.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(next) } });
+  await sys.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(next), hasPassword: true } });
   await sys.session.deleteMany({ where: { userId: user.id } }); // sign out everywhere else
   await createSession(user.id, true);
   await notifyChanged(row.email);

@@ -3,7 +3,7 @@ import { useOfflineAction } from "@/components/OfflineSync";
 
 import { UndoDeleteButton } from "@/components/Toast";
 import { useState } from "react";
-import { addGoalProgress, archiveGoal, deleteGoal, saveGoal } from "@/app/actions";
+import { archiveGoal, deleteGoal, saveGoal } from "@/app/actions";
 import { Field, FormStatus, numOrNull, useAction } from "@/components/ui";
 import { addDays } from "@/lib/dates";
 import { WORKOUT_LABELS, WORKOUT_TYPES } from "@/lib/constants";

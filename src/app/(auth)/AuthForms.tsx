@@ -2,7 +2,8 @@
 
 import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
-import { consumeMagicLink, requestMagicLink, requestPasswordReset, resetPasswordWithLink, resetPasswordWithRecoveryKey, signIn, signUp, verifyMfa, type AuthState } from "@/app/authActions";
+import { requestEmailCode, requestPasswordReset, resetPasswordWithLink, resetPasswordWithRecoveryKey, signIn, signUp, verifyEmailCode, verifyMfa, type AuthState } from "@/app/authActions";
+import { PasskeySignIn } from "@/components/Passkeys";
 import { PasswordInput } from "@/components/PasswordInput";
 import { RecoveryKeyReveal } from "@/components/RecoveryKeyReveal";
 
@@ -13,49 +14,84 @@ function Err({ state }: { state: AuthState }) {
   return <p className="rounded-2xl bg-terracotta-soft px-4 py-2.5 text-sm text-terracotta-ink" role="alert">{state.error}</p>;
 }
 
-export function LoginForm({ next, notice, magic }: { next?: string; notice?: string; magic?: boolean }) {
+const LINK = "inline-flex min-h-12 min-w-12 items-center justify-center font-semibold text-primary";
+
+/**
+ * Sign-in, fastest way first: passkey (Face ID / Touch ID), then email and password,
+ * then a code by email. Existing password accounts work exactly as before.
+ */
+export function LoginForm({ next, notice, emailCodes }: { next?: string; notice?: string; emailCodes?: boolean }) {
   const [state, action, pending] = useActionState(signIn, undefined);
+  const codeHref = `/login/code${next && next !== "/" ? `?next=${encodeURIComponent(next)}` : ""}`;
   return (
-    <form action={action} className="card space-y-4">
+    <div className="card space-y-4">
       <h2 className="h2 text-xl">Welcome back</h2>
       {notice && <p className="rounded-2xl bg-primary-soft px-4 py-2.5 text-sm text-primary" role="status">{notice}</p>}
-      <input type="hidden" name="next" value={next ?? "/"} />
-      <label className="block">
-        <span className="label">Email</span>
-        <input className="input" name="email" type="email" autoComplete="email" inputMode="email" required defaultValue={state?.email} key={state?.email} />
-      </label>
-      <div className="space-y-1">
-        <PasswordInput name="password" label="Password" autoComplete="current-password" />
-        <p className="text-right">
-          <Link href="/login/forgot" className="inline-flex min-h-11 items-center text-sm font-semibold text-primary">Forgot password?</Link>
-        </p>
-      </div>
-      <Err state={state} />
-      <button className="btn-primary w-full" disabled={pending}>{pending ? "Signing in…" : "Sign in"}</button>
-      {magic && <MagicLinkRequest />}
+      <PasskeySignIn next={next} />
+      <form action={action} className="space-y-4">
+        <input type="hidden" name="next" value={next ?? "/"} />
+        <label className="block">
+          <span className="label">Email</span>
+          {/* "webauthn" lets the browser suggest a saved passkey right in this field. */}
+          <input className="input" name="email" type="email" autoComplete="username webauthn" inputMode="email" autoCapitalize="none" required defaultValue={state?.email} key={state?.email} />
+        </label>
+        <div>
+          <PasswordInput name="password" label="Password" autoComplete="current-password" />
+          <p className="text-right text-sm"><Link href="/login/forgot" className={LINK}>Forgot password?</Link></p>
+        </div>
+        <Err state={state} />
+        <button className="btn-outline w-full" disabled={pending}>{pending ? "Signing in…" : "Sign in with password"}</button>
+      </form>
+      {emailCodes && <Link href={codeHref} className="btn-ghost w-full">Email me a sign-in code instead</Link>}
       <p className="text-center text-sm text-muted">
-        New here? <Link href="/signup" className="font-semibold text-primary">Create an account</Link>
+        New here? <Link href="/signup" className={LINK}>Create an account</Link>
       </p>
-    </form>
+    </div>
   );
 }
 
-function MagicLinkRequest() {
-  const [open, setOpen] = useState(false);
-  const [state, action, pending] = useActionState(requestMagicLink, undefined);
-  if (!open) return <button type="button" className="btn-ghost w-full" onClick={() => setOpen(true)}>Email me a sign-in link instead</button>;
-  return (
-    <div className="space-y-2 rounded-2xl bg-surface-2/60 p-3">
-      <label className="block">
-        <span className="label">Email for sign-in link</span>
-        <input className="input" name="magic-email" type="email" autoComplete="email" form="magic-form" required />
-      </label>
-      <form id="magic-form" action={(fd) => { fd.set("email", String(fd.get("magic-email") ?? "")); return action(fd); }}>
-        <button className="btn-outline w-full" disabled={pending}>{pending ? "Sending…" : "Send link"}</button>
+/** /login/code: ask for a six-digit code by email, then enter it. */
+export function EmailCodeLogin({ next }: { next?: string }) {
+  const [sent, request, requesting] = useActionState(requestEmailCode, undefined);
+  const [state, verify, verifying] = useActionState(verifyEmailCode, undefined);
+  const [again, setAgain] = useState(false);
+  const email = state?.email ?? sent?.email;
+  if (!sent?.ok || again)
+    return (
+      <form action={(fd) => { setAgain(false); request(fd); }} className="card space-y-4">
+        <div>
+          <h2 className="h2 text-xl">Sign in with a code</h2>
+          <p className="mt-1 text-sm text-muted">We&apos;ll email you a 6-digit code. No password needed.</p>
+        </div>
+        <label className="block">
+          <span className="label">Email</span>
+          <input className="input" name="email" type="email" autoComplete="email" inputMode="email" autoCapitalize="none" required defaultValue={email} autoFocus />
+        </label>
+        <Err state={sent} />
+        <button className="btn-primary w-full" disabled={requesting}>{requesting ? "Sending…" : "Email me a code"}</button>
+        <p className="text-center text-sm text-muted"><Link href="/login" className={LINK}>Back to sign in</Link></p>
       </form>
-      {state?.ok && <p className="text-sm text-sage-ink" role="status">{state.ok}</p>}
+    );
+  return (
+    <form action={verify} className="card space-y-4">
+      <div>
+        <h2 className="h2 text-xl">Enter your code</h2>
+        <p className="mt-1 text-sm text-muted" role="status">{sent.ok}</p>
+      </div>
+      <input type="hidden" name="email" value={email ?? ""} />
+      <input type="hidden" name="next" value={next ?? "/"} />
+      <label className="block">
+        <span className="label">6-digit code</span>
+        <input className="input text-center font-display text-2xl tracking-[0.3em]" name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9 ]*" maxLength={7} autoFocus required aria-describedby="code-help" />
+        <span id="code-help" className="mt-1 block text-xs text-muted">Sent to {email}. Check your spam folder if you don&apos;t see it.</span>
+      </label>
       <Err state={state} />
-    </div>
+      <button className="btn-primary w-full" disabled={verifying}>{verifying ? "Checking…" : "Sign in"}</button>
+      <div className="flex flex-wrap justify-between gap-x-4 text-sm">
+        <button type="button" className={LINK} onClick={() => setAgain(true)}>Send a new code</button>
+        <Link href="/login" className={LINK}>Back to sign in</Link>
+      </div>
+    </form>
   );
 }
 
@@ -76,26 +112,7 @@ export function VerifyForm({ next }: { next?: string }) {
   );
 }
 
-export function MagicConsume() {
-  const [token, setToken] = useState("");
-  const [state, action, pending] = useActionState(consumeMagicLink, undefined);
-  useEffect(() => {
-    const m = window.location.hash.match(/t=([A-Za-z0-9_-]+)/);
-    if (m) setToken(m[1]);
-    history.replaceState(null, "", window.location.pathname); // remove the token from the address bar
-  }, []);
-  return (
-    <form action={action} className="card space-y-4 text-center">
-      <h2 className="h2 text-xl">Sign in to Thrivie</h2>
-      <input type="hidden" name="token" value={token} />
-      <Err state={state} />
-      <button className="btn-primary w-full" disabled={pending || !token}>{pending ? "Signing in…" : "Continue"}</button>
-      {!token && <p className="text-sm text-muted">This link is missing its code. <Link className="font-semibold text-primary" href="/login">Back to sign in</Link></p>}
-    </form>
-  );
-}
-
-export function SignupForm({ needsCode, closed }: { needsCode: boolean; closed: boolean }) {
+export function SignupForm({ needsCode, closed, passwordOptional }: { needsCode: boolean; closed: boolean; passwordOptional: boolean }) {
   const [state, action, pending] = useActionState(signUp, undefined);
   const [tz, setTz] = useState("");
   useEffect(() => setTz(Intl.DateTimeFormat().resolvedOptions().timeZone), []);
@@ -118,7 +135,8 @@ export function SignupForm({ needsCode, closed }: { needsCode: boolean; closed: 
         <span className="label">Email</span>
         <input className="input" name="email" type="email" autoComplete="email" inputMode="email" required defaultValue={state?.email} key={state?.email} />
       </label>
-      <PasswordInput name="password" label="Password" autoComplete="new-password" minLength={10} hint={NEW_PW_HINT} />
+      <PasswordInput name="password" label={passwordOptional ? "Password (optional)" : "Password"} autoComplete="new-password" minLength={10} required={!passwordOptional}
+        hint={passwordOptional ? "Leave it empty to go passwordless: sign in with Face ID / Touch ID or a code by email. If you set one, use at least 10 characters." : NEW_PW_HINT} />
       {needsCode && (
         <label className="block">
           <span className="label">Invite code</span>
@@ -129,7 +147,7 @@ export function SignupForm({ needsCode, closed }: { needsCode: boolean; closed: 
       <button className="btn-primary w-full" disabled={pending}>{pending ? "Creating…" : "Create account"}</button>
       <p className="text-center text-xs text-muted">Your entries are private to your account. Nobody else on this server can see them.</p>
       <p className="text-center text-sm text-muted">
-        Already have an account? <Link href="/login" className="font-semibold text-primary">Sign in</Link>
+        Already have an account? <Link href="/login" className={LINK}>Sign in</Link>
       </p>
     </form>
   );
@@ -150,7 +168,7 @@ export function ForgotPassword({ emailReset }: { emailReset: boolean }) {
         <div className="grid grid-cols-2 gap-1 rounded-2xl bg-surface-2/70 p-1" role="tablist" aria-label="How to reset">
           {([["email", "Email me a link"], ["key", "Use recovery key"]] as const).map(([k, l]) => (
             <button key={k} type="button" role="tab" aria-selected={mode === k} aria-controls={`reset-${k}`} id={`tab-${k}`} onClick={() => setMode(k)}
-              className={`min-h-11 rounded-xl px-2 text-sm font-semibold ${mode === k ? "bg-surface text-text shadow-sm" : "text-muted"}`}>
+              className={`min-h-12 rounded-xl px-2 text-sm font-semibold ${mode === k ? "bg-surface text-text shadow-sm" : "text-muted"}`}>
               {l}
             </button>
           ))}
@@ -160,7 +178,7 @@ export function ForgotPassword({ emailReset }: { emailReset: boolean }) {
         {mode === "email" ? <EmailResetRequest /> : <RecoveryKeyReset emailReset={emailReset} />}
       </div>
       <p className="text-center text-sm text-muted">
-        Remembered it? <Link href="/login" className="font-semibold text-primary">Back to sign in</Link>
+        Remembered it? <Link href="/login" className={LINK}>Back to sign in</Link>
       </p>
     </div>
   );

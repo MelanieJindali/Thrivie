@@ -83,10 +83,6 @@ export function verifyItem(item: ReviewItem, ctx: VerifyContext): Issue[] {
   return out;
 }
 
-export function verifyItems<T extends ReviewItem>(items: T[], ctx: VerifyContext): (T & { issues: Issue[] })[] {
-  return items.map((i) => ({ ...i, issues: verifyItem(i, ctx) }));
-}
-
 /** Same thing written twice for the same day in one paste ("meditated ✅ … meditated ✅"). */
 export function repeatKey(item: ReviewItem): string | null {
   switch (item.kind) {

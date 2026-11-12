@@ -3,7 +3,7 @@ import { useOfflineAction } from "@/components/OfflineSync";
 
 import { useEffect, useState } from "react";
 import { Plus, Repeat, X } from "lucide-react";
-import { repeatLastWorkout, saveWorkout } from "@/app/actions";
+import { repeatLastWorkout } from "@/app/actions";
 import { Field, FormStatus, RatingPicker, numOrNull, useAction } from "@/components/ui";
 import { WORKOUT_LABELS, WORKOUT_TYPES, type WorkoutType } from "@/lib/constants";
 import { distanceUnit, paceUnit, weightUnit, type Units } from "@/lib/units";

@@ -9,23 +9,56 @@ export { hashPassword, verifyPassword } from "./password";
 // Email + password (and optional magic link) accounts with server-side sessions.
 // - Sessions: random 256-bit token in an httpOnly, Secure, SameSite=Lax cookie
 //   ("__Host-" prefixed in production). Only its SHA-256 is stored.
+// - Rotation: a session's token is replaced once a day (during an action or API call), so a
+//   copied token stops working soon after. The old token stays valid for one more minute so
+//   requests already in flight aren't signed out.
 // - Two-factor (TOTP): a session stays "pending" until the code is verified.
 // - Rate limits are keyed by hashes, so emails/IPs aren't stored in clear text.
 
 const PROD = process.env.NODE_ENV === "production";
 export const SESSION_COOKIE = PROD ? "__Host-thrivie" : "thrivie_session";
 const SESSION_DAYS = 30;
+const ROTATE_AFTER_MS = 24 * 3_600_000;
+const ROTATE_GRACE_MS = 60_000;
+export type SignInMethod = "password" | "passkey" | "code";
+const cookieOptions = (expires: Date) => ({ httpOnly: true, secure: PROD, sameSite: "lax" as const, path: "/", expires });
 
 export const sha256 = (s: string) => crypto.createHash("sha256").update(s).digest("hex");
 
-export async function createSession(userId: string, mfaVerified: boolean) {
+export async function createSession(userId: string, mfaVerified: boolean, method: SignInMethod = "password") {
   const token = crypto.randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 86_400_000);
   const sys = systemDb();
-  await sys.session.create({ data: { id: sha256(token), userId, expiresAt, mfaVerified } });
+  await sys.session.create({ data: { id: sha256(token), userId, expiresAt, mfaVerified, method } });
   // Opportunistic cleanup of this user's expired sessions.
   await sys.session.deleteMany({ where: { userId, expiresAt: { lt: new Date() } } });
-  (await cookies()).set(SESSION_COOKIE, token, { httpOnly: true, secure: PROD, sameSite: "lax", path: "/", expires: expiresAt });
+  (await cookies()).set(SESSION_COOKIE, token, cookieOptions(expiresAt));
+}
+
+/**
+ * Replaces a session token that is more than a day old and renews its 30 days. Cookies can
+ * only be written during a server action or API call; on a plain page view this does nothing.
+ */
+async function rotateIfDue(s: { id: string; userId: string; mfaVerified: boolean; method: string; createdAt: Date; expiresAt: Date }) {
+  // A row already shortened to the grace window has been rotated; don't rotate it again.
+  if (Date.now() - s.createdAt.getTime() < ROTATE_AFTER_MS || s.expiresAt.getTime() - Date.now() <= ROTATE_GRACE_MS) return;
+  const jar = await cookies();
+  const oldToken = jar.get(SESSION_COOKIE)?.value;
+  if (!oldToken) return;
+  const token = crypto.randomBytes(32).toString("base64url");
+  const expiresAt = new Date(Date.now() + SESSION_DAYS * 86_400_000);
+  try {
+    jar.set(SESSION_COOKIE, token, cookieOptions(expiresAt));
+  } catch {
+    return; // page render: cookies are read-only here
+  }
+  const sys = systemDb();
+  try {
+    await sys.session.create({ data: { id: sha256(token), userId: s.userId, expiresAt, mfaVerified: s.mfaVerified, method: s.method } });
+    await sys.session.update({ where: { id: s.id }, data: { expiresAt: new Date(Date.now() + ROTATE_GRACE_MS) } });
+  } catch {
+    jar.set(SESSION_COOKIE, oldToken, cookieOptions(s.expiresAt)); // keep the working session
+  }
 }
 
 async function currentSessionRow() {
@@ -58,8 +91,14 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const s = await currentSessionRow();
   if (!s) return null;
   if (s.user.totpEnabled && !s.mfaVerified) return null;
+  await rotateIfDue(s);
   return s.user;
 });
+
+/** How the current session signed in (password, passkey or emailed code). */
+export async function currentSignInMethod(): Promise<SignInMethod | null> {
+  return ((await currentSessionRow())?.method as SignInMethod | undefined) ?? null;
+}
 
 /** Password was correct but the 2FA code is still needed. */
 export const getPendingMfaUser = cache(async (): Promise<CurrentUser | null> => {

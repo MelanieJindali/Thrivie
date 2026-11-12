@@ -40,7 +40,7 @@ export function PasswordInput({
         />
         <button
           type="button"
-          className="absolute top-1/2 right-1 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-xl text-muted hover:text-text"
+          className="absolute top-0 right-0 grid h-12 w-12 place-items-center rounded-2xl text-muted hover:text-text"
           onClick={() => setShown((s) => !s)}
           aria-pressed={shown}
           aria-label={shown ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}

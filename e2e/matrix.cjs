@@ -40,7 +40,7 @@ async function signIn(ctx) {
   await p.goto(BASE + "/login");
   await p.locator("input[name=email]").fill("demo@thrivie.app");
   await p.locator("input[name=password]").fill(process.env.DEMO_PASSWORD);
-  await p.getByRole("button", { name: "Sign in" }).click();
+  await p.getByRole("button", { name: "Sign in with password" }).click();
   await p.waitForURL(BASE + "/");
   storageState = await ctx.storageState();
   await p.close();

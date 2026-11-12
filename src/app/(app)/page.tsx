@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { HeartPulse, Dumbbell, Repeat, NotebookPen, ClipboardPaste, CircleCheck, Sun, Trophy, ChevronRight, Utensils } from "lucide-react";
+import { HeartPulse, Dumbbell, NotebookPen, ClipboardPaste, CircleCheck, Sun, Trophy, ChevronRight, Utensils } from "lucide-react";
 import { getSettings } from "@/lib/settings";
 import { requireUser } from "@/lib/auth";
 import { formatDate, todayInTz } from "@/lib/dates";

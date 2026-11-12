@@ -148,7 +148,7 @@ input, select, textarea { font-size: 16px; } /* no iOS zoom on focus */
   @apply mb-1.5 block text-[11px] font-bold tracking-[0.12em] text-muted uppercase;
 }
 @utility btn {
-  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition duration-150 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50;
+  @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition duration-150 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50;
 }
 @utility btn-primary {
   @apply btn bg-primary text-primary-text shadow-lg shadow-primary/25 hover:bg-primary-2;
@@ -166,7 +166,7 @@ input, select, textarea { font-size: 16px; } /* no iOS zoom on focus */
   @apply btn bg-terracotta-ink text-primary-text hover:brightness-110;
 }
 @utility chip {
-  @apply inline-flex min-h-11 items-center gap-1.5 rounded-full border-[1.5px] border-line bg-surface px-4 text-sm font-semibold transition hover:border-primary;
+  @apply inline-flex min-h-12 items-center gap-1.5 rounded-full border-[1.5px] border-line bg-surface px-4 text-sm font-semibold transition hover:border-primary;
 }
 @utility chip-on {
   @apply border-primary bg-seaglass text-text;
