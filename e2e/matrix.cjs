@@ -29,6 +29,18 @@ function spills() {
       out.push(`${el.tagName.toLowerCase()}${id}${cls ? "." + cls : ""} (+${el.scrollWidth - el.clientWidth}px)`);
     }
   }
+  // form controls and buttons that stick out past the card or form that holds them
+  for (const el of document.querySelectorAll("main input, main select, main textarea, main button, [role=dialog] input, [role=dialog] select, [role=dialog] textarea")) {
+    const box = el.closest(".card, form, section, [role=dialog]");
+    if (!box || el.closest("[data-allow-overflow]") || el.type === "hidden") continue;
+    // inside a row that scrolls sideways by design (prompt chips, day strips)
+    let scroller = false;
+    for (let n = el.parentElement; n && n !== box; n = n.parentElement) if (["auto", "scroll", "hidden", "clip"].includes(getComputedStyle(n).overflowX)) { scroller = true; break; }
+    if (scroller) continue;
+    const r = el.getBoundingClientRect(), b = box.getBoundingClientRect();
+    if (r.width === 0 || getComputedStyle(el).opacity === "0" || getComputedStyle(el).position === "fixed") continue;
+    if (r.right - b.right > 1 || b.left - r.left > 1) out.push(`${el.tagName.toLowerCase()}[${el.getAttribute("name") || el.getAttribute("aria-label") || el.type}] sticks out of its card`);
+  }
   // report only the innermost offenders
   return [...new Set(out)].slice(0, 5);
 }

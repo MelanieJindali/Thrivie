@@ -8,7 +8,7 @@ import { getGoalViews, getHabitViews, getWorkoutsRange } from "@/lib/queries";
 import { kgToDisplay, mlToDisplay, waterUnit, weightUnit } from "@/lib/units";
 import { describeWorkout } from "@/lib/format";
 import { MOOD_EMOJI, ENERGY_EMOJI } from "@/lib/constants";
-import { HabitCheckList } from "@/components/HabitCheckList";
+import { HabitDayLogger } from "@/components/HabitDayLogger";
 import { DailyBrief } from "@/components/DailyBrief";
 import { ProgressRing } from "@/components/ProgressRing";
 import { RepeatLastButton } from "@/components/RepeatLastButton";
@@ -113,7 +113,7 @@ export default async function TodayPage() {
               </h2>
               <Link href="/habits" className="inline-flex min-h-10 items-center text-xs font-bold text-primary">All habits <ChevronRight size={14} aria-hidden /></Link>
             </div>
-            <HabitCheckList habits={habits} today={today} />
+            <HabitDayLogger habits={habits} today={today} />
           </section>
         )}
 
