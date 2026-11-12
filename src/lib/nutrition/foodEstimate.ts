@@ -14,11 +14,11 @@ export type PastMeal = { name: string; calories: string; proteinG: string; carbs
 export type FoodEstimate = Macros & { source: "history" | "library" | "foods"; basis: string };
 
 type Per100 = { kcal: number; proteinG: number; carbsG: number; fatG: number };
-const PER100 = Object.fromEntries(Object.entries(ingredientsData.ingredients).map(([k, v]) => [k, v.per100g as Per100])) as Record<string, Per100>;
+export const PER100 = Object.fromEntries(Object.entries(ingredientsData.ingredients).map(([k, v]) => [k, v.per100g as Per100])) as Record<string, Per100>;
 
 /** Typical serving per food (USDA household measures). `unit` is how one serving is described. */
-type Food = { key: string; words: string[]; grams: number; unit: string; each?: boolean };
-const FOODS: Food[] = [
+export type GenericEntry = { key: string; words: string[]; grams: number; unit: string; each?: boolean };
+export const FOODS: GenericEntry[] = [
   { key: "oats", words: ["oatmeal", "oats", "porridge", "overnight oats"], grams: 40, unit: "½ cup dry" },
   { key: "milk", words: ["milk"], grams: 244, unit: "1 cup" },
   { key: "soymilk", words: ["soy milk", "soymilk"], grams: 243, unit: "1 cup" },

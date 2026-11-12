@@ -39,21 +39,23 @@ model User {
   recoveryKeyAt   DateTime?
   createdAt       DateTime  @default(now())
 
-  aliases     Alias[]
-  sessions    Session[]
-  passkeys    Passkey[]
-  settings    Settings?
-  healthLogs  HealthLog[]
-  workouts    Workout[]
-  habits      Habit[]
-  goals       Goal[]
-  journal     JournalEntry[]
-  meals       Meal[]
-  bodyProfile BodyProfile?
-  mealPlans   MealPlan[]
-  attachments Attachment[]
-  pushSubs    PushSubscription[]
-  apiTokens   ApiToken[]
+  aliases       Alias[]
+  sessions      Session[]
+  passkeys      Passkey[]
+  settings      Settings?
+  healthLogs    HealthLog[]
+  workouts      Workout[]
+  habits        Habit[]
+  goals         Goal[]
+  journal       JournalEntry[]
+  meals         Meal[]
+  foods         Food[]
+  favoriteFoods FavoriteFood[]
+  bodyProfile   BodyProfile?
+  mealPlans     MealPlan[]
+  attachments   Attachment[]
+  pushSubs      PushSubscription[]
+  apiTokens     ApiToken[]
 }
 
 model Session {
@@ -207,9 +209,54 @@ model Meal {
   carbsG    Float?
   fatG      Float?
   notes     String?
+  // Set when the entry was logged from a scanned, searched or custom food. The numbers above
+  // (and `nutrients`) are a snapshot taken at logging time, so past days never change.
+  foodId    String?
+  food      Food?    @relation(fields: [foodId], references: [id], onDelete: SetNull)
+  servings  Float?
+  nutrients String? // JSON snapshot of the other label values (saturated fat, sugars, fibre, sodium…)
   createdAt DateTime @default(now())
 
   @@index([userId, date])
+}
+
+/// Foods that can be logged. Rows with no userId are shared: products cached from Open Food
+/// Facts (public product data, nothing personal). Rows with a userId are private to that
+/// person: foods they entered or read from a label.
+model Food {
+  id           String   @id @default(cuid())
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source       String // open_food_facts | label_scan | custom | generic
+  barcode      String?
+  found        Boolean  @default(true) // false: a barcode Open Food Facts didn't know (remembered briefly to avoid repeat lookups)
+  name         String
+  brand        String?
+  servingSize  String? // as printed, e.g. "30 g" or "1 cup (240 ml)"
+  servingGrams Float?
+  perServing   String? // JSON nutrients for one serving
+  per100g      String? // JSON nutrients per 100 g (or 100 ml)
+  allergens    String   @default("") // comma-separated: dairy,gluten,nuts,eggs,soy,shellfish,fish
+  traces       String   @default("") // "may contain" allergens, same format
+  fetchedAt    DateTime @default(now()) // when the product data was last refreshed
+  createdAt    DateTime @default(now())
+
+  meals     Meal[]
+  favorites FavoriteFood[]
+
+  @@index([barcode])
+  @@index([userId])
+}
+
+model FavoriteFood {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  foodId    String
+  food      Food     @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, foodId])
 }
 
 /// Body & Goals profile: height, weight, age, sex, pregnancy, activity, goal,

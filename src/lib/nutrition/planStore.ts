@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import type { ScopedDb } from "../db";
 import { startOfWeek, type DateStr } from "../dates";
 import { calculateTargets, type BodyProfile, type NutritionTargets } from "./calculations";
-import { fromStored, generateWeekPlan, getMeal, swapMeal, toStored, type PlanPreferences, type StoredPlan, type WeekPlan } from "./mealPlan";
+import { PORTIONS, fromStored, generateWeekPlan, getMeal, swapMeal, toStored, type PlanPreferences, type StoredPlan, type WeekPlan } from "./mealPlan";
 import { loadBodyProfile } from "./profile";
 
 export type PlanContext =
@@ -52,6 +52,18 @@ export async function swapStoredMeal(db: ScopedDb, userId: string, today: DateSt
   if (!next) return false;
   await save(db, userId, weekStart, toStored(next, ctx.targets.calories, (stored.swaps ?? 0) + 1), row.profileHash);
   return true;
+}
+
+/** Changes the portions of some of one day's planned meals (the meals themselves stay). */
+export async function setDayPortions(db: ScopedDb, userId: string, today: DateStr, dayIndex: number, changes: { index: number; portion: number }[]): Promise<void> {
+  const weekStart = startOfWeek(today);
+  const row = await db.mealPlan.findUnique({ where: { userId_weekStart: { userId, weekStart } } });
+  if (!row) return;
+  const stored = JSON.parse(row.data) as StoredPlan;
+  const day = stored.days[dayIndex];
+  if (!day) return;
+  for (const c of changes) if (day.items[c.index] && (PORTIONS as readonly number[]).includes(c.portion)) day.items[c.index].portion = c.portion;
+  await save(db, userId, weekStart, stored, row.profileHash);
 }
 
 export async function regeneratePlan(db: ScopedDb, today: DateStr): Promise<void> {

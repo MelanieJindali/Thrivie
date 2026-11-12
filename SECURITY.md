@@ -93,6 +93,15 @@ Two independent layers mean one user can never read or change another user's dat
   - Downloading the model contacts Hugging Face/GitHub. No personal data is sent.
 - Pasted text and model output are treated as untrusted and are only ever rendered as text, never as HTML.
 
+## Food scanner
+
+- **Images stay on the device.** Camera frames and label photos are processed in the browser (barcode reader, Tesseract in a Web Worker). They are never uploaded or stored on the server.
+- **What leaves Thrivie:** a product's barcode number, or the words of an online name search you start, sent from Thrivie's server to Open Food Facts with a descriptive User-Agent and no account details. Lookups are cached and rate-limited.
+- **Shared and private food data:** cached products are public product data, readable by every signed-in person and writable only by the lookup service. Foods you enter or read from a label are private rows with encrypted names; tests run raw SQL as a second user to prove they can't be read or changed.
+- **Engine files are self-hosted** under `/vendor`, so no third-party CDN is contacted, and they load only when the scanner is opened.
+- **Camera:** requested only from the scanner, and stopped when the scanner closes or the app goes to the background.
+- **On this device:** products you've scanned are kept in the browser's storage for offline use and cleared on sign-out.
+
 ## Logging and secrets
 
 - Health values, journal text and pasted notes are never logged. Database errors can echo the values being written, so error logging records only the error type and code (`src/lib/log.ts`). Query logging is off.

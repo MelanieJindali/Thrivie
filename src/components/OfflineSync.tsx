@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { addGoalProgress, saveHealthLog, saveJournal, saveMeal, saveWorkout, setHabitCheck, setHabitCount, type ActionResult } from "@/app/actions";
+import { logFoods } from "@/app/foodActions";
 import { allItems, clearQueue, enqueue, isNetworkError, remove } from "@/lib/offlineQueue";
 
 /** Smart Import save. A plain fetch, so a dropped connection throws and the reviewed entries are queued. */
@@ -13,7 +14,7 @@ async function importCommit(body: { items: unknown[]; aliases: unknown[] }): Pro
 }
 
 // Only idempotent or append-only actions may be queued offline.
-const ACTIONS = { saveHealthLog, saveWorkout, saveMeal, saveJournal, setHabitCheck, setHabitCount, addGoalProgress, importCommit } as const;
+const ACTIONS = { saveHealthLog, saveWorkout, saveMeal, saveJournal, setHabitCheck, setHabitCount, addGoalProgress, importCommit, logFoods } as const;
 export type OfflineAction = keyof typeof ACTIONS;
 
 type Runner = <K extends OfflineAction>(name: K, ...args: Parameters<(typeof ACTIONS)[K]>) => Promise<ActionResult & { queued?: boolean }>;
@@ -81,6 +82,7 @@ export function OfflineSync({ owner, children }: { owner: string; children: Reac
 /** Called on sign-out: forget queued entries and cached pages on this device. */
 export async function clearDeviceData() {
   await clearQueue();
+  try { localStorage.removeItem("thrivie:scanned-foods:v1"); } catch { /* nothing stored */ } // products scanned on this device
   try {
     // Only Thrivie's page caches (personal pages); the on-device AI model isn't personal data.
     if ("caches" in window) for (const k of await caches.keys()) if (k.startsWith("thrivie")) await caches.delete(k);

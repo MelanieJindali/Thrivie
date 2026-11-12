@@ -77,5 +77,6 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: [{ source: "/((?!_next/static|_next/image|favicon.ico).*)" }],
+  // /vendor holds the scanner's self-hosted engine files (public, static).
+  matcher: [{ source: "/((?!_next/static|_next/image|favicon.ico|vendor/).*)" }],
 };

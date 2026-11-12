@@ -8,6 +8,9 @@ import { PageHeader, ProgressBar } from "@/components/ui";
 import { NutritionView, TargetsForm, type DayGroup } from "./NutritionView";
 import type { RecentMeal } from "./MealForm";
 import { MealPlanCard } from "@/components/MealPlanCard";
+import { loadDay } from "@/lib/nutrition/dayData";
+import { suggestNext, type RecentFood } from "@/lib/nutrition/dayFit";
+import { DayLeft, type PlanGap } from "./DayLeft";
 import { getPlanContext, loggedFromPlan, planCard } from "@/lib/nutrition/planStore";
 
 const str = (v: number | null) => (v == null ? "" : String(v));
@@ -54,10 +57,24 @@ export default async function NutritionPage() {
   const weekMax = Math.max(calT ?? 0, ...week.map((w) => w.calories ?? 0));
   const tracked = week.filter((w) => w.calories != null);
 
+  // What's left today, a few ideas that fit, and how the rest of the plan compares.
+  const day = await loadDay(db, user.id, today, settings);
+  const hour = Number(new Intl.DateTimeFormat("en-US", { hour: "numeric", hourCycle: "h23", timeZone: settings.timezone }).format(new Date()));
+  const nowSlot: MealSlot = hour < 11 ? "breakfast" : hour < 16 ? "lunch" : hour < 21 ? "dinner" : "snack";
+  const todayMeals = meals.filter((m) => m.date === today);
+  const num = (s: string) => (s === "" ? null : Number(s));
+  const recents: RecentFood[] = allMeals.slice(0, 40).map((m) => ({ name: m.name, slot: m.slot, nutrients: { calories: num(m.calories), proteinG: num(m.proteinG), carbsG: num(m.carbsG), fatG: num(m.fatG) } }));
+  const suggestions = suggestNext({ targets: day.targets, left: day.left, slot: nowSlot, prefs: { diet: day.diet, allergies: day.allergies }, recents, exclude: todayMeals.map((m) => m.name), limit: 4 });
+  const loggedSlots = new Set(todayMeals.map((m) => m.slot));
+  const openPlan = plan.state === "ready" ? plan.plan.days[plan.todayIndex].items.filter((it) => !loggedSlots.has(it.slot)) : [];
+  const planGap: PlanGap = plan.state === "ready" ? { plannedKcal: openPlan.reduce((s, it) => s + it.kcal, 0), openMeals: openPlan.length } : null;
+
   return (
     <div className="space-y-6">
       <PageHeader theme="nutrition" icon={<Utensils size={26} />} eyebrow="Nourish" title="Nutrition" crumbs={[{ href: "/log", label: "Log" }]}
         subtitle={t.meals ? `${t.meals} ${t.meals === 1 ? "meal" : "meals"} logged today.` : "A simple, private food diary. Numbers are optional."} />
+
+      <DayLeft targets={day.targets} eaten={day.eaten} left={day.left} hideCalories={settings.hideCalories} slot={nowSlot} suggestions={suggestions} planGap={planGap} />
 
       <MealPlanCard plan={planCard(plan, settings.hideCalories, await loggedFromPlan(db, plan, today))} />
 

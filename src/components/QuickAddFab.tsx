@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, HeartPulse, Dumbbell, CircleCheck, NotebookPen, Target, ClipboardPaste, Utensils } from "lucide-react";
+import { Plus, HeartPulse, Dumbbell, CircleCheck, NotebookPen, Target, ClipboardPaste, Utensils, ScanBarcode } from "lucide-react";
 import { Sheet } from "./Sheet";
 
 const ITEMS = [
@@ -10,6 +10,7 @@ const ITEMS = [
   { href: "/habits#today", label: "Habits", sub: "Tick off today", icon: CircleCheck, tone: "bg-sage-soft text-sage-ink" },
   { href: "/workouts#log", label: "Workout", sub: "Or repeat last", icon: Dumbbell, tone: "bg-ocean-soft text-ocean" },
   { href: "/nutrition#log", label: "Meal", sub: "What you ate", icon: Utensils, tone: "bg-clay-soft text-clay-ink" },
+  { href: "/nutrition/scan", label: "Scan food", sub: "Barcode, label or search", icon: ScanBarcode, tone: "bg-clay-soft text-clay-ink" },
   { href: "/journal#new", label: "Journal", sub: "A few lines", icon: NotebookPen, tone: "bg-iris-soft text-iris" },
   { href: "/goals#progress", label: "Goal progress", sub: "Add an update", icon: Target, tone: "bg-gold-soft text-gold-ink" },
   { href: "/import", label: "Paste notes", sub: "Smart Import", icon: ClipboardPaste, tone: "bg-seaglass-soft text-primary" },

@@ -33,3 +33,6 @@ build/
 coverage/
 .vscode/
 .idea/
+
+# Scanner engine files copied from node_modules at install/build time
+public/vendor/
