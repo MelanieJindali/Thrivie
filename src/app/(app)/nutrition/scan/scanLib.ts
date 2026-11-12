@@ -37,33 +37,26 @@ export async function lookup(code: string, hint?: BarcodeFormat): Promise<Lookup
   return local ? { status: "found", food: local, barcode } : { status: "unavailable", barcode };
 }
 
-const FORMATS = ["ean_13", "ean_8", "upc_a", "upc_e"] as const;
 const HINT: Record<string, BarcodeFormat> = { ean_13: "ean13", ean_8: "ean8", upc_a: "upca", upc_e: "upce" };
 type Detected = { rawValue: string; format: string };
-type Detector = { detect: (source: ImageBitmapSource) => Promise<Detected[]> };
-let detector: Promise<Detector> | null = null;
+let worker: Worker | null = null;
+let nextId = 0;
+const waiting = new Map<number, (hits: Detected[]) => void>();
 
-/** The browser's own barcode reader where it exists; otherwise a small WebAssembly one, served by Thrivie. */
-export function getDetector(): Promise<Detector> {
-  detector ??= (async () => {
-    const Native = (globalThis as unknown as { BarcodeDetector?: { new (o: { formats: string[] }): Detector; getSupportedFormats(): Promise<string[]> } }).BarcodeDetector;
-    if (Native) {
-      try {
-        const supported = await Native.getSupportedFormats();
-        if (FORMATS.every((f) => supported.includes(f))) return new Native({ formats: [...FORMATS] });
-      } catch { /* fall back */ }
-    }
-    const mod = await import("barcode-detector/ponyfill");
-    mod.prepareZXingModule({ overrides: { locateFile: (path: string, prefix: string) => (path.endsWith(".wasm") ? "/vendor/zxing/zxing_reader.wasm" : prefix + path) } });
-    return new mod.BarcodeDetector({ formats: [...FORMATS] }) as unknown as Detector;
-  })();
-  detector.catch(() => { detector = null; });
-  return detector;
+/** The barcode reader runs in a Web Worker (started on first use), so reading never blocks the screen. */
+function reader(): Worker {
+  if (!worker) {
+    worker = new Worker(new URL("./barcode.worker.ts", import.meta.url), { type: "module" });
+    worker.onmessage = (e: MessageEvent<{ id: number; hits: Detected[] }>) => { waiting.get(e.data.id)?.(e.data.hits); waiting.delete(e.data.id); };
+    worker.onerror = () => { for (const done of waiting.values()) done([]); waiting.clear(); worker?.terminate(); worker = null; };
+  }
+  return worker;
 }
 
-/** The first valid food barcode in an image or video frame, or null. */
-export async function detectBarcode(source: ImageBitmapSource): Promise<{ code: string; hint: BarcodeFormat } | null> {
-  const found = await (await getDetector()).detect(source);
+/** The first valid food barcode in an image or video frame, or null. The bitmap is handed over and closed. */
+export async function detectBarcode(bitmap: ImageBitmap): Promise<{ code: string; hint: BarcodeFormat } | null> {
+  const id = ++nextId;
+  const found = await new Promise<Detected[]>((resolve) => { waiting.set(id, resolve); reader().postMessage({ id, bitmap }, [bitmap]); });
   for (const d of found) {
     const hint = HINT[d.format];
     if (hint && parseBarcode(d.rawValue, hint).ok) return { code: d.rawValue, hint };

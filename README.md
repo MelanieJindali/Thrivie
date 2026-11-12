@@ -48,6 +48,24 @@ The visual system pairs the Thrivie brand navy (#1E3A64) with Coastal Earth acce
 
 ---
 
+### Food scanner (free, on your device)
+
+Scan a barcode, read a Nutrition Facts label, or search by name, then log it in a couple of taps.
+
+- **Barcodes** (EAN-13, EAN-8, UPC-A, UPC-E) use the browser's built-in reader where it exists and a small WebAssembly reader otherwise. Products come from [Open Food Facts](https://world.openfoodfacts.org) and are cached, so repeat scans are instant and work offline.
+- **Labels** are read on the device with Tesseract in a Web Worker, then checked (calories against protein, carbs and fat) and shown for review before saving.
+- **Left today** and **What to eat next** on the Nutrition page use your Body & Goals targets, diet and allergies.
+- **Privacy:** camera images and photos never leave the device. Only the barcode number goes to Open Food Facts, through Thrivie's server, with nothing about you.
+
+| Used for | Library | License |
+|---|---|---|
+| Barcode reading fallback | [barcode-detector](https://github.com/Sec-ant/barcode-detector) (zxing-wasm / zxing-cpp) | MIT (Apache 2.0) |
+| Label text reading | [tesseract.js](https://github.com/naptha/tesseract.js) + English data | Apache 2.0 |
+| Product data | Open Food Facts | ODbL (attribution shown in the app) |
+| Generic foods | USDA FoodData Central | Public domain |
+
+The reader files are copied into `public/vendor` at install and build time (`scripts/copy-vendor.mjs`) and served by Thrivie itself. Photo recognition of unlabelled food is not included: the available models are trained on images whose reuse terms are unclear.
+
 ## Run it locally
 
 Needs Node.js 20+ and PostgreSQL 14+.
@@ -70,6 +88,7 @@ Demo logins: **demo@thrivie.app** and **demo2@thrivie.app**, both with the `DEMO
 | `npm test` | Unit + integration tests (parser accuracy, dates, schemas, encryption, brief, streaks, **RLS isolation against Postgres**). Uses a database whose name must end in `_test`, e.g. `thrivie_test`; put its URL in `TEST_DATABASE_URL`, in your shell or a git-ignored `.env.test`. |
 | `node e2e/matrix.cjs` | Playwright: 7 viewports × light/dark × key screens, axe accessibility checks, no horizontal scroll, and 200% text size. Needs the app running and seeded, and `DEMO_PASSWORD` set. |
 | `node e2e/auth.cjs` | Sign-in flows in a real browser with a virtual Face ID authenticator on iPhone and Android screens: password, passkey upgrade, passkey sign-in, emailed code, session rotation, 48px touch targets. Needs `DEMO_PASSWORD` and `E2E_DATABASE_URL`. |
+| `node e2e/scan.cjs` | Food scanner in a real browser with a fake camera: scan to log, product not found to label reading, offline, camera refused, hide calories, layout from 320 to 1440 px. Needs `DEMO_PASSWORD` and `E2E_DATABASE_URL`. |
 | `node e2e/lighthouse.cjs` | Lighthouse (mobile) for sign-in and Today |
 | `npm run db:new-migration` | Create a migration after you change `prisma/schema.prisma` |
 | `npm audit --omit=dev` | Dependency check (0 known vulnerabilities at release) |

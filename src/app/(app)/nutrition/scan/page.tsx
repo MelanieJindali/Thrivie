@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/ui";
 import { ScanClient } from "./ScanClient";
 
 export const metadata = { title: "Scan food · Thrivie" };
-const TABS = ["barcode", "label", "photo", "search"] as const;
+const TABS = ["barcode", "label", "search"] as const;
 
 export default async function ScanPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const settings = await getSettings();

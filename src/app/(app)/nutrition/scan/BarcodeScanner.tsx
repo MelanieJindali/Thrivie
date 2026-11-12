@@ -46,8 +46,7 @@ export function BarcodeScanner({ onFood, onMissing }: { onFood: (f: Food) => voi
         // Read a reduced-size frame: plenty for a barcode, and far less work per look.
         const scale = Math.min(1, SCAN_WIDTH / v.videoWidth);
         const frame = await createImageBitmap(v, { resizeWidth: Math.round(v.videoWidth * scale), resizeHeight: Math.round(v.videoHeight * scale) });
-        const hit = await detectBarcode(frame);
-        frame.close();
+        const hit = await detectBarcode(frame); // read in a worker; the frame is handed over
         if (hit && stream.current) {
           stop();
           setStatus("Looking it up…");
@@ -104,7 +103,6 @@ export function BarcodeScanner({ onFood, onMissing }: { onFood: (f: Food) => voi
     try {
       const bmp = await createImageBitmap(file);
       const hit = await detectBarcode(bmp);
-      bmp.close();
       if (!hit) { setStatus("No barcode found in that photo. Try a closer, sharper shot, or type the number."); return; }
       setStatus("Looking it up…");
       await handle(await lookup(hit.code, hit.hint));

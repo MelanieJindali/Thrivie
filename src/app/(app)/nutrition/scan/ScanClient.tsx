@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { Camera, Check, Lock, ScanBarcode, ScanText, Search, X } from "lucide-react";
+import { Check, Lock, ScanBarcode, ScanText, Search, X } from "lucide-react";
 import { MEAL_LABELS, type MealSlot } from "@/lib/constants";
 import type { Food } from "@/lib/nutrition/food";
 import { mealComparison, sum, type DayTargets } from "@/lib/nutrition/dayFit";
@@ -16,13 +16,12 @@ import type { FoodDraft } from "./FoodEditor";
 const Loading = () => <p className="py-8 text-center text-sm text-muted" role="status">Loading…</p>;
 const BarcodeScanner = dynamic(() => import("./BarcodeScanner").then((m) => m.BarcodeScanner), { ssr: false, loading: Loading });
 const LabelScanner = dynamic(() => import("./LabelScanner").then((m) => m.LabelScanner), { ssr: false, loading: Loading });
-const PhotoScanner = dynamic(() => import("./PhotoScanner").then((m) => m.PhotoScanner), { ssr: false, loading: Loading });
 const FoodSearch = dynamic(() => import("./FoodSearch").then((m) => m.FoodSearch), { ssr: false, loading: Loading });
 const FoodEditor = dynamic(() => import("./FoodEditor").then((m) => m.FoodEditor), { ssr: false, loading: Loading });
 
-type Tab = "barcode" | "label" | "photo" | "search";
-const TABS: { key: Tab; label: string; icon: typeof Camera }[] = [
-  { key: "barcode", label: "Barcode", icon: ScanBarcode }, { key: "label", label: "Label", icon: ScanText }, { key: "photo", label: "Photo", icon: Camera }, { key: "search", label: "Search", icon: Search },
+type Tab = "barcode" | "label" | "search";
+const TABS: { key: Tab; label: string; icon: typeof Search }[] = [
+  { key: "barcode", label: "Barcode", icon: ScanBarcode }, { key: "label", label: "Label", icon: ScanText }, { key: "search", label: "Search", icon: Search },
 ];
 type View =
   | { kind: "tabs" }
@@ -64,7 +63,7 @@ export function ScanClient({ day, targets, favoriteIds, initialTab }: { day: Day
     <div className="space-y-5">
       <p className="flex items-start gap-2.5 rounded-2xl bg-seaglass-soft px-4 py-3 text-sm">
         <Lock size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
-        <span>Camera images and photos are read <b>on your device</b> and never uploaded. Only a product&apos;s barcode number is sent, to Open Food Facts, with nothing about you.</span>
+        <span>Camera images and label photos are read <b>on your device</b> and never uploaded. Only a product&apos;s barcode number is sent, to Open Food Facts, with nothing about you.</span>
       </p>
 
       {tray.length > 0 && view.kind !== "done" && (
@@ -88,19 +87,18 @@ export function ScanClient({ day, targets, favoriteIds, initialTab }: { day: Day
 
       {view.kind === "tabs" && (
         <section className="card space-y-4">
-          <div className="grid grid-cols-4 gap-1 rounded-2xl bg-surface-2/70 p-1" role="tablist" aria-label="Ways to find a food">
+          <div className="grid grid-cols-3 gap-1 rounded-2xl bg-surface-2/70 p-1" role="tablist" aria-label="Ways to find a food">
             {TABS.map(({ key, label, icon: Icon }) => (
               <button key={key} type="button" role="tab" id={`tab-${key}`} aria-selected={tab === key} aria-controls="scan-panel" onClick={() => setTab(key)}
                 className={`flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-xs font-semibold ${tab === key ? "bg-surface text-text shadow-sm" : "text-muted"}`}>
                 <Icon size={18} aria-hidden />
-                <span className="truncate">{label}{key === "photo" && <span className="sr-only"> (beta)</span>}</span>
+                <span className="truncate">{label}</span>
               </button>
             ))}
           </div>
           <div id="scan-panel" role="tabpanel" aria-labelledby={`tab-${tab}`}>
             {tab === "barcode" && <BarcodeScanner onFood={(food) => setView({ kind: "food", food })} onMissing={(barcode, why) => setView({ kind: "missing", barcode, why })} />}
             {tab === "label" && <LabelScanner onRead={fromLabel} />}
-            {tab === "photo" && <PhotoScanner onPick={(food) => setView({ kind: "food", food })} onSearch={() => setTab("search")} />}
             {tab === "search" && <FoodSearch hideCalories={day.hideCalories} onPick={(food) => setView({ kind: "food", food })} onCreate={(name) => manual(name)} />}
           </div>
         </section>
