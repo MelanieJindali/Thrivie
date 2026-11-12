@@ -28,6 +28,8 @@ model User {
   id              String    @id @default(cuid())
   email           String    @unique
   passwordHash    String
+  // False for accounts created without a password (passkey or email code only); the hash is then random and unusable.
+  hasPassword     Boolean   @default(true)
   // Two-factor authentication (TOTP). Secret is encrypted; recovery codes are hashed.
   totpSecret      String?
   totpEnabled     Boolean   @default(false)
@@ -39,6 +41,7 @@ model User {
 
   aliases     Alias[]
   sessions    Session[]
+  passkeys    Passkey[]
   settings    Settings?
   healthLogs  HealthLog[]
   workouts    Workout[]
@@ -58,10 +61,41 @@ model Session {
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   mfaVerified Boolean  @default(false) // false until the 2FA code is entered (when 2FA is on)
+  method      String   @default("password") // how this session signed in: password | passkey | code
   expiresAt   DateTime
   createdAt   DateTime @default(now())
 
   @@index([userId])
+}
+
+/// Passkeys (WebAuthn credentials). Only public keys are stored; nothing here is secret.
+model Passkey {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialId String    @unique
+  publicKey    Bytes
+  counter      BigInt    @default(0)
+  transports   String? // comma-separated hints for the browser
+  backedUp     Boolean   @default(false) // synced passkey (iCloud Keychain, Google Password Manager)
+  name         String
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime?
+
+  @@index([userId])
+}
+
+/// Short-lived, single-use sign-in challenges: WebAuthn challenges and emailed codes (hash only).
+model AuthChallenge {
+  id        String   @id @default(cuid())
+  kind      String // passkey-register | passkey-login | email-code
+  subject   String? // user id (register) or email (code)
+  value     String // the WebAuthn challenge, or a SHA-256 of the emailed code
+  attempts  Int      @default(0)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([kind, subject])
 }
 
 /// Rate-limit events (login failures, writes, magic-link requests). Keys are hashed.

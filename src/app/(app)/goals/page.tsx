@@ -12,7 +12,7 @@ import { Target } from "lucide-react";
 
 export default async function GoalsPage() {
   const settings = await getSettings();
-  const { db, user } = await requireUser();
+  const { db } = await requireUser();
   const today = todayInTz(settings.timezone);
   const goals = await getGoalViews(db, today, true);
   const habits = await db.habit.findMany({ where: { archived: false }, select: { id: true, name: true } });

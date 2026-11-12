@@ -281,7 +281,7 @@ export async function logPlanMeal(dayIndex: number, itemIndex: number): Promise<
 export async function newMealPlan(): Promise<ActionResult> {
   const { db, user } = await requireUser();
   if (await tooFast(user.id)) return SLOW_DOWN;
-  await regeneratePlan(db, user.id, await getToday());
+  await regeneratePlan(db, await getToday());
   done();
   return { ok: true };
 }

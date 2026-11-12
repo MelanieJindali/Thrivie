@@ -14,7 +14,7 @@ const row = ({ id, name, emoji, schedule, summary }: HabitView, archived: boolea
 
 export default async function HabitsPage() {
   const settings = await getSettings();
-  const { db, user } = await requireUser();
+  const { db } = await requireUser();
   const today = todayInTz(settings.timezone);
   const habits = await getHabitViews(db, today);
   const archived = (await getHabitViews(db, today, true)).filter((h) => !habits.some((x) => x.id === h.id));

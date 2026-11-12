@@ -12,7 +12,7 @@ import { Dumbbell } from "lucide-react";
 
 export default async function WorkoutsPage() {
   const settings = await getSettings();
-  const { db, user } = await requireUser();
+  const { db } = await requireUser();
   const u = settings.units;
   const today = todayInTz(settings.timezone);
   const workouts = await getWorkoutsRange(db, today, 120);

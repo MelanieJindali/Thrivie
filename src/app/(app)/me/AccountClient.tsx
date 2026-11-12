@@ -8,7 +8,7 @@ import { PasswordInput } from "@/components/PasswordInput";
 import { RecoveryKeyReveal } from "@/components/RecoveryKeyReveal";
 import { formatDate } from "@/lib/dates";
 
-export function AccountSection({ email, recoveryKeyAt }: { email: string; recoveryKeyAt: string | null }) {
+export function AccountSection({ email, hasPassword, recoveryKeyAt }: { email: string; hasPassword: boolean; recoveryKeyAt: string | null }) {
   const [pwState, pwAction, pwPending] = useActionState(changePassword, undefined);
   const [delState, delAction, delPending] = useActionState(deleteAccount, undefined);
   return (
@@ -22,14 +22,15 @@ export function AccountSection({ email, recoveryKeyAt }: { email: string; recove
       </div>
 
       <form action={pwAction} className="space-y-3" aria-labelledby="chpw-h">
-        <h3 id="chpw-h" className="font-bold">Change password</h3>
+        <h3 id="chpw-h" className="font-bold">{hasPassword ? "Change password" : "Set a password"}</h3>
+        {!hasPassword && <p className="text-sm text-muted">Your account has no password; you sign in with a passkey or an emailed code. A password is optional, and is needed to create a recovery key or delete the account.</p>}
         <div className="grid gap-3 sm:grid-cols-3">
-          <PasswordInput name="current" label="Current password" autoComplete="current-password" />
+          {hasPassword && <PasswordInput name="current" label="Current password" autoComplete="current-password" />}
           <PasswordInput name="next" label="New password" autoComplete="new-password" minLength={10} hint="10+ characters" />
           <PasswordInput name="confirm" label="Confirm new password" autoComplete="new-password" minLength={10} />
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <button className="btn-primary" disabled={pwPending}>{pwPending ? "Updating…" : "Update password"}</button>
+          <button className="btn-primary" disabled={pwPending}>{pwPending ? "Saving…" : hasPassword ? "Update password" : "Set password"}</button>
           {pwState?.error && <p className="text-sm text-terracotta-ink" role="alert">{pwState.error}</p>}
           {pwState?.ok && <p className="text-sm text-primary" role="status">{pwState.ok}</p>}
         </div>

@@ -69,6 +69,7 @@ Demo logins: **demo@thrivie.app** and **demo2@thrivie.app**, both with the `DEMO
 |---|---|
 | `npm test` | Unit + integration tests (parser accuracy, dates, schemas, encryption, brief, streaks, **RLS isolation against Postgres**). Uses a database whose name must end in `_test`, e.g. `thrivie_test`; put its URL in `TEST_DATABASE_URL`, in your shell or a git-ignored `.env.test`. |
 | `node e2e/matrix.cjs` | Playwright: 7 viewports × light/dark × key screens, axe accessibility checks, no horizontal scroll, and 200% text size. Needs the app running and seeded, and `DEMO_PASSWORD` set. |
+| `node e2e/auth.cjs` | Sign-in flows in a real browser with a virtual Face ID authenticator on iPhone and Android screens: password, passkey upgrade, passkey sign-in, emailed code, session rotation, 48px touch targets. Needs `DEMO_PASSWORD` and `E2E_DATABASE_URL`. |
 | `node e2e/lighthouse.cjs` | Lighthouse (mobile) for sign-in and Today |
 | `npm run db:new-migration` | Create a migration after you change `prisma/schema.prisma` |
 | `npm audit --omit=dev` | Dependency check (0 known vulnerabilities at release) |
@@ -90,7 +91,7 @@ Vercel runs the app; a free **Neon** Postgres database, added from inside Vercel
 2. **Keys:** open `https://<your-app>/setup` (it works before setup is finished). It generates `ENCRYPTION_KEY`, `CRON_SECRET` and `SIGNUP_CODE` in your browser. Add them under **Settings → Environment Variables**.
 3. **Deploy the new version:** merge this branch into `main` on GitHub (or set **Settings → Git → Production Branch** to this branch). Vercel rebuilds, and the build applies the database migrations, including all security policies, automatically.
 4. **Reminders (optional):** at [cron-job.org](https://cron-job.org), call `https://<your-app>/api/cron/reminders?secret=<CRON_SECRET>` **every hour**.
-5. **Email (optional, recommended):** add `RESEND_API_KEY`, `EMAIL_FROM` and `APP_URL` (Resend's free tier is enough). This turns on "Forgot password?" reset emails, password-change notices and email sign-in links. Without email, people can still reset a forgotten password with the recovery key they create in **Me → Account**.
+5. **Email (optional, recommended):** add `RESEND_API_KEY`, `EMAIL_FROM` and `APP_URL` (Resend's free tier is enough). This turns on emailed sign-in codes, "Forgot password?" reset emails and password-change notices. `APP_URL` is also the address passkeys are tied to, so set it to the site's real address. Without email, people can still reset a forgotten password with the recovery key they create in **Me → Account**.
 6. Open the site in Safari, create your account with the signup code, then tap **Share → Add to Home Screen**.
 
 > **Keep a safe copy of `ENCRYPTION_KEY`.** Without it, encrypted entries can't be read. To rotate it, set the old key as `ENCRYPTION_KEY_PREVIOUS` and the new one as `ENCRYPTION_KEY`.
@@ -106,7 +107,7 @@ prisma/schema.prisma            data model
 prisma/migrations/*_rls         Row Level Security: policies, restricted role, forced on every table
 src/lib/db.ts                   scoped data client (RLS context + app-level scoping + encryption)
 src/lib/crypto.ts               AES-256-GCM field/attachment encryption
-src/lib/auth.ts, authActions.ts sessions, 2FA, magic links, rate limits
+src/lib/auth.ts, authActions.ts sessions, passkeys, emailed codes, 2FA, rate limits
 src/lib/import/parser.ts        Smart Import Tier 1 (on-device)
 src/lib/import/onDevice.ts      Smart Import Tier 2 (WebLLM, optional)
 src/lib/briefText.ts            template daily brief
@@ -117,6 +118,6 @@ e2e/                            viewport/a11y matrix, Lighthouse
 ```
 
 ### Why these choices
-- **Postgres + RLS, with our own small auth layer instead of Supabase Auth:** RLS is enforced by the database, and the same code runs on Neon, Supabase or any Postgres. Keeping auth in the app made it fully testable here, including 2FA, magic links, rate limits and breach checks. The RLS migration works on Supabase too.
+- **Postgres + RLS, with our own small auth layer instead of Supabase Auth:** RLS is enforced by the database, and the same code runs on Neon, Supabase or any Postgres. Keeping auth in the app made it fully testable here, including passkeys, emailed codes, 2FA, rate limits and breach checks. The RLS migration works on Supabase too.
 - **Self-hosted fonts:** avoids sending every visitor's IP to a third party and keeps the CSP strict.
 - **Template-based daily brief:** free, private and consistent. When the on-device model is already downloaded, an optional "Rewrite with on-device AI" polish is offered. It's rejected if any number changes.

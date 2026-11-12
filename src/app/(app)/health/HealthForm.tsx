@@ -3,7 +3,6 @@ import { useOfflineAction } from "@/components/OfflineSync";
 
 import { useEffect, useState } from "react";
 import { Plus, X } from "lucide-react";
-import { saveHealthLog } from "@/app/actions";
 import { Field, FormStatus, RatingPicker, numOrNull, useAction } from "@/components/ui";
 import { ENERGY_EMOJI, MOOD_EMOJI } from "@/lib/constants";
 import { waterUnit, weightUnit, type Units } from "@/lib/units";

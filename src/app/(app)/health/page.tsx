@@ -13,7 +13,7 @@ import { HeartPulse } from "lucide-react";
 
 export default async function HealthPage() {
   const settings = await getSettings();
-  const { db, user } = await requireUser();
+  const { db } = await requireUser();
   const today = todayInTz(settings.timezone);
   const logs = await getHealthRange(db, today, 90);
   const u = settings.units;

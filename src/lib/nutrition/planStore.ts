@@ -54,7 +54,7 @@ export async function swapStoredMeal(db: ScopedDb, userId: string, today: DateSt
   return true;
 }
 
-export async function regeneratePlan(db: ScopedDb, userId: string, today: DateStr): Promise<void> {
+export async function regeneratePlan(db: ScopedDb, today: DateStr): Promise<void> {
   await db.mealPlan.deleteMany({ where: { weekStart: startOfWeek(today) } });
 }
 

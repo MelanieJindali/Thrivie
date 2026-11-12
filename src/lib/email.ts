@@ -1,9 +1,10 @@
 import "server-only";
 
 // Transactional email via Resend (free tier: 3,000 emails/month).
-// Magic links are only offered when RESEND_API_KEY, EMAIL_FROM and APP_URL are set.
+// Email features (sign-in codes, reset links, notices) are only offered when
+// RESEND_API_KEY, EMAIL_FROM and APP_URL are set.
 
-export function magicLinksEnabled(): boolean {
+export function emailEnabled(): boolean {
   return !!(process.env.RESEND_API_KEY && process.env.EMAIL_FROM && process.env.APP_URL);
 }
 
@@ -38,7 +39,7 @@ class EmailError extends Error {
  * still sees the same message either way, so nothing reveals whether an account exists.
  * Email addresses are blanked out; the recipient is never logged.
  */
-export function logEmailFailure(kind: "sign-in link" | "reset link" | "password-changed notice") {
+export function logEmailFailure(kind: "sign-in code" | "reset link" | "password-changed notice") {
   return (e: unknown) => {
     const scrub = (t: string) => t.replace(/[^\s@<>"']+@[^\s@<>"']+/g, "[email]").slice(0, 300);
     if (e instanceof EmailError) console.error(`[email] ${kind} not sent: HTTP ${e.status} ${e.reason}: ${scrub(e.detail)}`);
@@ -47,15 +48,15 @@ export function logEmailFailure(kind: "sign-in link" | "reset link" | "password-
   };
 }
 
-// Tokens go in the URL fragment, which browsers never send to servers,
-// so they can't end up in request logs.
-export async function sendMagicLinkEmail(to: string, token: string) {
-  await send(to, "Your Thrivie sign-in link", ["Tap to sign in to Thrivie.", "This link works once and expires in 15 minutes. If you didn't ask for it, you can ignore this email."], {
-    href: `${base()}/login/magic#t=${token}`,
-    label: "Sign in to Thrivie",
-  });
+export async function sendSignInCodeEmail(to: string, code: string) {
+  await send(to, "Your Thrivie sign-in code", [
+    `Your Thrivie sign-in code is ${code}`,
+    "It works once and expires in 10 minutes. If you didn't ask for it, you can ignore this email; nobody can sign in without it.",
+  ]);
 }
 
+// Reset tokens go in the URL fragment, which browsers never send to servers,
+// so they can't end up in request logs.
 export async function sendPasswordResetEmail(to: string, token: string) {
   await send(to, "Reset your Thrivie password", [
     "Someone (hopefully you) asked to reset the password for this Thrivie account.",

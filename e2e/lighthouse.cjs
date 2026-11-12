@@ -13,7 +13,7 @@ const TARGETS = { performance: 90, accessibility: 90, "best-practices": 90, seo:
   await p.goto(BASE + "/login");
   await p.locator("input[name=email]").fill("demo@thrivie.app");
   await p.locator("input[name=password]").fill(process.env.DEMO_PASSWORD);
-  await p.getByRole("button", { name: "Sign in" }).click();
+  await p.getByRole("button", { name: "Sign in with password" }).click();
   await p.waitForURL(BASE + "/");
   const cookie = (await ctx.cookies()).map((c) => `${c.name}=${c.value}`).join("; ");
   await b.close();

@@ -8,7 +8,7 @@ import { NotebookPen } from "lucide-react";
 export default async function JournalPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q = "" } = await searchParams;
   const settings = await getSettings();
-  const { db, user } = await requireUser();
+  const { db } = await requireUser();
   const today = todayInTz(settings.timezone);
   const query = q.trim();
   // Entries are encrypted at rest, so search decrypts this user's entries and filters here.
