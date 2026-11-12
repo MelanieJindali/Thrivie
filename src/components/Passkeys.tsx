@@ -37,9 +37,11 @@ export function PasskeySignIn({ next }: { next?: string }) {
       if (done.ok) { window.location.assign(done.redirectTo); return; }
       setError(done.error);
     } catch (e) {
-      // A cancelled autofill request (replaced by a button press) must not disturb the button's state.
-      if (cancelled(e)) { if (!autofill) setBusy(false); return; }
-      setError("Passkey sign-in didn't complete. Try again, or sign in another way.");
+      // The autofill request runs in the background, unasked: it must stay silent whatever happens
+      // (no passkey hardware, replaced by a button press) and never disturb the button's state.
+      if (autofill) return;
+      if (cancelled(e)) { setBusy(false); return; }
+      setError(e instanceof Error && e.name === "NotSupportedError" ? "This device or browser can't use passkeys here. Sign in another way." : "Passkey sign-in didn't complete. Try again, or sign in another way.");
     }
     setBusy(false);
   }
