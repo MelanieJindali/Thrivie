@@ -11,4 +11,5 @@ if (process.env.POSTGRES_URL_NON_POOLING && process.env.POSTGRES_PRISMA_URL) {
   console.warn("⚠ No database connected (POSTGRES_PRISMA_URL / POSTGRES_URL_NON_POOLING missing). Skipping migrations.\n  Add one in Vercel → Storage → Neon, then redeploy.");
 }
 run("npx prisma generate");
+run("node scripts/copy-vendor.mjs");
 run("npx next build");
