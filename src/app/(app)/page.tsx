@@ -68,7 +68,7 @@ export default async function TodayPage() {
       </header>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2"><DailyBrief brief={brief.brief} hasData={hasAnyData} /></div>
+        <div className="lg:col-span-2"><DailyBrief brief={brief.brief} hasData={hasAnyData} onDeviceAi={settings.onDeviceAi} /></div>
         <section className="card flex flex-col items-center justify-center gap-3 text-center" aria-labelledby="today-progress">
           <h2 id="today-progress" className="sr-only">Today&apos;s progress</h2>
           {due.length ? (

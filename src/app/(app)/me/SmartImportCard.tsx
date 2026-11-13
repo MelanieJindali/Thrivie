@@ -19,7 +19,8 @@ export function SmartImportCard({ aliases, onDeviceAi }: { aliases: Alias[]; onD
   });
   const toast = useToast();
   useEffect(() => {
-    import("@/lib/import/onDevice").then(async (m) => { setGpu(await m.webGpuAvailable()); setCached(await m.isModelCached()); }).catch(() => {});
+    // Only checks what this browser supports and what is already downloaded; nothing is fetched.
+    import("@/services/localAi").then(async (m) => { const plan = await m.getPlan(); setGpu(!!plan); setCached(!!plan && plan.tier !== "builtin" && (await m.isAiReady())); }).catch(() => {});
   }, []);
 
   return (
@@ -31,9 +32,9 @@ export function SmartImportCard({ aliases, onDeviceAi }: { aliases: Alias[]; onD
       {gpu && (
         <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-surface-2/60 p-3 text-sm">
           <span className="min-w-0 flex-1"><b>On-device AI</b> for messy notes. Runs privately on this device.{cached ? " The model is downloaded." : ""}</span>
-          <button className="btn-outline" onClick={() => { setOn(!on); void setOnDeviceAi(!on); }} aria-pressed={on}>{on ? "Turn off" : "Turn on"}</button>
+          <button className="btn-outline" onClick={() => { if (on) void import("@/services/localAi").then((m) => m.release()); setOn(!on); void setOnDeviceAi(!on); }} aria-pressed={on}>{on ? "Turn off" : "Turn on"}</button>
           {cached && (
-            <button className="btn-ghost text-xs" onClick={async () => { const m = await import("@/lib/import/onDevice"); await m.deleteModel(); setCached(false); toast({ message: "Downloaded model deleted from this device" }); }}>
+            <button className="btn-ghost text-xs" onClick={async () => { const m = await import("@/services/localAi"); await m.deleteAiDownloads(); setCached(false); toast({ message: "Downloaded model deleted from this device" }); }}>
               Delete downloaded model
             </button>
           )}

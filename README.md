@@ -38,9 +38,12 @@ The visual system pairs the Thrivie brand navy (#1E3A64) with Coastal Earth acce
    - It splits notes by day and resolves "Mon", "yesterday" or "11/3" in your timezone.
    - It finds sleep, weight, water, steps, mood, energy, workouts (distance, time, sets × reps), meals ("lunch: chicken salad 520 cal, 40g protein", "had salmon for dinner"), habits from ✅/❌, goal progress and journal reflections.
    - Every field has a confidence score.
-2. **Tier 2, optional.** A small on-device model (WebLLM, Qwen2.5-0.5B) runs in a Web Worker on devices with WebGPU. Devices with 16-bit shader support get the smaller q4f16 build; others get q4f32.
-   - It's hidden elsewhere and off by default; turning it on means a one-time download.
-   - It only re-reads snippets Tier 1 was unsure about. Its output is schema-validated, and any failure falls back to Tier 1.
+2. **Tier 2, optional: on-device AI** (`src/services/localAi.ts`). Off by default, free, and nothing leaves the device. It picks a tier per device:
+   - **Built-in:** desktop Chrome's own model (the Prompt API), when it's ready. Nothing to download.
+   - **Desktop:** Qwen2.5-0.5B-Instruct (`onnx-community`, 4-bit) with Transformers.js in a Web Worker, on WebGPU or WebAssembly.
+   - **Phones, tablets and low-memory devices:** SmolLM2-360M-Instruct (4-bit), with replies capped at 150 tokens so the tab stays within mobile memory limits.
+   - Model files download once, only after it's turned on and first used, and stay in the browser cache for offline use. The runtime files are served by Thrivie (`public/vendor/ort`). The model is released when the page is hidden or the feature is turned off.
+   - **Enhance** rewrites the parts Tier 1 couldn't read into lines it can (for example "snack: apple (~95 cal)"), replaces them in the note, and Tier 1 reads them as usual, so everything still goes through review.
 3. **Review.** Entries are grouped by date. Low-confidence fields are highlighted. You can edit, remove or approve each one, or use **Approve all**. Duplicates are checked against your existing entries before anything is overwritten.
 4. **Learning.** Your corrections become personal shorthand ("bb" → Bench press) for next time. You can view and edit it in **Me**.
 
@@ -119,7 +122,7 @@ Vercel runs the app; a free **Neon** Postgres database, added from inside Vercel
 
 ## Tech
 
-Next.js 15 (App Router) · TypeScript · Tailwind CSS 4 · PostgreSQL with forced Row Level Security · Prisma · Zod · Recharts (lazy-loaded) · chrono-node · Fuse.js · WebLLM (optional, lazy-loaded) · Fraunces + Manrope (self-hosted, no font requests to Google) · web-push · Vitest · Playwright + axe · Lighthouse.
+Next.js 15 (App Router) · TypeScript · Tailwind CSS 4 · PostgreSQL with forced Row Level Security · Prisma · Zod · Recharts (lazy-loaded) · chrono-node · Fuse.js · Transformers.js (optional on-device AI, lazy-loaded) · Fraunces + Manrope (self-hosted, no font requests to Google) · web-push · Vitest · Playwright + axe · Lighthouse.
 
 ```
 prisma/schema.prisma            data model
@@ -128,7 +131,7 @@ src/lib/db.ts                   scoped data client (RLS context + app-level scop
 src/lib/crypto.ts               AES-256-GCM field/attachment encryption
 src/lib/auth.ts, authActions.ts sessions, passkeys, emailed codes, 2FA, rate limits
 src/lib/import/parser.ts        Smart Import Tier 1 (on-device)
-src/lib/import/onDevice.ts      Smart Import Tier 2 (WebLLM, optional)
+src/services/localAi.ts         On-device AI (optional): device tiers, worker, streaming
 src/lib/briefText.ts            template daily brief
 src/middleware.ts               CSP nonce, CSRF origin check, auth redirect
 src/app/(app)/                  Today, Log, Import, Insights, Me + module pages
@@ -139,4 +142,4 @@ e2e/                            viewport/a11y matrix, Lighthouse
 ### Why these choices
 - **Postgres + RLS, with our own small auth layer instead of Supabase Auth:** RLS is enforced by the database, and the same code runs on Neon, Supabase or any Postgres. Keeping auth in the app made it fully testable here, including passkeys, emailed codes, 2FA, rate limits and breach checks. The RLS migration works on Supabase too.
 - **Self-hosted fonts:** avoids sending every visitor's IP to a third party and keeps the CSP strict.
-- **Template-based daily brief:** free, private and consistent. When the on-device model is already downloaded, an optional "Rewrite with on-device AI" polish is offered. It rewrites one sentence at a time and keeps a sentence as written if its rewrite changes a number or a quoted goal name, or adds weight, food or medical wording.
+- **Template-based daily brief:** free, private and consistent. With on-device AI turned on, the brief can be rewritten on the device; the rewrite streams into the card, "Show original" switches back without running the model again, and a rewrite that uses a number not in the brief, or adds weight, food or medical wording, is discarded. It starts on its own only when nothing needs downloading and the device isn't a phone.

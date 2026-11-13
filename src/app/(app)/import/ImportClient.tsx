@@ -17,7 +17,6 @@ import { LOW_CONFIDENCE, normalizeEntries, type ReviewItem } from "@/lib/import/
 import { repeatKey, verifyItem, type Fix, type Issue } from "@/lib/import/verify";
 import { hintFor, personalExample } from "@/lib/import/hints";
 import type { AliasRule } from "@/lib/import/parser";
-import type { ImportEntry } from "@/lib/import/schema";
 import { Tip } from "@/components/Tip";
 import { useToast } from "@/components/Toast";
 import { useOfflineAction } from "@/components/OfflineSync";
@@ -46,7 +45,6 @@ export function ImportClient({ today, units, habits, goals, aliases, tipsSeen, o
   const [existing, setExisting] = useState<{ dates: string; data: Existing } | null>(null);
   const [dupStatus, setDupStatus] = useState<"idle" | "checking" | "ok" | "failed">("idle");
   const [result, setResult] = useState<string | null>(null);
-  const [enhanced, setEnhanced] = useState<ImportEntry[] | null>(null);
   const router = useRouter();
   const toast = useToast();
   const runAction = useOfflineAction();
@@ -55,9 +53,8 @@ export function ImportClient({ today, units, habits, goals, aliases, tipsSeen, o
   // Layers 1–2: parsed on this device, in a Web Worker, 250 ms after typing pauses.
   const ctx = useMemo(() => ({ today, units, habits: habits.map((h) => h.name), goals: goals.map((g) => ({ title: g.name, unit: g.unit })), aliases, personal }), [today, units, habits, goals, aliases, personal]);
   const { parsed, pending, failed, retry } = useImportParser(text, ctx);
-  const entries = useMemo(() => enhanced ?? parsed?.entries ?? [], [enhanced, parsed]);
+  const entries = useMemo(() => parsed?.entries ?? [], [parsed]);
   const base = useMemo(() => normalizeEntries(entries, { today, units, habits, goals }), [entries, today, units, habits, goals]);
-  useEffect(() => setEnhanced(null), [text]);
 
   // Background duplicate check: only the dates are sent, and your own entries for those dates come back.
   const dates = useMemo(() => [...new Set(base.map((i) => overrides[i.key]?.date ?? i.date))].sort().join(","), [base, overrides]);
@@ -277,7 +274,7 @@ export function ImportClient({ today, units, habits, goals, aliases, tipsSeen, o
             </div>
           )}
 
-          <OnDeviceEnhance enabled={onDeviceAi} text={text} ctx={ctx} parsed={parsed} onResult={setEnhanced} active={!!enhanced} />
+          <OnDeviceEnhance enabled={onDeviceAi} parsed={parsed} onReplace={(changes) => onText(changes.reduce((t, c) => (t.includes(c.from) ? t.replace(c.from, c.to) : t), text))} />
         </section>
       )}
 
