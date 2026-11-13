@@ -153,7 +153,7 @@ export function GoalForm({ habits, today, units, initial, onDone }: { habits: { 
         </Field>
       </div>
       <div className="flex items-center gap-3">
-        <button className="btn-primary" disabled={pending || !title.trim()}>{initial ? "Save goal" : "Add goal"}</button>
+        <button className="btn-primary" disabled={pending || !title.trim()} aria-busy={pending}>{initial ? "Save goal" : "Add goal"}</button>
         {initial && <button type="button" className="btn-ghost" onClick={onDone}>Cancel</button>}
         <FormStatus error={error} message={message} />
       </div>
@@ -189,7 +189,7 @@ export function GoalActions({ goal, habits, today, units = "metric" }: { goal: G
         >
           <input className="input w-24" inputMode="decimal" placeholder={`+ ${goal.unit}`} value={value} onChange={(e) => setValue(e.target.value)} autoFocus />
           <input className="input min-w-0 flex-1" placeholder="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
-          <button className="btn-primary" disabled={pending}>Add</button>
+          <button className="btn-primary" disabled={pending} aria-busy={pending}>Add</button>
         </form>
       )}
       <div className="flex flex-wrap gap-1">

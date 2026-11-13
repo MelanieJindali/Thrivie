@@ -78,7 +78,7 @@ export function JournalComposer({ today, initial, onDone, compact = false }: { t
         <RatingPicker name="Mood" value={mood} onChange={setMood} labels={MOOD_EMOJI} />
       </div>
       <div className="flex items-center gap-3">
-        <button className="btn-primary" disabled={pending || (!content.trim() && !media.length)}>{pending ? "Saving…" : "Save entry"}</button>
+        <button className="btn-primary" disabled={pending || (!content.trim() && !media.length)} aria-busy={pending}>{pending ? "Saving…" : "Save entry"}</button>
         {initial && <button type="button" className="btn-ghost" onClick={onDone}>Cancel</button>}
         <FormStatus error={error} message={message} />
       </div>

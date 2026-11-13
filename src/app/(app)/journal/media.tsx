@@ -185,9 +185,9 @@ export function AttachmentGallery({ items, onDelete }: { items: SavedAttachment[
         </div>
       ))}
       {open && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4" onClick={() => setOpen(null)} role="dialog" aria-label="Photo">
+        <div className="t-fade fixed inset-0 z-50 grid place-items-center bg-black/80 p-4" onClick={() => setOpen(null)} role="dialog" aria-label="Photo">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`/api/attachments/${open}`} alt="Journal photo" className="max-h-[85dvh] max-w-full rounded-2xl" />
+          <img src={`/api/attachments/${open}`} alt="Journal photo" className="t-zoom max-h-[85dvh] max-w-full rounded-2xl" />
           {onDelete && (
             <button className="btn-danger absolute bottom-8" onClick={(e) => { e.stopPropagation(); onDelete(open); setOpen(null); }}>
               <Trash2 size={14} /> Delete photo

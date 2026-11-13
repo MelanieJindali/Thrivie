@@ -14,6 +14,7 @@ export function RepeatLastButton({ summary }: { summary: string }) {
     <button
       type="button"
       disabled={pending}
+      aria-busy={pending}
       title={summary}
       onClick={() => start(async () => {
         const r = await repeatLastWorkout();

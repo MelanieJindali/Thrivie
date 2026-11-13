@@ -153,7 +153,7 @@ export function MealForm({ today, recent, allMeals = recent, editing, onDone }: 
       </Field>
 
       <div className="flex flex-wrap items-center gap-3">
-        <button className="btn-primary" disabled={pending}>{pending ? "Saving…" : m.id ? "Update meal" : "Save meal"}</button>
+        <button className="btn-primary" disabled={pending} aria-busy={pending}>{pending ? "Saving…" : m.id ? "Update meal" : "Save meal"}</button>
         {m.id && <button type="button" className="btn-ghost" onClick={() => { setM(blank(today, m.slot)); onDone(); }}>Cancel</button>}
         <FormStatus error={error} message={message} />
       </div>

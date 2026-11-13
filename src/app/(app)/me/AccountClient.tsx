@@ -78,7 +78,7 @@ function RecoveryKeyCard({ createdAt }: { createdAt: string | null }) {
       ) : open && (
         <form action={action} className="flex flex-wrap items-end gap-2">
           <PasswordInput name="password" label="Confirm with your password" autoComplete="current-password" className="min-w-0 flex-1 basis-60" autoFocus />
-          <button className="btn-primary" disabled={pending}>{pending ? "Creating…" : "Show my key"}</button>
+          <button className="btn-primary" disabled={pending} aria-busy={pending}>{pending ? "Creating…" : "Show my key"}</button>
           <button type="button" className="btn-ghost" onClick={() => setOpen(false)}>Cancel</button>
           {state?.error && <p className="basis-full text-sm text-terracotta-ink" role="alert">{state.error}</p>}
         </form>

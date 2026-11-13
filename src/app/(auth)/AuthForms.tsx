@@ -40,7 +40,7 @@ export function LoginForm({ next, notice, emailCodes }: { next?: string; notice?
           <p className="text-right text-sm"><Link href="/login/forgot" className={LINK}>Forgot password?</Link></p>
         </div>
         <Err state={state} />
-        <button className="btn-outline w-full" disabled={pending}>{pending ? "Signing in…" : "Sign in with password"}</button>
+        <button className="btn-outline w-full" disabled={pending} aria-busy={pending}>{pending ? "Signing in…" : "Sign in with password"}</button>
       </form>
       {emailCodes && <Link href={codeHref} className="btn-ghost w-full">Email me a sign-in code instead</Link>}
       <p className="text-center text-sm text-muted">
@@ -107,7 +107,7 @@ export function VerifyForm({ next }: { next?: string }) {
         <input className="input text-center font-display text-2xl tracking-[0.3em]" name="code" inputMode="numeric" autoComplete="one-time-code" autoFocus required maxLength={11} />
       </label>
       <Err state={state} />
-      <button className="btn-primary w-full" disabled={pending}>{pending ? "Checking…" : "Verify"}</button>
+      <button className="btn-primary w-full" disabled={pending} aria-busy={pending}>{pending ? "Checking…" : "Verify"}</button>
     </form>
   );
 }
@@ -144,7 +144,7 @@ export function SignupForm({ needsCode, closed, passwordOptional }: { needsCode:
         </label>
       )}
       <Err state={state} />
-      <button className="btn-primary w-full" disabled={pending}>{pending ? "Creating…" : "Create account"}</button>
+      <button className="btn-primary w-full" disabled={pending} aria-busy={pending}>{pending ? "Creating…" : "Create account"}</button>
       <p className="text-center text-xs text-muted">Your entries are private to your account. Nobody else on this server can see them.</p>
       <p className="text-center text-sm text-muted">
         Already have an account? <Link href="/login" className={LINK}>Sign in</Link>
@@ -194,7 +194,7 @@ function EmailResetRequest() {
         <input className="input" name="email" type="email" autoComplete="email" inputMode="email" required defaultValue={state?.email} key={state?.email} />
       </label>
       <Err state={state} />
-      <button className="btn-primary w-full" disabled={pending}>{pending ? "Sending…" : "Send reset link"}</button>
+      <button className="btn-primary w-full" disabled={pending} aria-busy={pending}>{pending ? "Sending…" : "Send reset link"}</button>
     </form>
   );
 }
@@ -228,7 +228,7 @@ function RecoveryKeyReset({ emailReset }: { emailReset: boolean }) {
       <PasswordInput name="password" label="New password" autoComplete="new-password" minLength={10} hint={NEW_PW_HINT} />
       <PasswordInput name="confirm" label="Confirm new password" autoComplete="new-password" minLength={10} />
       <Err state={state} />
-      <button className="btn-primary w-full" disabled={pending}>{pending ? "Resetting…" : "Reset password"}</button>
+      <button className="btn-primary w-full" disabled={pending} aria-busy={pending}>{pending ? "Resetting…" : "Reset password"}</button>
       <p className="text-xs text-muted">No recovery key and no reset email? Ask whoever runs this Thrivie server to help you get back in.</p>
     </form>
   );
@@ -261,7 +261,7 @@ export function ResetFromLink() {
       <PasswordInput name="confirm" label="Confirm new password" autoComplete="new-password" minLength={10} />
       <Err state={state} />
       {state?.error?.includes("expired") && <Link href="/login/forgot" className="btn-soft w-full">Request a new link</Link>}
-      <button className="btn-primary w-full" disabled={pending || !token}>{pending ? "Saving…" : "Save new password"}</button>
+      <button className="btn-primary w-full" disabled={pending || !token} aria-busy={pending}>{pending ? "Saving…" : "Save new password"}</button>
     </form>
   );
 }

@@ -99,6 +99,7 @@ export function WorkoutForm({
               type="button"
               className="btn-soft py-1.5 text-xs"
               disabled={pending}
+              aria-busy={pending}
               title={lastSummary}
               onClick={() => run(() => repeatLastWorkout(), { success: "Repeated last workout ✓" })}
             >
@@ -181,7 +182,7 @@ export function WorkoutForm({
       </details>
 
       <div className="flex flex-wrap items-center gap-3">
-        <button className="btn-primary" disabled={pending}>{pending ? "Saving…" : w.id ? "Update" : "Save workout"}</button>
+        <button className="btn-primary" disabled={pending} aria-busy={pending}>{pending ? "Saving…" : w.id ? "Update" : "Save workout"}</button>
         {w.id && (
           <button type="button" className="btn-ghost" onClick={() => { setW(emptyWorkout(today)); onDone?.(); }}>
             Cancel

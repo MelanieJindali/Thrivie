@@ -69,7 +69,7 @@ export function DayLeft({ targets, eaten, left, hideCalories, slot, suggestions,
             {hideCalories ? `Your plan's remaining ${planGap!.openMeals === 1 ? "meal is" : "meals are"} ${gap > 0 ? "a little bigger" : "a little smaller"} than what's left today.`
               : `Your plan still has about ${planGap!.plannedKcal.toLocaleString("en-US")} kcal to come, and about ${left.calories!.toLocaleString("en-US")} kcal are left today.`}
           </p>
-          <button type="button" className="btn-soft" disabled={pending} onClick={adjust}><SlidersHorizontal size={16} aria-hidden /> Resize the rest of today&apos;s plan</button>
+          <button type="button" className="btn-soft" disabled={pending} aria-busy={pending} onClick={adjust}><SlidersHorizontal size={16} aria-hidden /> Resize the rest of today&apos;s plan</button>
         </div>
       )}
 
@@ -87,7 +87,7 @@ export function DayLeft({ targets, eaten, left, hideCalories, slot, suggestions,
                   </p>
                 </div>
                 {logged.includes(s.name) ? <span className="px-2 text-xs font-bold text-sage-ink">Logged</span>
-                  : <button type="button" className="btn-soft px-3 text-xs" disabled={pending} onClick={() => log(s)} aria-label={`Log it: ${s.name}`}><Plus size={14} aria-hidden /> Log it</button>}
+                  : <button type="button" className="btn-soft px-3 text-xs" disabled={pending} aria-busy={pending} onClick={() => log(s)} aria-label={`Log it: ${s.name}`}><Plus size={14} aria-hidden /> Log it</button>}
               </li>
             ))}
           </ul>

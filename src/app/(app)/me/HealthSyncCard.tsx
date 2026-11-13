@@ -50,7 +50,7 @@ export function HealthSyncCard({ tokens }: { tokens: Token[] }) {
       ) : (
         <div className="flex flex-wrap gap-2">
           <input className="input max-w-56" value={name} onChange={(e) => setName(e.target.value)} aria-label="Token name" />
-          <button className="btn-primary" disabled={pending} onClick={create}>Create token</button>
+          <button className="btn-primary" disabled={pending} aria-busy={pending} onClick={create}>Create token</button>
         </div>
       )}
       <FormStatus error={error} message={message} />

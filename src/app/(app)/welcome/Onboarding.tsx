@@ -78,7 +78,7 @@ export function Onboarding({ name: initialName, units: initialUnits, timezone: i
           </div>
           <TimezonePicker value={timezone} onChange={setTimezone} hint="Decides when your day starts, for streaks and reminders." />
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <button type="button" className="btn-ghost" disabled={pending}
+            <button type="button" className="btn-ghost" disabled={pending} aria-busy={pending}
               onClick={() => start(async () => { await skipOnboarding(timezone); const r = await loadSampleDataAction(); if (!r.ok) return setError(r.error); router.push("/"); })}>
               Explore with sample data
             </button>
@@ -133,8 +133,8 @@ export function Onboarding({ name: initialName, units: initialUnits, timezone: i
           <div className="flex flex-wrap items-center justify-between gap-2">
             <button type="button" className="btn-ghost" onClick={() => setStep(1)}>Back</button>
             <div className="flex gap-2">
-              <button type="button" className="btn-ghost" disabled={pending} onClick={() => finish(false)}>Skip</button>
-              <button type="button" className="btn-primary" disabled={pending || !goal} onClick={() => finish(true)}>{pending ? "Setting up…" : "Start"}</button>
+              <button type="button" className="btn-ghost" disabled={pending} aria-busy={pending} onClick={() => finish(false)}>Skip</button>
+              <button type="button" className="btn-primary" disabled={pending || !goal} aria-busy={pending} onClick={() => finish(true)}>{pending ? "Setting up…" : "Start"}</button>
             </div>
           </div>
         </section>

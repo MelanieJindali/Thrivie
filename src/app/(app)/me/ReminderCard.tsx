@@ -71,11 +71,11 @@ export function ReminderCard({ on, hour, publicKey }: { on: boolean; hour: numbe
         </select>
         {on ? (
           <>
-            <button className="btn-soft" disabled={pending} onClick={disable}>Turn off</button>
+            <button className="btn-soft" disabled={pending} aria-busy={pending} onClick={disable}>Turn off</button>
             <button className="btn-ghost text-xs" onClick={test}>Send a test</button>
           </>
         ) : (
-          <button className="btn-primary" disabled={pending || support !== "ok"} onClick={enable}>Turn on reminders</button>
+          <button className="btn-primary" disabled={pending || support !== "ok"} aria-busy={pending} onClick={enable}>Turn on reminders</button>
         )}
       </div>
       <FormStatus error={error} message={message} />

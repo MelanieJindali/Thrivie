@@ -37,7 +37,7 @@ export function PasskeysCard({ passkeys }: { passkeys: PasskeyRow[] }) {
           <h2 id="passkeys-h" className="h2">Passkeys</h2>
           <p className="text-sm text-muted">Sign in with Face ID, Touch ID or your screen lock. Nothing to remember, and nothing that can be phished.</p>
         </div>
-        {supported && <button type="button" className="btn-primary" disabled={busy} onClick={add}>{busy ? "Setting up…" : "Add a passkey"}</button>}
+        {supported && <button type="button" className="btn-primary" disabled={busy} aria-busy={busy} onClick={add}>{busy ? "Setting up…" : "Add a passkey"}</button>}
       </div>
       {!supported && <p className="text-sm text-muted">This browser doesn&apos;t support passkeys. Your other sign-in methods still work.</p>}
       {error && <p className="text-sm text-terracotta-ink" role="alert">{error}</p>}
@@ -49,7 +49,7 @@ export function PasskeysCard({ passkeys }: { passkeys: PasskeyRow[] }) {
                 <p className="font-semibold">{k.name}</p>
                 <p className="text-xs text-muted">Added {day(k.createdAt)}{k.lastUsedAt ? ` · last used ${day(k.lastUsedAt)}` : ""}{k.backedUp ? " · synced" : ""}</p>
               </div>
-              <button type="button" className="btn-ghost px-3 text-xs" disabled={busy} aria-label={`Remove passkey: ${k.name}`} onClick={() => remove(k.id)}>
+              <button type="button" className="btn-ghost px-3 text-xs" disabled={busy} aria-busy={busy} aria-label={`Remove passkey: ${k.name}`} onClick={() => remove(k.id)}>
                 <Trash2 size={15} aria-hidden /> Remove
               </button>
             </li>

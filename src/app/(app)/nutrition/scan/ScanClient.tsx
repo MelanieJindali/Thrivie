@@ -79,7 +79,7 @@ export function ScanClient({ day, targets, favoriteIds, initialTab }: { day: Day
           </ul>
           <NutrientLine n={total} hide={day.hideCalories} />
           {(() => { const c = mealComparison(total, slot, targets, { hideCalories: day.hideCalories }); return c ? <p className="rounded-2xl bg-seaglass-soft/70 px-3.5 py-2.5 text-sm">{c}</p> : null; })()}
-          <button type="button" className="btn-primary w-full" disabled={pending} onClick={() => log(tray)}>{pending ? "Logging…" : `Log ${tray.length} ${tray.length === 1 ? "item" : "items"} to ${MEAL_LABELS[slot].toLowerCase()}`}</button>
+          <button type="button" className="btn-primary w-full" disabled={pending} aria-busy={pending} onClick={() => log(tray)}>{pending ? "Logging…" : `Log ${tray.length} ${tray.length === 1 ? "item" : "items"} to ${MEAL_LABELS[slot].toLowerCase()}`}</button>
         </section>
       )}
 
