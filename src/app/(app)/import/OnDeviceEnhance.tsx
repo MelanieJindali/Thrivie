@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Cpu } from "lucide-react";
 import { setOnDeviceAi } from "@/app/actions";
 import { useLocalAi } from "@/components/useLocalAi";
-import { acceptEnhance, ENHANCE_SYSTEM } from "@/lib/import/polish";
+import { acceptEnhance, ENHANCE_EXAMPLES, ENHANCE_SYSTEM } from "@/lib/import/polish";
 import type { ParseOutput } from "@/lib/import/parser";
 
 /**
@@ -43,7 +43,7 @@ export function OnDeviceEnhance({ enabled, parsed, onReplace }: {
       const list = uncertain.slice(0, 8);
       for (const [i, u] of list.entries()) {
         setLive({ index: i + 1, total: list.length, text: "" });
-        const raw = await generate({ system: ENHANCE_SYSTEM, prompt: u.text.slice(0, 300), maxTokens: 60, temperature: 0, onToken: (_d, full) => setLive({ index: i + 1, total: list.length, text: full }) });
+        const raw = await generate({ system: ENHANCE_SYSTEM, examples: ENHANCE_EXAMPLES, prompt: u.text.slice(0, 300), maxTokens: 60, temperature: 0, onToken: (_d, full) => setLive({ index: i + 1, total: list.length, text: full }) });
         const line = acceptEnhance(u.text, raw);
         if (line) changes.push({ from: u.text, to: line });
       }

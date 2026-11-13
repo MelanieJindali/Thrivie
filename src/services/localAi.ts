@@ -19,6 +19,8 @@ export type GenerateOptions = {
   prompt: string;
   maxTokens?: number;
   temperature?: number;
+  /** Worked examples (input and the ideal reply). Small models follow these far better than instructions alone. */
+  examples?: { input: string; output: string }[];
   /** Called for each piece of text as it is written. */
   onToken?: (delta: string, full: string) => void;
 };
@@ -170,13 +172,15 @@ export async function prepareAi(): Promise<boolean> {
 
 // --- Generation -------------------------------------------------------------------------------
 const sessions = new Map<string, Promise<LmSession>>();
+const exampleTurns = (o: GenerateOptions) => (o.examples ?? []).flatMap((e) => [{ role: "user", content: e.input }, { role: "assistant", content: e.output }]);
 async function generateBuiltin(o: GenerateOptions): Promise<string> {
   const api = lmApi()!;
-  if (!sessions.has(o.system)) {
-    const init = { initialPrompts: [{ role: "system", content: o.system }] };
-    sessions.set(o.system, api.create({ ...init, ...LM_LANG }).catch(() => api.create(init)));
+  const key = o.system + JSON.stringify(o.examples ?? []);
+  if (!sessions.has(key)) {
+    const init = { initialPrompts: [{ role: "system", content: o.system }, ...exampleTurns(o)] };
+    sessions.set(key, api.create({ ...init, ...LM_LANG }).catch(() => api.create(init)));
   }
-  const base = await sessions.get(o.system)!;
+  const base = await sessions.get(key)!;
   // A fresh copy for each request, so one rewrite never colours the next.
   const session = base.clone ? await base.clone() : base;
   try {
@@ -212,7 +216,7 @@ export async function generate(o: GenerateOptions): Promise<string> {
     const timer = setTimeout(() => { jobs.delete(id); worker?.postMessage({ type: "stop" }); console.warn("[on-device AI] generation timed out"); reject(new Error("timeout")); }, GENERATE_TIMEOUT_MS);
     const finish = <T,>(fn: (v: T) => void) => (v: T) => { clearTimeout(timer); fn(v); };
     jobs.set(id, { resolve: finish(resolve), reject: finish(reject), onToken: o.onToken, full: "" });
-    worker!.postMessage({ type: "generate", id, messages: [{ role: "system", content: o.system }, { role: "user", content: o.prompt }], maxTokens, temperature: o.temperature ?? 0.3 });
+    worker!.postMessage({ type: "generate", id, messages: [{ role: "system", content: o.system }, ...exampleTurns(o), { role: "user", content: o.prompt }], maxTokens, temperature: o.temperature ?? 0.3 });
   });
 }
 

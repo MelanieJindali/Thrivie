@@ -68,3 +68,16 @@ describe("device detection", () => {
     expect(isConstrainedDevice({ userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/605.1.15", maxTouchPoints: 0, deviceMemory: 8 })).toBe(false);
   });
 });
+
+import { parseNotes } from "@/lib/import/parser";
+import { ENHANCE_EXAMPLES } from "@/lib/import/polish";
+
+describe("Enhance examples", () => {
+  it("are all lines the note reader understands", () => {
+    for (const e of ENHANCE_EXAMPLES) {
+      const r = parseNotes(`Mon - ${e.output}`, { today: "2026-11-13", units: "imperial", habits: [], goals: [], aliases: [], personal: {} } as never);
+      expect(r.entries.length, e.output).toBeGreaterThan(0);
+      expect(r.unparsed, e.output).toEqual([]);
+    }
+  });
+});

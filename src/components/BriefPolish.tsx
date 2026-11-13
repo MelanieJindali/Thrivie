@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { acceptRewrite, BRIEF_SENTENCE_SYSTEM, splitSentences } from "@/lib/import/polish";
+import { acceptRewrite, BRIEF_EXAMPLES, BRIEF_SENTENCE_SYSTEM, splitSentences } from "@/lib/import/polish";
 import { useLocalAi } from "./useLocalAi";
 
 const KEY = "thrivie-brief-rewrite";
@@ -39,7 +39,7 @@ export function BriefText({ brief, enabled }: { brief: string; enabled: boolean 
       let changed = 0;
       for (const sentence of splitSentences(brief).slice(0, 8)) {
         const before = done.join(" ");
-        const raw = await generate({ system: BRIEF_SENTENCE_SYSTEM, prompt: sentence, maxTokens: 60, temperature: 0.3, onToken: (_d, full) => setLive(`${before} ${full}`.trim()) });
+        const raw = await generate({ system: BRIEF_SENTENCE_SYSTEM, examples: BRIEF_EXAMPLES, prompt: sentence, maxTokens: 60, temperature: 0.3, onToken: (_d, full) => setLive(`${before} ${full}`.trim()) });
         const better = acceptRewrite(sentence, raw);
         if (better) changed++;
         done.push(better ?? sentence);
