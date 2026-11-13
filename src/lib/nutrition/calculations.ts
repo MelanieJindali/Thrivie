@@ -31,6 +31,14 @@ export const GOAL_HINT: Record<Goal, string> = {
   gain: "A small calorie surplus with more protein, to build muscle alongside strength training.",
 };
 
+/** What the chosen goal means for the daily target, shown under the numbers. */
+export const GOAL_NOTE: Record<Goal, string> = {
+  lose: "A steady calorie deficit drives weight loss, while balanced protein helps keep you full and energized throughout the day.",
+  fat_loss: "Protein is set higher on this goal to help you keep muscle during a calorie deficit. Regular strength training helps too.",
+  maintain: "Calories are set to match your daily energy burn, keeping your weight steady while fueling everyday performance and recovery.",
+  gain: "A slight calorie surplus paired with elevated protein gives your body the fuel and building blocks it needs to grow new muscle.",
+};
+
 export const LIMITS = { heightCm: { min: 120, max: 230 }, weightKg: { min: 35, max: 250 }, age: { min: 13, max: 100 } } as const;
 
 /** Strict validation for anything that reaches the server or comes out of storage. */
@@ -113,7 +121,7 @@ export function calculateTargets(input: BodyProfile): TargetsResult {
   const notes: string[] = [];
   if (floorApplied) notes.push("Your target is set at a safe minimum intake, so changes may be gradual.");
   if (p.sex === "unspecified") notes.push("This target uses a neutral average in the energy equation. You can add sex assigned at birth in Body & Goals for a more precise estimate.");
-  if (p.goal === "fat_loss") notes.push("Protein is set higher on this goal to help you keep muscle during a calorie deficit. Regular strength training helps too.");
+  notes.push(GOAL_NOTE[p.goal]);
   if (bmi < 18.5 && !isDeficitGoal(p.goal)) notes.push("Based on your current height and weight, a doctor or registered dietitian can help confirm the right goal for you.");
   return { ok: true, targets: { bmr: Math.round(bmr), tdee: Math.round(tdee), calories, proteinG, carbsG, fatG, floorApplied }, notes };
 }
