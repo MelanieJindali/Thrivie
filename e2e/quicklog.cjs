@@ -87,12 +87,15 @@ const section = (t) => console.log(`\n${t}`);
   check("journal saved, and encrypted at rest", j.length === 1 && !j[0].content.includes(mark));
   await p.keyboard.press("Escape");
 
-  section("Log hub tiles open the matching form");
+  section("Log hub tiles go straight to the page");
   await p.goto(BASE + "/log");
-  await p.locator("main").getByRole("button", { name: /^Workout/ }).click();
-  await p.getByRole("dialog", { name: "Quick log" }).getByLabel("Minutes").waitFor();
-  check("Workout tile opens the workout form", true);
-  await p.keyboard.press("Escape");
+  await p.locator("main").getByRole("link", { name: /^Workout/ }).click();
+  await p.waitForURL(/\/workouts/);
+  check("Workout tile opens the Workouts page", new URL(p.url()).pathname === "/workouts");
+  await p.goto(BASE + "/log");
+  await p.locator("main").getByRole("link", { name: /^Meal/ }).click();
+  await p.waitForURL(/\/nutrition/);
+  check("Meal tile opens the Nutrition page", new URL(p.url()).pathname === "/nutrition");
 
   section("Past-day habits");
   await p.goto(BASE + "/habits");

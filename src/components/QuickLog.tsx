@@ -252,9 +252,3 @@ function GoalMini({ data, onSaved }: MiniProps) {
     </form>
   );
 }
-
-/** A tile or link that opens the quick-log sheet at one kind of entry. */
-export function QuickLogButton({ kind, className, children, label }: { kind: QuickKind; className?: string; children: React.ReactNode; label?: string }) {
-  const open = useQuickLog();
-  return <button type="button" className={className} aria-label={label} onClick={() => open(kind)}>{children}</button>;
-}
