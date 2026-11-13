@@ -30,7 +30,7 @@ export function RangeToggle({ value, onChange }: { value: number; onChange: (v: 
           role="tab"
           aria-selected={value === r}
           onClick={() => onChange(r)}
-          className={`rounded-full px-3.5 py-1 text-xs font-semibold transition ${value === r ? "bg-surface text-text shadow-soft" : "text-muted hover:text-text"}`}
+          className={`min-h-11 min-w-11 rounded-full px-3 py-2 text-xs font-semibold transition ${value === r ? "bg-surface text-text shadow-soft" : "text-muted hover:text-text"}`}
         >
           {r}d
         </button>
