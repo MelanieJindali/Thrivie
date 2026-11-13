@@ -225,6 +225,70 @@ input::-webkit-date-and-time-value { text-align: left; margin: 0; min-height: 1.
 @keyframes thrivie-pop { 0% { transform: scale(0.8); } 60% { transform: scale(1.12); } 100% { transform: scale(1); } }
 @utility pop { animation: thrivie-pop 300ms cubic-bezier(.2,.8,.2,1); }
 
+/* --- Motion -------------------------------------------------------------------------------
+   Durations, easings, distances and the patterns below follow the free Transitions.dev
+   library (panel reveal, modal, accordion, toast, checkbox check, page slide, error shake),
+   adapted to Thrivie's components. Enter animations only, so nothing waits on them, and each
+   uses `backwards` so no transform or filter is left on the element afterwards. */
+:root {
+  --duration-stagger: 40ms;
+  --duration-micro: 80ms;
+  --duration-quick: 150ms;
+  --duration-fast: 250ms;
+  --duration-medium: 350ms;
+  --duration-slow: 400ms;
+  --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --distance-micro: 4px;
+  --distance-small: 6px;
+  --distance-base: 8px;
+  --blur-small: 2px;
+  --blur-medium: 3px;
+}
+@keyframes t-fade-in { from { opacity: 0; } }
+@keyframes t-panel-in { from { opacity: 0; transform: translateY(100px); filter: blur(var(--blur-small)); } }
+@keyframes t-modal-in { from { opacity: 0; transform: scale(0.96); } }
+@keyframes t-acc-in { from { opacity: 0; transform: translateY(calc(var(--distance-micro) * -1)); filter: blur(var(--blur-small)); } }
+@keyframes t-toast-in { from { opacity: 0; transform: translateY(16px) scale(0.97); filter: blur(var(--blur-small)); } }
+@keyframes t-page-in { from { opacity: 0; transform: translateY(var(--distance-base)); filter: blur(var(--blur-medium)); } }
+@keyframes t-rise-in { from { opacity: 0; transform: translateY(var(--distance-base)); } }
+@keyframes t-check-draw { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
+@keyframes t-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(calc(var(--distance-base) * -1)); }
+  40% { transform: translateX(var(--distance-base)); }
+  60% { transform: translateX(calc(var(--distance-small) * -1)); }
+  80% { transform: translateX(var(--distance-small)); }
+}
+/* Backdrop behind a sheet. */
+@utility t-fade { animation: t-fade-in var(--duration-fast) var(--ease-smooth-out) backwards; }
+/* Sheet: slides up on phones, scales in as a dialog from the sm breakpoint. */
+@utility t-sheet {
+  animation: t-panel-in var(--duration-slow) var(--ease-smooth-out) backwards;
+  @variant sm { animation: t-modal-in var(--duration-fast) var(--ease-smooth-out) backwards; }
+}
+/* Content revealed under an expanding row. */
+@utility t-acc { animation: t-acc-in var(--duration-fast) var(--ease-smooth-out) backwards; }
+@utility t-toast { animation: t-toast-in var(--duration-medium) var(--ease-smooth-out) backwards; }
+/* Page content on navigation. */
+@utility t-page { animation: t-page-in var(--duration-fast) var(--ease-smooth-out) backwards; }
+/* A check mark that draws itself when it appears. */
+@utility t-check {
+  & svg path { stroke-dasharray: 24; animation: t-check-draw var(--duration-medium) var(--ease-smooth-out) backwards; }
+}
+/* A validation message that needs a second look. */
+@utility t-shake { animation: t-shake calc(var(--duration-micro) * 5) var(--ease-smooth-out); }
+/* Children rise in one after another (tiles, rows). */
+@utility t-stagger {
+  & > * { animation: t-rise-in var(--duration-medium) var(--ease-smooth-out) backwards; }
+  & > *:nth-child(2) { animation-delay: calc(var(--duration-stagger) * 1); }
+  & > *:nth-child(3) { animation-delay: calc(var(--duration-stagger) * 2); }
+  & > *:nth-child(4) { animation-delay: calc(var(--duration-stagger) * 3); }
+  & > *:nth-child(5) { animation-delay: calc(var(--duration-stagger) * 4); }
+  & > *:nth-child(6) { animation-delay: calc(var(--duration-stagger) * 5); }
+  & > *:nth-child(n + 7) { animation-delay: calc(var(--duration-stagger) * 6); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }
 }

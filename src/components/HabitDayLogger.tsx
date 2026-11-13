@@ -96,7 +96,7 @@ function DayList({ habits, date, today }: { habits: HabitView[]; date: string; t
           return (
             <li key={h.id}>
               <button type="button" aria-pressed={n > 0} aria-label={`${h.name}, ${when}`} onClick={() => set(h, n > 0 ? 0 : 1)} className={`${shell} active:scale-[0.98]`}>
-                <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full transition ${n > 0 ? "bg-sage-ink text-surface" : "border-2 border-line text-transparent"}`} aria-hidden><Check size={18} strokeWidth={3} /></span>
+                <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full transition ${n > 0 ? "pop t-check bg-sage-ink text-surface" : "border-2 border-line text-transparent"}`} aria-hidden><Check size={18} strokeWidth={3} /></span>
                 {text}
               </button>
             </li>

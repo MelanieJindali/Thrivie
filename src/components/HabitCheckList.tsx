@@ -93,7 +93,7 @@ export function HabitCheckList({ habits, today, showAll = false }: { habits: Hab
         return (
           <li key={h.id}>
             <button type="button" onClick={() => setCount(h, todayCount > 0 ? 0 : 1)} aria-pressed={todayCount > 0} className={`group ${shell} active:scale-[0.98] ${done ? "" : "hover:-translate-y-0.5 hover:border-sage hover:shadow-soft"}`}>
-              <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full transition duration-300 ${todayCount > 0 ? "pop bg-sage-ink text-surface" : "border-2 border-line text-transparent"}`} aria-hidden>
+              <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full transition duration-300 ${todayCount > 0 ? "pop t-check bg-sage-ink text-surface" : "border-2 border-line text-transparent"}`} aria-hidden>
                 <Check size={18} strokeWidth={3} />
               </span>
               {emoji}
