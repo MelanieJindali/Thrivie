@@ -4,14 +4,14 @@ import { addDays, formatDate, todayInTz, type DateStr } from "./dates";
 import { loadSettings } from "./settings";
 import { getGoalViews, getHabitViews, getHealthRange, getWorkoutsRange } from "./queries";
 import { computeInsights, type Insight } from "./insights";
-import { composeBrief, type BriefFacts } from "./briefText";
+import { briefNumbers, composeBrief, type BriefFacts } from "./briefText";
 import { mean, round } from "./stats";
 
 /**
  * The daily brief is generated entirely in code from the user's own numbers
  * (no AI service, nothing leaves the server). Phrasing varies by day.
  */
-export async function buildBrief(db: ScopedDb, userId: string): Promise<{ today: DateStr; brief: string; insights: Insight[] }> {
+export async function buildBrief(db: ScopedDb, userId: string): Promise<{ today: DateStr; brief: string; numbers: { label: string; value: string }[]; insights: Insight[] }> {
   const settings = await loadSettings(db, userId);
   const today = todayInTz(settings.timezone);
   const yesterday = addDays(today, -1);
@@ -44,5 +44,5 @@ export async function buildBrief(db: ScopedDb, userId: string): Promise<{ today:
     goals: { total: goals.length, onTrack: goals.filter((g) => g.status === "on-track" || g.status === "done").length, behind: goals.filter((g) => g.status === "behind").map((g) => g.title) },
     week: { sleep: avg(week.map((h) => h.sleepHours)), workouts: workouts.filter((w) => w.date >= addDays(today, -6)).length, steps: avg(week.map((h) => h.steps)) },
   };
-  return { today, brief: composeBrief(facts), insights };
+  return { today, brief: composeBrief(facts), numbers: briefNumbers(facts), insights };
 }

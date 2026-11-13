@@ -670,12 +670,6 @@ export async function setHabitCount(habitId: string, date: string, count: number
   return { ok: true };
 }
 
-export async function setOnDeviceAi(on: boolean): Promise<ActionResult> {
-  const { db, user } = await requireUser();
-  await db.settings.update({ where: { userId: user.id }, data: { onDeviceAi: on } });
-  return { ok: true };
-}
-
 export async function updateAlias(id: string, target: string): Promise<ActionResult> {
   const { db } = await requireUser();
   const t = target.trim().slice(0, 60);

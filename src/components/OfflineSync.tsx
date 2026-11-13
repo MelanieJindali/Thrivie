@@ -84,7 +84,7 @@ export async function clearDeviceData() {
   await clearQueue();
   try { localStorage.removeItem("thrivie:scanned-foods:v1"); } catch { /* nothing stored */ } // products scanned on this device
   try {
-    // Only Thrivie's page caches (personal pages); the on-device AI model isn't personal data.
+    // Only Thrivie's page caches (personal pages).
     if ("caches" in window) for (const k of await caches.keys()) if (k.startsWith("thrivie")) await caches.delete(k);
   } catch {}
 }

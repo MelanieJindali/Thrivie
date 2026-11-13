@@ -23,7 +23,6 @@ export default async function ImportPage() {
       goals={goals.map((g) => ({ id: g.id, name: g.title, unit: g.unit }))}
       aliases={aliases as { kind: "exercise" | "habit" | "workout" | "metric"; alias: string; target: string }[]}
       tipsSeen={settings.tipsSeen}
-      onDeviceAi={settings.onDeviceAi}
     />
   );
 }

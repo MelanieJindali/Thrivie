@@ -18,7 +18,6 @@ export type AppSettings = {
   reminderHour: number;
   onboarded: boolean;
   tipsSeen: string[];
-  onDeviceAi: boolean;
   calorieTarget: number | null;
   proteinTargetG: number | null;
   hideCalories: boolean;
@@ -38,7 +37,6 @@ export async function loadSettings(db: ScopedDb, userId: string): Promise<AppSet
     reminderHour: s.reminderHour,
     onboarded: s.onboarded,
     tipsSeen: s.tipsSeen.split(",").filter(Boolean),
-    onDeviceAi: s.onDeviceAi,
     calorieTarget: s.calorieTarget,
     proteinTargetG: s.proteinTargetG,
     hideCalories: s.hideCalories,

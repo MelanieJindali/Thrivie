@@ -1,12 +1,15 @@
-// Removes the files left by the previous on-device model (WebLLM 0.2.87, replaced in Nov 2026).
-// It stored the model in the browser under these names, in the Cache API or, on some setups,
-// IndexedDB. They take a few hundred MB and nothing uses them any more.
-export const LEGACY_STORES = ["webllm/model", "webllm/config", "webllm/wasm", "tvmjs-cos-hash-meta"];
-const DONE_KEY = "thrivie-legacy-ai-cleaned";
+// Removes what the on-device AI models left in the browser. Thrivie no longer uses a model
+// (Smart Import and the daily brief are rule-based), so these files, up to a few hundred MB,
+// serve no purpose: WebLLM's stores (Cache API or IndexedDB) and the Transformers.js cache.
+export const LEGACY_STORES = ["webllm/model", "webllm/config", "webllm/wasm", "tvmjs-cos-hash-meta", "transformers-cache"];
+const LEGACY_KEYS = ["thrivie-ai-busy", "thrivie-ai-crashed", "thrivie-legacy-ai-cleaned"];
+const DONE_KEY = "thrivie-ai-files-removed";
 
 /** Deletes the old model's caches and databases. Returns how many stores were removed. */
 export async function removeLegacyAiFiles(): Promise<number> {
   let removed = 0;
+  for (const k of LEGACY_KEYS) { try { localStorage.removeItem(k); } catch { /* storage blocked */ } }
+  try { sessionStorage.removeItem("thrivie-ai-unsupported"); sessionStorage.removeItem("thrivie-brief-rewrite"); } catch { /* storage blocked */ }
   if (typeof caches !== "undefined") {
     for (const name of LEGACY_STORES) if (await caches.delete(name).catch(() => false)) removed++;
   }

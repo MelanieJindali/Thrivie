@@ -35,7 +35,7 @@ export default function PrivacyPage() {
         </ul>
       </Section>
       <Section title="Smart Import stays on your device">
-        <p>When you paste notes, they are read on your device. The pasted text is never sent to our server; only the entries you approve are saved. The optional on-device AI also runs entirely on your device. Turning it on downloads a model file once from Hugging Face. No personal information is sent with that download.</p>
+        <p>When you paste notes, they are read on your device. The pasted text is never sent to our server; only the entries you approve are saved. It uses reading rules built into the app; there is no AI model and nothing to download.</p>
       </Section>
       <Section title="Other services we use">
         <ul className="list-disc space-y-1 pl-5">

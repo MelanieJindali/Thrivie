@@ -20,7 +20,6 @@ import type { AliasRule } from "@/lib/import/parser";
 import { Tip } from "@/components/Tip";
 import { useToast } from "@/components/Toast";
 import { useOfflineAction } from "@/components/OfflineSync";
-import { OnDeviceEnhance } from "./OnDeviceEnhance";
 
 type Item = ReviewItemWithDup & { approved: boolean; issues: Issue[] };
 type Opt = { id: string; name: string };
@@ -34,8 +33,8 @@ const savable = (i: Item) => i.decision !== "skip" && !i.issues.some((x) => x.bl
 /** Ready without a look: confident, nothing flagged, no duplicate question. */
 const confident = (i: Item) => i.confidence >= LOW_CONFIDENCE && !i.lowFields.length && !i.issues.length && !i.dup && savable(i);
 
-export function ImportClient({ today, units, habits, goals, aliases, tipsSeen, onDeviceAi, personal }: {
-  today: string; units: Units; habits: Opt[]; goals: (Opt & { unit: string })[]; aliases: AliasRule[]; tipsSeen: string[]; onDeviceAi: boolean; personal: PersonalContext;
+export function ImportClient({ today, units, habits, goals, aliases, tipsSeen, personal }: {
+  today: string; units: Units; habits: Opt[]; goals: (Opt & { unit: string })[]; aliases: AliasRule[]; tipsSeen: string[]; personal: PersonalContext;
 }) {
   const [text, setText] = useState("");
   const [truncated, setTruncated] = useState(false);
@@ -273,8 +272,6 @@ export function ImportClient({ today, units, habits, goals, aliases, tipsSeen, o
               {dupStatus === "failed" && total > 0 && <p className="mt-2 text-xs text-muted">Couldn&apos;t check what you&apos;ve already logged. You can still save; Thrivie won&apos;t overwrite anything.</p>}
             </div>
           )}
-
-          <OnDeviceEnhance enabled={onDeviceAi} parsed={parsed} ctx={ctx} onReplace={(changes) => onText(changes.reduce((t, c) => (t.includes(c.from) ? t.replace(c.from, c.to) : t), text))} />
         </section>
       )}
 

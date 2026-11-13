@@ -71,3 +71,19 @@ export function composeBrief(f: BriefFacts): string {
 
   return out.slice(0, 5).join(" ");
 }
+
+/** The same facts as the brief, as plain label and value pairs, for people who'd rather see the numbers. */
+export function briefNumbers(f: BriefFacts): { label: string; value: string }[] {
+  const out: { label: string; value: string }[] = [];
+  const y = f.yesterday;
+  if (y.sleepHours != null) out.push({ label: "Sleep last night", value: `${y.sleepHours} h` });
+  if (y.workouts.length) out.push({ label: "Workouts yesterday", value: `${y.workouts.length} (${y.workouts.reduce((s, w) => s + w.minutes, 0)} min)` });
+  if (y.habitsDone) out.push({ label: "Habits yesterday", value: String(y.habitsDone) });
+  if (f.openToday) out.push({ label: "Habits open today", value: String(f.openToday) });
+  for (const s of f.atRisk.slice(0, 2)) out.push({ label: `${s.name} streak`, value: plural(s.streak, s.unit) });
+  if (f.goals.total) out.push({ label: "Goals on track", value: `${f.goals.onTrack} of ${f.goals.total}` });
+  if (f.week.sleep != null) out.push({ label: "Average sleep, 7 days", value: `${f.week.sleep} h` });
+  if (f.week.workouts) out.push({ label: "Workouts, 7 days", value: String(f.week.workouts) });
+  if (f.week.steps != null) out.push({ label: "Average steps, 7 days", value: Math.round(f.week.steps).toLocaleString("en-US") });
+  return out;
+}

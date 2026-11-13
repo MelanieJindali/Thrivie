@@ -46,7 +46,7 @@ export default async function SettingsPage() {
 
       <HealthSyncCard tokens={(await db.apiToken.findMany({ orderBy: { createdAt: "desc" } })).map((t) => ({ id: t.id, name: t.name, prefix: t.prefix, lastUsedAt: t.lastUsedAt?.toISOString() ?? null }))} />
 
-      <SmartImportCard aliases={await db.alias.findMany({ orderBy: { alias: "asc" }, select: { id: true, kind: true, alias: true, target: true } })} onDeviceAi={settings.onDeviceAi} />
+      <SmartImportCard aliases={await db.alias.findMany({ orderBy: { alias: "asc" }, select: { id: true, kind: true, alias: true, target: true } })} />
 
       <section className="card space-y-3">
         <h2 className="h2">Appearance</h2>
