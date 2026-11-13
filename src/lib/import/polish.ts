@@ -1,6 +1,7 @@
-// Safety checks for the optional on-device "rewrite" of the daily brief. Pure, so it is easy to test.
-// A rewrite is used one sentence at a time, and only if it keeps every number and quoted phrase and
-// adds no weight, food or medical language that wasn't already in that sentence.
+// Prompts and safety checks for the optional on-device AI (daily brief rewrite, Smart Import
+// "Enhance"). Pure, so it is easy to test. The model's words are never trusted as they come:
+// a brief rewrite is shown only if it invents no numbers and adds no weight, food or medical
+// language, and an enhanced note is used only if it is one clean line.
 
 const WORD_NUMBERS: Record<string, string> = { zero: "0", one: "1", two: "2", three: "3", four: "4", five: "5", six: "6", seven: "7", eight: "8", nine: "9", ten: "10" };
 /** Every number in the text, digits or number words, as a sorted list so order doesn't matter. */
@@ -28,5 +29,54 @@ export function acceptRewrite(original: string, candidate: string): string | nul
   const allowed = new Set((original.match(SENSITIVE) ?? []).map((w) => w.toLowerCase()));
   if ((out.match(SENSITIVE) ?? []).some((w) => !allowed.has(w.toLowerCase()))) return null;
   for (const q of original.match(/[“"][^”"]+[”"]/g) ?? []) if (!out.includes(q.slice(1, -1))) return null;
+  return out;
+}
+
+export const BRIEF_SYSTEM = "You are a supportive wellness assistant. Rewrite the provided user stats into a concise, warm, friendly, and encouraging daily summary (2-4 sentences). Keep all factual numbers accurate, avoid robotic phrasing, and do not include meta-commentary.";
+
+const numberList = (s: string) => numbersIn(s).split(",").filter(Boolean);
+
+/**
+ * The rewritten brief if it is safe to show, otherwise null (the original stays).
+ * It may leave a number out, but every number it does use must come from the original.
+ */
+export function acceptBrief(original: string, candidate: string): string | null {
+  let out = candidate.replace(/\s+/g, " ").trim();
+  if (/^["“].*["”]$/.test(out)) out = out.slice(1, -1).trim();
+  out = out.replace(/^(here(?:'s| is)[^:]{0,60}:|summary:|rewritten(?: summary)?:)\s*/i, "");
+  if (!out || out === original || out.length < 40 || out.length > Math.max(400, original.length * 1.6)) return null;
+  // Cut off mid-sentence (the reply limit was reached): keep the complete sentences only.
+  if (!/[.!?]["”)]?$/.test(out)) {
+    const whole = splitSentences(out).filter((s) => /[.!?]["”)]?$/.test(s));
+    if (!whole.length) return null;
+    out = whole.join(" ");
+  }
+  const known = new Set(numberList(original));
+  if (numberList(out).some((n) => !known.has(n))) return null;
+  const allowed = new Set((original.match(SENSITIVE) ?? []).map((w) => w.toLowerCase()));
+  if ((out.match(SENSITIVE) ?? []).some((w) => !allowed.has(w.toLowerCase()))) return null;
+  return out;
+}
+
+export const ENHANCE_SYSTEM = `You are a health and habit log parser. Convert the user's unrecognized natural-language note into a clean, structured log entry that matches this app's format (e.g., '1/2/26 - snack: apple (~95 cal)'). Estimate reasonable nutritional or activity metrics if missing, and return only the corrected entry text.
+Formats the app reads:
+slept 7h
+ran 3 miles in 30 min
+walked 45 min
+yoga 20 min
+lunch: chicken salad (~520 cal)
+snack: apple (~95 cal)
+water 64 oz
+8,500 steps
+mood 4/5`;
+
+/** One clean line from the model's reply (no date prefix, quotes or commentary), or null. */
+export function acceptEnhance(original: string, candidate: string): string | null {
+  let out = candidate.split("\n").map((l) => l.trim()).find(Boolean) ?? "";
+  out = out.replace(/^[-*•]\s*/, "").replace(/^["'“‘](.*)["'”’]$/, "$1").trim();
+  // The line keeps its place under the day it was written for, so a date the model adds is dropped.
+  out = out.replace(/^(?:\d{1,2}\/\d{1,2}(?:\/\d{2,4})?|\d{4}-\d{2}-\d{2}|today|yesterday|(?:mon|tues?|wed(?:nes)?|thu(?:rs)?|fri|sat(?:ur)?|sun)(?:day)?)\s*[-–:,]\s*/i, "").trim();
+  if (!out || out.length > 160 || out.toLowerCase() === original.trim().toLowerCase()) return null;
+  if (/^(sure|here|i |sorry|note:|okay|certainly)/i.test(out)) return null;
   return out;
 }
