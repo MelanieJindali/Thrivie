@@ -38,7 +38,7 @@ export default async function LogPage() {
     <div className="space-y-6">
       <PageHeader theme="today" eyebrow="Log" title="What would you like to log?" />
       <Tip id="log" seen={settings.tipsSeen}>Tap a tile for a quick form. Every field is optional, and each form links to its full page.</Tip>
-      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <ul className="t-stagger grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {TILES.filter((t) => settings.visibleModules.includes(t.module)).map(({ href, module, label, sub, icon: Icon, tone }) => (
           <li key={href}>
             <QuickLogButton kind={module} className="lift flex min-h-24 w-full items-center gap-4 rounded-3xl border border-border/70 bg-surface p-5 text-left shadow-soft">

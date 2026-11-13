@@ -22,7 +22,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {children}
       <div className="pointer-events-none fixed inset-x-0 bottom-28 z-50 flex flex-col items-center gap-2 px-4 md:bottom-8" role="status" aria-live="polite">
         {toasts.map((t) => (
-          <div key={t.id} className={`pointer-events-auto flex max-w-full items-center gap-3 rounded-full py-2 pr-2 pl-5 text-sm font-semibold shadow-lift ${t.tone === "error" ? "bg-terracotta-ink text-primary-text" : "bg-text text-bg"}`}>
+          <div key={t.id} className={`t-toast pointer-events-auto flex max-w-full items-center gap-3 rounded-full py-2 pr-2 pl-5 text-sm font-semibold shadow-lift ${t.tone === "error" ? "bg-terracotta-ink text-primary-text" : "bg-text text-bg"}`}>
             <span className="min-w-0">{t.message}</span>
             {t.undo ? (
               <button className="min-h-10 rounded-full bg-aqua px-4 text-sm font-bold text-[#0E1B24]" onClick={() => { t.undo!(); setToasts((xs) => xs.filter((x) => x.id !== t.id)); }}>
