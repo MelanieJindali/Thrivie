@@ -33,7 +33,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <OfflineBanner />
           {offerPasskey && <PasskeyUpgradeBanner />}
           {children}
-          <p className="mt-12 text-center text-xs text-muted">{MEDICAL_NOTE} <a href="/privacy" className="underline">Privacy</a></p>
+          <p className="mt-12 text-center text-xs text-muted">{MEDICAL_NOTE} <a href="/privacy" className="-my-3 inline-block py-3 px-1 underline">Privacy</a></p>
         </main>
       </div>
       </QuickLogProvider>

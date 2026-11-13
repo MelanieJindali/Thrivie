@@ -39,8 +39,10 @@ export function WorkoutsView({ today, units, rows, exerciseNames, lastSummary }:
           <ul className="divide-y divide-border">
             {view.visible.map((r) => (
               <li key={r.id} className="flex items-start gap-3 py-3 text-sm">
-                <span className="w-20 shrink-0 text-muted">{relativeLabel(r.date, today)}</span>
+                <span className="hidden w-20 shrink-0 text-muted sm:block">{relativeLabel(r.date, today)}</span>
                 <div className="min-w-0 flex-1">
+                  {/* On a narrow phone the date goes above the summary, so the text keeps the full width. */}
+                  <div className="text-xs text-muted sm:hidden">{relativeLabel(r.date, today)}</div>
                   <div className="font-medium">{r.summary}</div>
                   {r.exercises.length > 0 && <ShowMoreText lines={2} className="mt-0.5 text-xs text-muted">{r.exercises.join(" · ")}</ShowMoreText>}
                 </div>

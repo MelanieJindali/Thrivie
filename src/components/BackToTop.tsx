@@ -31,7 +31,7 @@ export function BackToTop() {
       title="Back to top"
       tabIndex={show ? 0 : -1}
       aria-hidden={!show}
-      className={`glass fixed right-4 z-40 grid h-12 w-12 place-items-center rounded-full text-text shadow-lift transition duration-200 bottom-[calc(9.75rem+env(safe-area-inset-bottom))] md:right-6 md:bottom-6 ${show ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"}`}
+      className={`glass glass-solid fixed right-4 z-40 grid h-12 w-12 place-items-center rounded-full text-text shadow-lift transition duration-200 bottom-[calc(9.75rem+env(safe-area-inset-bottom))] md:right-6 md:bottom-6 ${show ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"}`}
     >
       <ArrowUp size={20} aria-hidden />
     </button>

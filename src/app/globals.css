@@ -126,11 +126,19 @@
 html, body { background: var(--bg); color: var(--text); }
 body {
   -webkit-tap-highlight-color: transparent;
+  background: transparent; /* the page colour comes from <html>, so the wash layer below shows through */
+}
+/* The soft colour wash behind the app. A fixed layer of its own, because `background-attachment: fixed`
+   is ignored by iOS Safari and makes Android Chrome repaint the whole backdrop on every scroll frame. */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
   background-image:
     radial-gradient(60rem 36rem at -10% -10%, var(--scene-1), transparent 60%),
     radial-gradient(50rem 32rem at 110% 0%, var(--scene-2), transparent 60%);
-  background-attachment: fixed;
+  transform: translateZ(0);
 }
+/* No double-tap-to-zoom delay on anything you tap. Pinch zoom still works. */
+a, button, summary, label, select, input, textarea, [role="button"], [role="radio"], [role="tab"] { touch-action: manipulation; }
 input, select, textarea { font-size: 16px; } /* no iOS zoom on focus */
 :where(.grid) > * { min-width: 0; } /* grid items may shrink; long words wrap instead of overflowing */
 :where(h1, h2, h3, p, li, dd, dt, a, label, span, button) { overflow-wrap: break-word; }
@@ -161,7 +169,7 @@ input::-webkit-date-and-time-value { text-align: left; margin: 0; min-height: 1.
   @apply mb-1.5 block text-[11px] font-bold tracking-[0.12em] text-muted uppercase;
 }
 @utility btn {
-  @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition-[background-color,color,box-shadow,transform,translate,scale,filter] duration-150 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50;
+  @apply inline-flex min-h-12 min-w-11 items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition-[background-color,color,box-shadow,transform,translate,scale,filter] duration-150 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50;
 }
 /* While an action runs: a spinner before the label, the button stays readable and can't be pressed twice. */
 /* (:is() because each button style is its own class.) */
@@ -208,10 +216,16 @@ input::-webkit-date-and-time-value { text-align: left; margin: 0; min-height: 1.
 /* Frosted glass + iridescent edge: reserved for the daily brief and bottom nav. */
 @utility glass {
   background: var(--glass);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
   box-shadow: var(--shadow), inset 0 0 0 1px var(--glass-edge);
 }
+/* People who ask for less transparency, and small floating buttons, get a solid surface: blurring what is
+   behind a moving page is the most expensive thing a phone's graphics chip does. */
+@media (prefers-reduced-transparency: reduce) {
+  .glass, .brief-card { background: var(--surface); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+.glass-solid { background: var(--surface); backdrop-filter: none; -webkit-backdrop-filter: none; }
 @utility brief-card {
   @apply glass relative rounded-3xl p-6 sm:p-8;
   &::before {
@@ -255,10 +269,11 @@ input::-webkit-date-and-time-value { text-align: left; margin: 0; min-height: 1.
   --blur-medium: 3px;
 }
 @keyframes t-fade-in { from { opacity: 0; } }
-@keyframes t-panel-in { from { opacity: 0; transform: translateY(100px); filter: blur(var(--blur-small)); } }
+/* Animated with opacity and transform only: those run on the phone's GPU without repainting anything. */
+@keyframes t-panel-in { from { opacity: 0; transform: translateY(100px); } }
 @keyframes t-modal-in { from { opacity: 0; transform: scale(0.96); } }
-@keyframes t-acc-in { from { opacity: 0; transform: translateY(calc(var(--distance-micro) * -1)); filter: blur(var(--blur-small)); } }
-@keyframes t-toast-in { from { opacity: 0; transform: translateY(16px) scale(0.97); filter: blur(var(--blur-small)); } }
+@keyframes t-acc-in { from { opacity: 0; transform: translateY(calc(var(--distance-micro) * -1)); } }
+@keyframes t-toast-in { from { opacity: 0; transform: translateY(16px) scale(0.97); } }
 @keyframes t-page-in { from { opacity: 0; transform: translateY(var(--distance-base)); } }
 @keyframes t-spin { to { transform: rotate(360deg); } }
 @keyframes t-rise-in { from { opacity: 0; transform: translateY(var(--distance-base)); } }
@@ -316,11 +331,16 @@ input::-webkit-date-and-time-value { text-align: left; margin: 0; min-height: 1.
    gradient with the faded ghost mark, as on the approved business card. */
 @utility brand-bg {
   background-color: var(--brand-navy);
-  background-image:
-    url("/brand/thrivie-mark-ghost.svg"),
-    radial-gradient(120% 90% at 65% 18%, var(--brand-navy-glow) 0%, var(--brand-navy) 48%, var(--brand-navy-deep) 100%);
-  background-repeat: no-repeat, no-repeat;
-  background-size: min(140vh, 150vw) auto, cover;
-  background-position: -38vh 8vh, center;
-  background-attachment: fixed, fixed;
+  position: relative;
+  isolation: isolate;
+  /* The artwork sits on its own layer rather than using a fixed background attachment, which iOS Safari ignores. */
+  &::before {
+    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background-image:
+      url("/brand/thrivie-mark-ghost.svg"),
+      radial-gradient(120% 90% at 65% 18%, var(--brand-navy-glow) 0%, var(--brand-navy) 48%, var(--brand-navy-deep) 100%);
+    background-repeat: no-repeat, no-repeat;
+    background-size: min(140vh, 150vw) auto, cover;
+    background-position: -38vh 8vh, center;
+  }
 }

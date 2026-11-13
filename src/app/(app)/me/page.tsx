@@ -64,7 +64,7 @@ export default async function SettingsPage() {
       <section className="card space-y-2 text-sm">
         <h2 className="h2">Privacy</h2>
         <p>Your entries are private to your account and protected by the database itself. Journal text, notes and attachments are encrypted before they are stored. Smart Import reads your notes on this device; the pasted text is never sent to our server.</p>
-        <a href="/privacy" className="font-semibold text-primary underline">Read the privacy page</a>
+        <a href="/privacy" className="-my-3 inline-block py-3 font-semibold text-primary underline">Read the privacy page</a>
       </section>
 
       <section className="card space-y-4">

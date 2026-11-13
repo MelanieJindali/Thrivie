@@ -37,7 +37,7 @@ export default async function MealPlanPage() {
               </section>
             ))}
           </div>
-          <p className="text-xs text-muted">{NOT_MEDICAL_ADVICE} Nutrition values are calculated from USDA FoodData Central. <Link href="/me/body" className="font-semibold text-primary underline">Edit Body & Goals</Link></p>
+          <p className="text-xs text-muted">{NOT_MEDICAL_ADVICE} Nutrition values are calculated from USDA FoodData Central. <Link href="/me/body" className="-my-3 inline-block py-3 font-semibold text-primary underline">Edit Body & Goals</Link></p>
         </>
       )}
     </div>

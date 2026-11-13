@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 
 // Motion budget: every animation and transition finishes within 300 ms. The one exception is a
 // spinner, which loops, but only while something is loading.
-const css = readFileSync("src/app/globals.css", "utf8");
+const raw = readFileSync("src/app/globals.css", "utf8");
+const css = raw.replace(/\/\*[\s\S]*?\*\//g, ""); // comments are not styles
 const tokens: Record<string, number> = {};
 for (const m of css.matchAll(/--duration-([a-z-]+):\s*(\d+)ms/g)) tokens[m[1]] = Number(m[2]);
 
@@ -49,5 +50,37 @@ describe("motion budget", () => {
   });
   it("gives a button a spinner while it is busy", () => {
     expect(css).toMatch(/btn-primary[^{]*\[aria-busy="true"\]::before[\s\S]*animation: t-spin/);
+  });
+
+  it("animates only opacity and transform, which phones can do without repainting", () => {
+    const blocks: string[] = [];
+    for (const m of css.matchAll(/@keyframes\s+[\w-]+\s*\{/g)) {
+      let depth = 1, k = m.index! + m[0].length;
+      while (depth && k < css.length) depth += css[k] === "{" ? 1 : css[k] === "}" ? -1 : 0, k++;
+      blocks.push(css.slice(m.index!, k));
+    }
+    expect(blocks.length).toBeGreaterThan(8);
+    for (const b of blocks) expect(b, b.slice(0, 40)).not.toMatch(/\bfilter\s*:|\b(width|height|top|left|margin|padding)\s*:/);
+  });
+});
+
+describe("phone paint costs", () => {
+  it("does not use a fixed background attachment (ignored by iOS, repainted on every scroll by Android)", () => {
+    expect(css).not.toMatch(/background-attachment:\s*fixed/);
+    expect(css).toMatch(/body::before\s*\{[^}]*position:\s*fixed/);
+  });
+  it("keeps taps instant and the glass cheap", () => {
+    expect(css).toMatch(/touch-action:\s*manipulation/);
+    expect(css).toMatch(/blur\((?:[0-9]|1[0-2])px\)/); // glass blur is 12 px at most
+    expect(css).not.toMatch(/blur\((?:1[3-9]|[2-9][0-9])px\)/);
+    expect(css).toMatch(/prefers-reduced-transparency: reduce/);
+  });
+  it("never blurs the screen behind a sheet", () => {
+    expect(readFileSync("src/components/Sheet.tsx", "utf8")).not.toMatch(/backdrop-blur/);
+    expect(readFileSync("src/components/Sheet.tsx", "utf8")).toMatch(/overscroll-contain/);
+  });
+  it("lets people pinch to zoom", () => {
+    const layout = readFileSync("src/app/layout.tsx", "utf8");
+    expect(layout).not.toMatch(/maximumScale|userScalable/);
   });
 });

@@ -154,12 +154,12 @@ export function ShowMoreText({ children, lines = 3, className = "" }: { children
     return () => ro.disconnect();
   }, [open, children]);
   return (
-    <div className={className}>
+    <div className={`min-w-0 break-words ${className}`}>
       <div id={id} ref={ref} className="break-words whitespace-pre-wrap" style={open ? undefined : { display: "-webkit-box", WebkitLineClamp: lines, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
         {children}
       </div>
       {overflows && (
-        <button type="button" aria-expanded={open} aria-controls={id} onClick={() => setOpen((o) => !o)} className="mt-1 inline-flex min-h-9 items-center gap-1 text-xs font-bold text-primary">
+        <button type="button" aria-expanded={open} aria-controls={id} onClick={() => setOpen((o) => !o)} className="mt-1 inline-flex min-h-11 items-center gap-1 text-xs font-bold text-primary">
           {open ? <>Show less <ChevronUp size={14} aria-hidden /></> : <>Show more <ChevronDown size={14} aria-hidden /></>}
         </button>
       )}
