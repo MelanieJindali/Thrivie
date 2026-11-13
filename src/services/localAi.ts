@@ -128,11 +128,13 @@ function failAll(e: Error) {
   loadWaiter = null;
 }
 
-function startWorker(plan: Plan): Worker {
+function startWorker(plan: Plan, fromCache: boolean): Worker {
   const w = new Worker(new URL("./localAi.worker.ts", import.meta.url), { type: "module" });
   w.onmessage = (e: MessageEvent<{ type: string; id?: number; delta?: string; text?: string; loaded?: number; total?: number; stage?: string; message?: string }>) => {
     const m = e.data;
-    if (m.type === "progress" && m.total) setState("downloading", { pct: Math.min(99, Math.round(((m.loaded ?? 0) / m.total) * 100)), sizeMb: Math.max(downloadSizeMb(plan), Math.round(m.total / 1e6)) });
+    // Reading files back from the cache reports progress too; that's starting up, not downloading.
+    if (m.type === "progress" && m.total && fromCache) setState("loading");
+    else if (m.type === "progress" && m.total) setState("downloading", { pct: Math.min(99, Math.round(((m.loaded ?? 0) / m.total) * 100)), sizeMb: Math.max(downloadSizeMb(plan), Math.round(m.total / 1e6)) });
     else if (m.type === "ready") { setState("ready"); loadWaiter?.resolve(); loadWaiter = null; }
     else if (m.type === "token" && m.id != null) { const j = jobs.get(m.id); if (j) { j.full += m.delta ?? ""; j.onToken?.(m.delta ?? "", j.full); } }
     else if (m.type === "done" && m.id != null) { const j = jobs.get(m.id); jobs.delete(m.id); j?.resolve(m.text ?? j.full); }
@@ -154,9 +156,10 @@ export async function prepareAi(): Promise<boolean> {
   if (!plan) { setState("unsupported"); return false; }
   if (plan.tier === "builtin") { setState("ready"); return true; }
   loading ??= (async () => {
-    setState((await isAiReady()) ? "loading" : "downloading", { pct: 0, sizeMb: downloadSizeMb(plan) });
+    const fromCache = await isAiReady();
+    setState(fromCache ? "loading" : "downloading", fromCache ? null : { pct: 0, sizeMb: downloadSizeMb(plan) });
     try {
-      worker = startWorker(plan);
+      worker = startWorker(plan, fromCache);
       await new Promise<void>((resolve, reject) => {
         loadWaiter = { resolve, reject };
         worker!.postMessage({ type: "load", model: plan.model!.id, device: plan.device, dtype: plan.dtype, fallbackDtype: "q4" });
