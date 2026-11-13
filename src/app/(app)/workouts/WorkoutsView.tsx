@@ -54,7 +54,7 @@ export function WorkoutsView({ today, units, rows, exerciseNames, lastSummary }:
           <ShowMoreButton view={view} noun="more workouts" />
           </>
         ) : (
-          <Empty>No workouts yet — log your first one above.</Empty>
+          <Empty>No workouts yet. Log your first one above.</Empty>
         )}
       </section>
     </>

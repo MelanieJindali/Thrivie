@@ -11,7 +11,7 @@ import { kmToDisplay, distanceUnit } from "./units";
 export type WeekStats = Awaited<ReturnType<typeof weekStats>>;
 export type ReviewContent = { summary: string; wins: string[]; focus: string };
 
-/** Numbers for one Mon–Sun week (computed in code; the AI only writes prose). */
+/** Numbers for one Mon–Sun week (computed in code; the prose comes from templates). */
 export async function weekStats(db: ScopedDb, userId: string, weekStart: DateStr) {
   const settings = await loadSettings(db, userId);
   const u = settings.units;
@@ -75,8 +75,8 @@ export function fallbackReview(s: WeekStats): ReviewContent {
   return {
     summary: s.daysLogged || s.workouts
       ? `This week you showed up for yourself on ${Math.max(s.daysLogged, s.workouts)} day${Math.max(s.daysLogged, s.workouts) === 1 ? "" : "s"}. Every entry is a small act of care.`
-      : "A quiet week in your log — that's okay. Next week is a fresh start.",
-    wins: wins.length ? wins : ["You opened Thrivie — that counts."],
+      : "A quiet week in your log, and that's okay. Next week is a fresh start.",
+    wins: wins.length ? wins : ["You opened Thrivie. That counts."],
     focus: s.sleep != null && s.sleep < 7 ? "You could try winding down 20 minutes earlier on a couple of nights." : "You could pick one habit to protect on your busiest day.",
   };
 }

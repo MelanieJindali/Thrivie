@@ -37,7 +37,7 @@ describe("computeInsights", () => {
       goals: [], journalDates: [],
     });
     const text = out.map((i) => i.text).join(" | ");
-    expect(text).toContain("Meditate: your longest streak yet — 12 days");
+    expect(text).toContain("Meditate: your longest streak yet (12 days)");
     expect(text).toContain("You sleep about 1 hour more on workout days");
     expect(text).toMatch(/mi covered/);
     expect(text).not.toMatch(/weight|lb/i);

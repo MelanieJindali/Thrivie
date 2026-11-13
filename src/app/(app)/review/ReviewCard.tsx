@@ -16,7 +16,7 @@ export function ReviewCard({ review }: { review: ReviewContent }) {
           ))}
         </ul>
         <p className="rounded-2xl bg-seaglass-soft px-4 py-3 text-sm"><b>Next week:</b> {review.focus}</p>
-        <p className="text-xs text-muted">Written on our server from this week&apos;s numbers. Nothing is sent to an AI service.</p>
+        <p className="text-xs text-muted">Written from this week&apos;s numbers, on our server. Nothing is shared with other services.</p>
       </div>
     </section>
   );

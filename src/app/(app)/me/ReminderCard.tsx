@@ -51,7 +51,7 @@ export function ReminderCard({ on, hour, publicKey }: { on: boolean; hour: numbe
     const j = await r.json();
     if (!r.ok) setError(j.error);
     else if (!j.sent) setError("No devices are subscribed yet. Turn reminders on first.");
-    else run(async () => ({ ok: true }), { success: "Test sent — check your notifications." });
+    else run(async () => ({ ok: true }), { success: "Test sent. Check your notifications." });
   }
 
   return (
@@ -60,7 +60,7 @@ export function ReminderCard({ on, hour, publicKey }: { on: boolean; hour: numbe
         <span className="grid h-8 w-8 place-items-center rounded-xl bg-gold-soft text-gold-ink"><BellRing size={16} /></span>
         Daily reminder
       </h2>
-      <p className="text-sm text-muted">One gentle nudge a day — only if you still have habits to check off or haven&apos;t logged yet.</p>
+      <p className="text-sm text-muted">One gentle nudge a day, only if you still have habits to check off or haven&apos;t logged yet.</p>
       {support === "ios-install" && (
         <p className="rounded-2xl bg-gold-soft px-4 py-3 text-sm">On iPhone, first add Thrivie to your Home Screen (Share → Add to Home Screen), then open it from there to turn on reminders.</p>
       )}

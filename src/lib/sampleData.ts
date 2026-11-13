@@ -203,7 +203,7 @@ export async function loadSampleData(db: ScopedDb, userId: string, timezone: str
     [27, "First week back at a routine. Legs are sore from squats but I feel more awake in the mornings.", 4, "How do you feel today?"],
     [24, "Work was a lot today. Took a 10 minute walk at lunch which helped more than I expected.", 3, null],
     [21, "Long run felt easy for once! Kept a steady pace and finished with energy to spare.", 5, "What went well today?"],
-    [18, "Slept badly, skipped the gym. That's okay — rested and read instead.", 2, null],
+    [18, "Slept badly, skipped the gym. That's okay. Rested and read instead.", 2, null],
     [15, "Grateful for a slow Sunday morning, coffee, and yoga on the balcony.", 4, "What are you grateful for?"],
     [12, "Started meditating every morning before checking my phone. Noticing I'm calmer in meetings.", 4, null],
     [9, "Tough conversation with a friend, but I'm glad we talked it through.", 3, "What's on your mind?"],

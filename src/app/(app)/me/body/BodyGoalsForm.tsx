@@ -11,6 +11,9 @@ import {
   calculateTargets,
   cmToFtIn,
   ftInToCm,
+  GOAL_HINT,
+  GOAL_LABEL,
+  GOALS,
   kgToLb,
   lbToKg,
   NOT_MEDICAL_ADVICE,
@@ -24,14 +27,7 @@ import type { Units } from "@/lib/units";
 
 const SEX_OPTIONS: { value: Sex; label: string }[] = [{ value: "female", label: "Female" }, { value: "male", label: "Male" }, { value: "unspecified", label: "Prefer not to say" }];
 
-
-const GOAL_OPTIONS: { value: Goal; label: string }[] = [{ value: "lose", label: "Lose weight" }, { value: "fat_loss", label: "Fat loss" }, { value: "maintain", label: "Maintain" }, { value: "gain", label: "Gain muscle" }];
-const GOAL_HINT: Record<Goal, string> = {
-  lose: "A steady calorie deficit, for gradual weight loss at a pace you can keep up.",
-  fat_loss: "A moderate calorie deficit with more protein, to lose fat while keeping muscle.",
-  maintain: "Calories matched to what you burn, to keep your weight steady.",
-  gain: "A small calorie surplus with extra protein, to build muscle alongside strength training.",
-};
+const GOAL_OPTIONS: { value: Goal; label: string }[] = GOALS.map((g) => ({ value: g, label: GOAL_LABEL[g] }));
 const DIET_OPTIONS: { value: DietType; label: string }[] = [{ value: "none", label: "No preference" }, { value: "vegetarian", label: "Vegetarian" }, { value: "vegan", label: "Vegan" }, { value: "pescatarian", label: "Pescatarian" }];
 const ALLERGEN_LABEL: Record<Allergen, string> = { dairy: "Dairy", gluten: "Gluten", nuts: "Nuts", eggs: "Eggs", soy: "Soy", shellfish: "Shellfish", fish: "Fish" };
 
