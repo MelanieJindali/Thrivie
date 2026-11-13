@@ -157,6 +157,8 @@ export async function prepareAi(): Promise<boolean> {
   if (plan.tier === "builtin") { setState("ready"); return true; }
   loading ??= (async () => {
     const fromCache = await isAiReady();
+    // Ask the browser to keep the model files rather than clearing them under storage pressure.
+    if (!fromCache) await navigator.storage?.persist?.().catch(() => false);
     setState(fromCache ? "loading" : "downloading", fromCache ? null : { pct: 0, sizeMb: downloadSizeMb(plan) });
     try {
       worker = startWorker(plan, fromCache);
