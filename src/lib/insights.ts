@@ -1,5 +1,5 @@
-// Highlights: wins and patterns computed in code. The AI only re-phrases
-// these facts; it never invents numbers.
+// Highlights: wins and patterns computed in code and phrased from templates.
+// Every number comes from the log; nothing is invented.
 import { addDays, diffDays, startOfWeek, type DateStr } from "./dates";
 import { mean, round } from "./stats";
 import { kgToDisplay, kmToDisplay, distanceUnit, weightUnit, type Units } from "./units";
@@ -32,7 +32,7 @@ export function computeInsights(input: InsightInput): Insight[] {
   for (const h of habits) {
     const unit = h.streakUnit;
     if (h.streak >= 3 && h.streak >= h.longest) {
-      out.push({ id: `streak-record-${h.name}`, emoji: "🏆", score: 90 + Math.min(h.streak, 30), text: `${h.name}: your longest streak yet — ${plural(h.streak, unit)}.` });
+      out.push({ id: `streak-record-${h.name}`, emoji: "🏆", score: 90 + Math.min(h.streak, 30), text: `${h.name}: your longest streak yet (${plural(h.streak, unit)}).` });
     } else if (h.streak >= 5) {
       out.push({ id: `streak-${h.name}`, emoji: "🔥", score: 60 + Math.min(h.streak, 30), text: `${h.name}: ${plural(h.streak, unit)} in a row.` });
     }
@@ -54,7 +54,7 @@ export function computeInsights(input: InsightInput): Insight[] {
       id: "sleep-workout",
       emoji: "😴",
       score: 80,
-      text: sleepDiff > 0 ? `You sleep ${amount} more on workout days.` : `You sleep ${amount} less on workout days — worth noticing.`,
+      text: sleepDiff > 0 ? `You sleep ${amount} more on workout days.` : `You sleep ${amount} less on workout days. Worth noticing.`,
     });
   }
   const moodDiff = split("mood");
@@ -68,7 +68,7 @@ export function computeInsights(input: InsightInput): Insight[] {
   const lastWeek = workouts.filter((w) => w.date >= addDays(ws, -7) && w.date < ws);
   const minutes = (xs: WorkoutRow[]) => xs.reduce((a, w) => a + w.durationMin, 0);
   if (thisWeek.length && minutes(thisWeek) > minutes(lastWeek)) {
-    out.push({ id: "week-volume", emoji: "💪", score: 70, text: `${minutes(thisWeek)} active minutes this week — already more than last week (${minutes(lastWeek)}).` });
+    out.push({ id: "week-volume", emoji: "💪", score: 70, text: `${minutes(thisWeek)} active minutes this week, already more than last week (${minutes(lastWeek)}).` });
   } else if (thisWeek.length >= 2) {
     out.push({ id: "week-count", emoji: "💪", score: 50, text: `${plural(thisWeek.length, "workout")} so far this week.` });
   }

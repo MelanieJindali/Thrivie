@@ -39,9 +39,9 @@ export function composeBrief(f: BriefFacts): string {
   if (f.yesterday.habitsDone) bits.push(`checked off ${plural(f.yesterday.habitsDone, "habit")}`);
   if (bits.length) {
     const list = bits.length > 1 ? `${bits.slice(0, -1).join(", ")} and ${bits.at(-1)}` : bits[0];
-    out.push(pick([`Yesterday you ${list}.`, `Quick look back: yesterday you ${list}.`, `You ${list} yesterday — nice.`]));
+    out.push(pick([`Yesterday you ${list}.`, `Quick look back: yesterday you ${list}.`, `You ${list} yesterday. Nice.`]));
   } else {
-    out.push(pick(["Yesterday was quiet in your log, and that's completely fine.", "No entries yesterday — rest days are part of the rhythm.", "A fresh start today; yesterday stayed off the log."]));
+    out.push(pick(["Yesterday was quiet in your log, and that's completely fine.", "No entries yesterday. Rest days are part of the rhythm.", "A fresh start today; yesterday stayed off the log."]));
   }
 
   // 2. Streaks at risk
@@ -50,7 +50,7 @@ export function composeBrief(f: BriefFacts): string {
     const unit = s.unit;
     out.push(pick([
       `Your ${s.name.toLowerCase()} streak (${plural(s.streak, unit)}) is waiting for today's check-in.`,
-      `${s.name} is on a ${s.streak}-${unit} run — one tap keeps it going.`,
+      `${s.name} is on a ${s.streak}-${unit} run. One tap keeps it going.`,
     ]));
   } else if (f.openToday > 0) {
     out.push(pick([`${plural(f.openToday, "habit")} still open today.`, `You have ${plural(f.openToday, "habit")} left for today.`]));
@@ -58,7 +58,7 @@ export function composeBrief(f: BriefFacts): string {
 
   // 3. Goals
   if (f.goals.total) {
-    if (f.goals.onTrack === f.goals.total) out.push(pick([`All ${plural(f.goals.total, "goal")} are on track.`, `Every goal is on pace — steady wins.`]));
+    if (f.goals.onTrack === f.goals.total) out.push(pick([`All ${plural(f.goals.total, "goal")} are on track.`, `Every goal is on pace. Steady wins.`]));
     else if (f.goals.behind.length) out.push(`${f.goals.onTrack} of ${f.goals.total} goals are on track; “${f.goals.behind[0]}” could use a little attention.`);
     else out.push(`${f.goals.onTrack} of ${f.goals.total} goals are on track.`);
   }
@@ -67,7 +67,7 @@ export function composeBrief(f: BriefFacts): string {
   if (f.week.sleep != null && f.week.sleep < 7) out.push(pick(["If it suits you, an earlier wind-down tonight could help.", "You could try putting the phone away 20 minutes earlier tonight."]));
   else if (f.week.workouts === 0) out.push(pick(["A short walk today could be an easy win.", "Even ten minutes of movement counts today."]));
   else if (f.week.steps != null && f.week.steps < 6000) out.push("A walk after a meal is a gentle way to add steps.");
-  else out.push(pick([`Enjoy your ${f.weekday} — keep doing what feels good.`, "Small steps add up; keep going at your pace.", `Make some room for rest this ${f.weekday} too.`]));
+  else out.push(pick([`Enjoy your ${f.weekday}. Keep doing what feels good.`, "Small steps add up; keep going at your pace.", `Make some room for rest this ${f.weekday} too.`]));
 
   return out.slice(0, 5).join(" ");
 }

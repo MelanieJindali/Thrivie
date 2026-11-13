@@ -24,6 +24,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `This doesn't look like a Thrivie backup (${i.path.join(".") || "root"}: ${i.message}). Nothing was changed.` }, { status: 400 });
     }
     logError("backup-restore", e);
-    return NextResponse.json({ error: "Restore failed — nothing was changed." }, { status: 500 });
+    return NextResponse.json({ error: "Restore failed. Nothing was changed." }, { status: 500 });
   }
 }

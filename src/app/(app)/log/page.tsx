@@ -10,7 +10,7 @@ import { QuickLogButton } from "@/components/QuickLog";
 
 const TILES = [
   { href: "/health#log", module: "health", label: "Check-in", sub: "Mood, energy, sleep, water, steps, weight", icon: HeartPulse, tone: "bg-terracotta-soft text-terracotta-ink" },
-  { href: "/workouts#log", module: "workouts", label: "Workout", sub: "Type, time, intensity — or repeat last", icon: Dumbbell, tone: "bg-ocean-soft text-ocean" },
+  { href: "/workouts#log", module: "workouts", label: "Workout", sub: "Type, time and intensity, or repeat last", icon: Dumbbell, tone: "bg-ocean-soft text-ocean" },
   { href: "/nutrition#log", module: "nutrition", label: "Meal", sub: "What you ate, with optional calories and macros", icon: Utensils, tone: "bg-clay-soft text-clay-ink" },
   { href: "/habits#today", module: "habits", label: "Habits", sub: "One tap to check off", icon: CircleCheck, tone: "bg-sage-soft text-sage-ink" },
   { href: "/goals#progress", module: "goals", label: "Goal progress", sub: "Linked goals update by themselves", icon: Target, tone: "bg-gold-soft text-gold-ink" },

@@ -55,7 +55,7 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
           <h2 className="h2">Movement</h2>
           {Object.keys(s.byType).length ? Object.entries(s.byType).map(([t, m]) => (
             <div key={t} className="flex justify-between text-sm"><span>{WORKOUT_LABELS[t as WorkoutType]?.emoji} {WORKOUT_LABELS[t as WorkoutType]?.label ?? t}</span><span className="font-semibold">{m} min</span></div>
-          )) : <p className="text-sm text-muted">No workouts logged this week — rest is part of the plan too.</p>}
+          )) : <p className="text-sm text-muted">No workouts logged this week. Rest is part of the plan too.</p>}
           {s.prevMinutes > 0 && <p className="text-xs text-muted">Previous week: {s.prevMinutes} min</p>}
           <p className="text-xs text-muted">Journaled on {s.journalDays} day{s.journalDays === 1 ? "" : "s"}.</p>
         </section>

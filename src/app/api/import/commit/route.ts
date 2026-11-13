@@ -25,6 +25,6 @@ export async function POST(req: Request) {
     return NextResponse.json(result);
   } catch (e) {
     logError("import-commit", e);
-    return NextResponse.json({ error: "Saving failed — nothing was changed. Please try again." }, { status: 500 });
+    return NextResponse.json({ error: "Saving failed. Nothing was changed. Please try again." }, { status: 500 });
   }
 }

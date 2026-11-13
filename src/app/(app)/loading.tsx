@@ -1,4 +1,4 @@
-// Skeleton shown while a screen loads — never a blank page.
+// Skeleton shown while a screen loads. Never a blank page.
 export default function Loading() {
   const bar = "animate-pulse rounded-2xl bg-surface-2/80";
   return (

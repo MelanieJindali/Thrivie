@@ -33,7 +33,7 @@ export function SettingsForm({ initial }: { initial: S }) {
           <button type="button" className={`chip ${s.units === "imperial" ? "chip-on" : ""}`} onClick={() => setS({ ...s, units: "imperial" })}>U.S. (lb, mi, fl oz)</button>
           <button type="button" className={`chip ${s.units === "metric" ? "chip-on" : ""}`} onClick={() => setS({ ...s, units: "metric" })}>Metric (kg, km, ml)</button>
         </div>
-        <p className="mt-1 text-xs text-muted">Changing units converts how existing data is shown — nothing is lost.</p>
+        <p className="mt-1 text-xs text-muted">Changing units converts how existing data is shown. Nothing is lost.</p>
       </div>
       <TimezonePicker value={s.timezone} onChange={(timezone) => setS({ ...s, timezone })} hint="Used to decide what “today” and “yesterday” mean. Saved when you tap Save." />
       <div>

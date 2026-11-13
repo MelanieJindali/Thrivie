@@ -454,7 +454,7 @@ function ReviewCard({
               {goals.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
             </select>
           ) : (
-            <span className="text-muted">“{item.data.goalName}” — no manual goals to update.</span>
+            <span className="text-muted">“{item.data.goalName}”: no manual goals to update.</span>
           )}
           <span>+</span>
           <input className={`${fieldCls("value")} w-24`} inputMode="decimal" value={item.data.value} onChange={(e) => setData({ value: numOrNull(e.target.value) ?? 0 })} aria-label="Progress value" />

@@ -22,6 +22,15 @@ export type Goal = (typeof GOALS)[number];
 export type DietType = (typeof DIETS)[number];
 export type Allergen = (typeof ALLERGENS)[number];
 
+/** Goal names and one-line descriptions, shared by the setup form and the plan notes so the wording stays in step. */
+export const GOAL_LABEL: Record<Goal, string> = { lose: "Lose weight", fat_loss: "Fat loss", maintain: "Maintain", gain: "Gain muscle" };
+export const GOAL_HINT: Record<Goal, string> = {
+  lose: "A steady calorie deficit, to lose weight at a pace you can keep up.",
+  fat_loss: "A moderate calorie deficit with more protein, to lose fat while keeping muscle.",
+  maintain: "Calories matched to what you burn, to keep your weight steady.",
+  gain: "A small calorie surplus with more protein, to build muscle alongside strength training.",
+};
+
 export const LIMITS = { heightCm: { min: 120, max: 230 }, weightKg: { min: 35, max: 250 }, age: { min: 13, max: 100 } } as const;
 
 /** Strict validation for anything that reaches the server or comes out of storage. */
@@ -77,7 +86,7 @@ export const activityFactor = (a: ActivityLevel) => ACTIVITY_LEVELS.find((x) => 
 export const SAFETY_MESSAGES: Record<SafetyBlockReason, string> = {
   under_18: "Meal plans here are designed for adults. Growing bodies have different needs, so a doctor or registered dietitian is the best guide for an eating plan made for you.",
   pregnant_or_breastfeeding: "Nutrition needs change during pregnancy and breastfeeding. Your doctor, midwife or a registered dietitian can create a plan that supports you both.",
-  underweight_weight_loss: "We can't create a weight-loss or fat-loss plan at your current height and weight. A doctor or registered dietitian can help you find the right goal for you. You can still choose a maintain or gain-muscle plan.",
+  underweight_weight_loss: "We can't create a Lose weight or Fat loss plan at your current height and weight. A doctor or registered dietitian can help you find the right goal for you. You can still choose Maintain or Gain muscle.",
 };
 
 /** Calorie and macro targets, or a kind explanation when a plan isn't appropriate. Throws on an invalid profile. */
@@ -104,7 +113,7 @@ export function calculateTargets(input: BodyProfile): TargetsResult {
   const notes: string[] = [];
   if (floorApplied) notes.push("Your target is set at a safe minimum intake, so changes may be gradual.");
   if (p.sex === "unspecified") notes.push("This target uses a neutral average in the energy equation. You can add sex assigned at birth in Body & Goals for a more precise estimate.");
-  if (p.goal === "fat_loss") notes.push("Protein is set higher to help you keep muscle while eating a little below what you burn. Regular strength training helps too.");
+  if (p.goal === "fat_loss") notes.push("Protein is set higher on this goal to help you keep muscle during a calorie deficit. Regular strength training helps too.");
   if (bmi < 18.5 && !isDeficitGoal(p.goal)) notes.push("Based on your current height and weight, a doctor or registered dietitian can help confirm the right goal for you.");
   return { ok: true, targets: { bmr: Math.round(bmr), tdee: Math.round(tdee), calories, proteinG, carbsG, fatG, floorApplied }, notes };
 }
