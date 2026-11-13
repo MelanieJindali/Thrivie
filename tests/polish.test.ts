@@ -50,7 +50,7 @@ describe("brief rewrite safety", () => {
 });
 
 import { acceptEnhance } from "@/lib/import/polish";
-import { isConstrainedDevice } from "@/services/localAi";
+import { isConstrainedDevice, MODELS, pickModel, startingModel } from "@/services/localAi";
 
 describe("enhance note line", () => {
   it("takes one clean line and drops a date the model added", () => {
@@ -84,5 +84,31 @@ describe("Enhance examples", () => {
       expect(r.entries.length, e.output).toBeGreaterThan(0);
       expect(r.unparsed, e.output).toEqual([]);
     }
+  });
+});
+
+describe("model choice", () => {
+  const iphone = { userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) Mobile/15E148" };
+  const ipad = { userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/605.1.15", maxTouchPoints: 5 };
+  const bigAndroid = { userAgent: "Mozilla/5.0 (Linux; Android 15; Pixel 9) Mobile Safari/537.36", deviceMemory: 8 };
+  const smallAndroid = { userAgent: "Mozilla/5.0 (Linux; Android 12) Mobile Safari/537.36", deviceMemory: 4 };
+  const desktop = { userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/140", deviceMemory: 8 };
+  it("starts iPhone, iPad and low-memory devices on the smallest model", () => {
+    expect(startingModel(iphone)).toBe(MODELS.tiny);
+    expect(startingModel(ipad)).toBe(MODELS.tiny);
+    expect(startingModel(smallAndroid)).toBe(MODELS.tiny);
+    expect(startingModel({ userAgent: "Mozilla/5.0 (Linux; Android 14) Mobile" })).toBe(MODELS.tiny); // memory unknown
+    expect(startingModel(bigAndroid)).toBe(MODELS.mobile);
+    expect(startingModel(desktop)).toBe(MODELS.desktop);
+  });
+  it("steps down after a model closed the tab, and gives up after the smallest", () => {
+    expect(pickModel(desktop, [MODELS.desktop.id])).toBe(MODELS.mobile);
+    expect(pickModel(desktop, [MODELS.desktop.id, MODELS.mobile.id])).toBe(MODELS.tiny);
+    expect(pickModel(bigAndroid, [MODELS.mobile.id])).toBe(MODELS.tiny);
+    expect(pickModel(iphone, [MODELS.tiny.id])).toBeNull();
+    expect(pickModel(iphone, [MODELS.desktop.id])).toBe(MODELS.tiny); // unrelated crash
+  });
+  it("keeps phone downloads small", () => {
+    expect(Math.max(MODELS.tiny.gpu.mb, MODELS.tiny.cpu.mb)).toBeLessThan(150);
   });
 });
