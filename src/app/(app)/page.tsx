@@ -62,35 +62,55 @@ export default async function TodayPage() {
 
   return (
     <div className="space-y-6">
+      {/* Order: brief, highlights, goals, quick actions, habit progress, then everything else. */}
       <header className="pt-1">
         <p className="eyebrow">{formatDate(today, { weekday: "long", month: "long", day: "numeric" })}</p>
         <h1 className="h1 mt-2">{greeting(settings.name, settings.timezone)}<span className="text-gold-bright">.</span></h1>
       </header>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2"><DailyBrief brief={brief.brief} numbers={brief.numbers} hasData={hasAnyData} /></div>
-        <section className="card flex flex-col items-center justify-center gap-3 text-center" aria-labelledby="today-progress">
-          <h2 id="today-progress" className="sr-only">Today&apos;s progress</h2>
-          {due.length ? (
-            <>
-              <ProgressRing id="habits-today" pct={(done / due.length) * 100} size={132} label="Habits done today" sub={`${done} of ${due.length} habits`} />
-              <p className="text-sm text-muted">{done === due.length ? "Every habit done today. Beautifully consistent." : `${due.length - done} to go. One tap each.`}</p>
-            </>
-          ) : (
-            <p className="text-sm text-muted">Add a habit and your daily progress ring appears here.</p>
-          )}
-        </section>
-      </div>
+      <DailyBrief brief={brief.brief} numbers={brief.numbers} hasData={hasAnyData} />
 
-      {milestone && (
-        <div className="flex items-center gap-4 rounded-3xl bg-gold-soft p-4" role="status">
-          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full font-display text-lg font-semibold text-[#3A2C10] shadow-[0_0_0_3px_var(--surface),0_0_24px_2px_rgb(212_178_106/0.55)] pop"
-            style={{ background: "radial-gradient(circle at 35% 30%, #F4E3B5, #D4B26A 55%, #9C7A35)" }} aria-hidden>{milestone.streak}</span>
-          <div>
-            <p className="font-display text-lg font-semibold">{milestone.streak}-{milestone.streakUnit} streak!</p>
-            <p className="text-sm text-muted">{milestone.name}: a real milestone. Well done.</p>
+      {brief.insights.length > 0 && (
+        <section className="card" aria-labelledby="hl-h">
+          <h2 id="hl-h" className="h2 mb-4 flex items-center gap-2.5">
+            <span className="grid h-8 w-8 place-items-center rounded-xl bg-gold-soft text-gold-ink" aria-hidden><Trophy size={16} /></span>
+            Highlights
+          </h2>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {brief.insights.map((i) => (
+              <li key={i.id} className="flex items-center gap-3.5 rounded-2xl bg-surface-2/60 px-4 py-3.5 text-sm font-medium">
+                <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface text-xl shadow-sm">{i.emoji}</span>
+                <span>{i.text}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {vis.includes("goals") && topGoals.length > 0 && (
+        <section className="card" aria-labelledby="goals-h">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <h2 id="goals-h" className="h2">Goals</h2>
+            <Link href="/goals" className="inline-flex min-h-10 items-center text-xs font-bold text-primary">Manage <ChevronRight size={14} aria-hidden /></Link>
           </div>
-        </div>
+          <ul className="grid gap-5 sm:grid-cols-3">
+            {topGoals.map((g) => {
+              const d = goalDisplay(g, u);
+              return (
+                <li key={g.id} className="flex items-center gap-4 sm:flex-col sm:text-center">
+                  <ProgressRing id={`g-${g.id}`} pct={g.pct} size={96} stroke={9} label={g.title} />
+                  <div>
+                    <p className="font-semibold">{g.title}</p>
+                    <p className="text-xs text-muted">{d.current} / {d.target} {d.unit}</p>
+                    <p className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-bold ${g.status === "behind" ? "bg-terracotta-soft text-terracotta-ink" : g.status === "done" ? "bg-gold-soft text-gold-ink" : "bg-sage-soft text-sage-ink"}`}>
+                      {g.status === "behind" ? "A little behind" : g.status === "done" ? "Complete" : g.status === "overdue" ? "Past deadline" : "On track"}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       )}
 
       <nav aria-label="Quick log" className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,9.5rem),1fr))] gap-3">
@@ -102,6 +122,29 @@ export default async function TodayPage() {
         ))}
         {vis.includes("workouts") && lastWorkout && <RepeatLastButton summary={describeWorkout(lastWorkout, u)} />}
       </nav>
+
+      <section className="card flex flex-col items-center justify-center gap-3 text-center sm:flex-row sm:gap-8 sm:text-left" aria-labelledby="today-progress">
+        <h2 id="today-progress" className="sr-only">Today&apos;s progress</h2>
+        {due.length ? (
+          <>
+            <ProgressRing id="habits-today" pct={(done / due.length) * 100} size={132} label="Habits done today" sub={`${done} of ${due.length} habits`} />
+            <p className="text-sm text-muted">{done === due.length ? "Every habit done today. Beautifully consistent." : `${due.length - done} to go. One tap each.`}</p>
+          </>
+        ) : (
+          <p className="text-sm text-muted">Add a habit and your daily progress ring appears here.</p>
+        )}
+      </section>
+
+      {milestone && (
+        <div className="flex items-center gap-4 rounded-3xl bg-gold-soft p-4" role="status">
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full font-display text-lg font-semibold text-[#3A2C10] shadow-[0_0_0_3px_var(--surface),0_0_24px_2px_rgb(212_178_106/0.55)] pop"
+            style={{ background: "radial-gradient(circle at 35% 30%, #F4E3B5, #D4B26A 55%, #9C7A35)" }} aria-hidden>{milestone.streak}</span>
+          <div>
+            <p className="font-display text-lg font-semibold">{milestone.streak}-{milestone.streakUnit} streak!</p>
+            <p className="text-sm text-muted">{milestone.name}: a real milestone. Well done.</p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {vis.includes("habits") && (
@@ -152,50 +195,7 @@ export default async function TodayPage() {
         </section>
       </div>
 
-      {vis.includes("goals") && topGoals.length > 0 && (
-        <section className="card" aria-labelledby="goals-h">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <h2 id="goals-h" className="h2">Goals</h2>
-            <Link href="/goals" className="inline-flex min-h-10 items-center text-xs font-bold text-primary">Manage <ChevronRight size={14} aria-hidden /></Link>
-          </div>
-          <ul className="grid gap-5 sm:grid-cols-3">
-            {topGoals.map((g) => {
-              const d = goalDisplay(g, u);
-              return (
-                <li key={g.id} className="flex items-center gap-4 sm:flex-col sm:text-center">
-                  <ProgressRing id={`g-${g.id}`} pct={g.pct} size={96} stroke={9} label={g.title} />
-                  <div>
-                    <p className="font-semibold">{g.title}</p>
-                    <p className="text-xs text-muted">{d.current} / {d.target} {d.unit}</p>
-                    <p className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-bold ${g.status === "behind" ? "bg-terracotta-soft text-terracotta-ink" : g.status === "done" ? "bg-gold-soft text-gold-ink" : "bg-sage-soft text-sage-ink"}`}>
-                      {g.status === "behind" ? "A little behind" : g.status === "done" ? "Complete" : g.status === "overdue" ? "Past deadline" : "On track"}
-                    </p>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
-
       {plan?.state === "ready" && <MealPlanCard plan={planCard(plan, settings.hideCalories, await loggedFromPlan(db, plan, today))} compact />}
-
-      {brief.insights.length > 0 && (
-        <section className="card" aria-labelledby="hl-h">
-          <h2 id="hl-h" className="h2 mb-4 flex items-center gap-2.5">
-            <span className="grid h-8 w-8 place-items-center rounded-xl bg-gold-soft text-gold-ink" aria-hidden><Trophy size={16} /></span>
-            Highlights
-          </h2>
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {brief.insights.map((i) => (
-              <li key={i.id} className="flex items-center gap-3.5 rounded-2xl bg-surface-2/60 px-4 py-3.5 text-sm font-medium">
-                <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface text-xl shadow-sm">{i.emoji}</span>
-                <span>{i.text}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
     </div>
   );
 }
