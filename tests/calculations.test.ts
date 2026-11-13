@@ -79,3 +79,30 @@ describe("profile validation", () => {
     expect(BodyProfileSchema.parse({ ...base, allergies: ["nuts", "nuts", "soy"] }).allergies).toEqual(["nuts", "soy"]);
   });
 });
+
+describe("fat loss goal", () => {
+  const fl = (p: Partial<BodyProfile> = {}) => calculateTargets({ ...base, weightKg: 80, heightCm: 178, sex: "male", activity: "moderate", ...p });
+  const targets = (p: Partial<BodyProfile> = {}) => { const r = fl(p); if (!r.ok) throw new Error(r.reason); return r.targets; };
+  it("sets a deficit of 20% of daily needs, never more than 500 kcal", () => {
+    const small = targets({ goal: "fat_loss", sex: "female", weightKg: 62, heightCm: 165, activity: "light" });
+    expect(small.tdee - small.calories).toBeGreaterThan(0);
+    expect(Math.abs(small.tdee - small.calories - 0.2 * small.tdee)).toBeLessThanOrEqual(6); // rounding to 10 kcal
+    const big = targets({ goal: "fat_loss", weightKg: 110, heightCm: 190, activity: "active" });
+    expect(big.tdee - big.calories).toBeGreaterThanOrEqual(495);
+    expect(big.tdee - big.calories).toBeLessThanOrEqual(505);
+  });
+  it("puts protein first: more than any other goal, and less fat than plain weight loss", () => {
+    const f = targets({ goal: "fat_loss" });
+    for (const goal of ["lose", "maintain", "gain"] as const) expect(f.proteinG).toBeGreaterThan(targets({ goal }).proteinG);
+    expect(f.proteinG).toBe(160); // 2.0 g per kg
+    expect(f.fatG * 9 / f.calories).toBeCloseTo(0.25, 1);
+    expect(Math.abs(f.proteinG * 4 + f.carbsG * 4 + f.fatG * 9 - f.calories)).toBeLessThanOrEqual(10);
+  });
+  it("keeps the same safety rules as weight loss", () => {
+    expect(fl({ goal: "fat_loss", heightCm: 180, weightKg: 55 })).toMatchObject({ ok: false, reason: "underweight_weight_loss" });
+    expect(fl({ goal: "fat_loss", age: 16 })).toMatchObject({ ok: false, reason: "under_18" });
+    expect(targets({ goal: "fat_loss", sex: "female", heightCm: 150, weightKg: 50, age: 70, activity: "sedentary" }).calories).toBeGreaterThanOrEqual(1200);
+    const r = fl({ goal: "fat_loss" });
+    expect(r.ok && r.notes.some((n) => n.includes("keep muscle"))).toBe(true);
+  });
+});

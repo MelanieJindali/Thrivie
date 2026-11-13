@@ -3,14 +3,16 @@
 // - BMR: Mifflin-St Jeor (kg, cm, years). "Prefer not to say" uses the midpoint of the two sex constants.
 // - Daily needs: BMR × activity factor.
 // - Goal adjustment: −500 (lose), 0, +300 (gain muscle); always within ±500 kcal/day.
+//   Fat loss: a deficit of 20% of daily needs (at most 500 kcal), with more protein (2.0 g/kg)
+//   and a little less fat, so the deficit comes from stored fat while muscle is kept.
 // - Floors: never below 1,200 kcal (female), 1,500 kcal (male, and "prefer not to say", the higher floor), or BMR.
-// - No plans for under-18s or during pregnancy/breastfeeding; no weight-loss plans when BMI < 18.5.
+// - No plans for under-18s or during pregnancy/breastfeeding; no weight-loss or fat-loss plans when BMI < 18.5.
 // Plans are general guidance for healthy adults, not medical advice.
 import { z } from "zod";
 
 export const SEXES = ["female", "male", "unspecified"] as const;
 export const ACTIVITY = ["sedentary", "light", "moderate", "active", "very_active"] as const;
-export const GOALS = ["lose", "maintain", "gain"] as const;
+export const GOALS = ["lose", "fat_loss", "maintain", "gain"] as const;
 export const DIETS = ["none", "vegetarian", "vegan", "pescatarian"] as const;
 export const ALLERGENS = ["dairy", "gluten", "nuts", "eggs", "soy", "shellfish", "fish"] as const;
 
@@ -50,9 +52,15 @@ export const ACTIVITY_LEVELS: readonly { value: ActivityLevel; label: string; de
 
 const SEX_CONSTANT: Record<Sex, number> = { male: 5, female: -161, unspecified: -78 };
 export const CALORIE_FLOOR: Record<Sex, number> = { female: 1200, male: 1500, unspecified: 1500 };
-export const GOAL_ADJUSTMENT: Record<Goal, number> = { lose: -500, maintain: 0, gain: 300 };
-const PROTEIN_G_PER_KG: Record<Goal, number> = { lose: 1.6, maintain: 1.2, gain: 1.8 };
-const FAT_SHARE = 0.3;
+/** Fixed daily adjustment per goal. For fat loss this is the largest deficit allowed; see `goalAdjustment`. */
+export const GOAL_ADJUSTMENT: Record<Goal, number> = { lose: -500, fat_loss: -500, maintain: 0, gain: 300 };
+export const FAT_LOSS_DEFICIT_SHARE = 0.2;
+const PROTEIN_G_PER_KG: Record<Goal, number> = { lose: 1.6, fat_loss: 2.0, maintain: 1.2, gain: 1.8 };
+const FAT_SHARE: Record<Goal, number> = { lose: 0.3, fat_loss: 0.25, maintain: 0.3, gain: 0.3 };
+/** Goals that put the day below maintenance. */
+export const isDeficitGoal = (g: Goal) => g === "lose" || g === "fat_loss";
+/** Calories added to (or taken from) daily needs. Fat loss scales with daily needs so smaller bodies get a gentler deficit. */
+export const goalAdjustment = (goal: Goal, tdee: number) => (goal === "fat_loss" ? Math.max(GOAL_ADJUSTMENT.fat_loss, -FAT_LOSS_DEFICIT_SHARE * tdee) : GOAL_ADJUSTMENT[goal]);
 
 export const lbToKg = (lb: number) => lb * 0.45359237;
 export const kgToLb = (kg: number) => kg / 0.45359237;
@@ -69,7 +77,7 @@ export const activityFactor = (a: ActivityLevel) => ACTIVITY_LEVELS.find((x) => 
 export const SAFETY_MESSAGES: Record<SafetyBlockReason, string> = {
   under_18: "Meal plans here are designed for adults. Growing bodies have different needs, so a doctor or registered dietitian is the best guide for an eating plan made for you.",
   pregnant_or_breastfeeding: "Nutrition needs change during pregnancy and breastfeeding. Your doctor, midwife or a registered dietitian can create a plan that supports you both.",
-  underweight_weight_loss: "We can't create a weight-loss plan at your current height and weight. A doctor or registered dietitian can help you find the right goal for you. You can still choose a maintain or gain-muscle plan.",
+  underweight_weight_loss: "We can't create a weight-loss or fat-loss plan at your current height and weight. A doctor or registered dietitian can help you find the right goal for you. You can still choose a maintain or gain-muscle plan.",
 };
 
 /** Calorie and macro targets, or a kind explanation when a plan isn't appropriate. Throws on an invalid profile. */
@@ -79,24 +87,25 @@ export function calculateTargets(input: BodyProfile): TargetsResult {
   if (p.age < 18) return block("under_18");
   if (p.sex !== "male" && p.pregnantOrBreastfeeding) return block("pregnant_or_breastfeeding");
   const bmi = calculateBmi(p.heightCm, p.weightKg);
-  if (p.goal === "lose" && bmi < 18.5) return block("underweight_weight_loss");
+  if (isDeficitGoal(p.goal) && bmi < 18.5) return block("underweight_weight_loss");
 
   const bmr = calculateBmr(p);
   const tdee = bmr * activityFactor(p.activity);
-  const desired = tdee + GOAL_ADJUSTMENT[p.goal];
+  const desired = tdee + goalAdjustment(p.goal, tdee);
   const floor = Math.max(CALORIE_FLOOR[p.sex], bmr);
   const calories = Math.max(Math.round(desired / 10) * 10, Math.ceil(floor / 10) * 10);
   const floorApplied = desired < floor;
 
-  // Protein by body weight (≤ 35% of calories), fat 30% of calories, carbs fill the rest.
+  // Protein by body weight (≤ 35% of calories), fat 30% of calories (25% for fat loss), carbs fill the rest.
   const proteinG = Math.min(Math.round(PROTEIN_G_PER_KG[p.goal] * p.weightKg), Math.round((calories * 0.35) / 4));
-  const fatG = Math.round((calories * FAT_SHARE) / 9);
+  const fatG = Math.round((calories * FAT_SHARE[p.goal]) / 9);
   const carbsG = Math.max(0, Math.round((calories - proteinG * 4 - fatG * 9) / 4));
 
   const notes: string[] = [];
   if (floorApplied) notes.push("Your target is set at a safe minimum intake, so changes may be gradual.");
   if (p.sex === "unspecified") notes.push("This target uses a neutral average in the energy equation. You can add sex assigned at birth in Body & Goals for a more precise estimate.");
-  if (bmi < 18.5 && p.goal !== "lose") notes.push("Based on your current height and weight, a doctor or registered dietitian can help confirm the right goal for you.");
+  if (p.goal === "fat_loss") notes.push("Protein is set higher to help you keep muscle while eating a little below what you burn. Regular strength training helps too.");
+  if (bmi < 18.5 && !isDeficitGoal(p.goal)) notes.push("Based on your current height and weight, a doctor or registered dietitian can help confirm the right goal for you.");
   return { ok: true, targets: { bmr: Math.round(bmr), tdee: Math.round(tdee), calories, proteinG, carbsG, fatG, floorApplied }, notes };
 }
 

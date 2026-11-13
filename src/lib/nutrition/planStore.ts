@@ -11,7 +11,7 @@ export type PlanContext =
   | { state: "blocked"; message: string }
   | { state: "ready"; plan: WeekPlan; targets: NutritionTargets; todayIndex: number; notes: string[] };
 
-const prefsOf = (p: BodyProfile): PlanPreferences => ({ diet: p.diet, allergies: p.allergies });
+const prefsOf = (p: BodyProfile): PlanPreferences => ({ diet: p.diet, allergies: p.allergies, proteinFocus: p.goal === "fat_loss" });
 /** Changes whenever anything that shapes the plan changes, so the plan regenerates. */
 const hashOf = (p: BodyProfile, calories: number) => crypto.createHash("sha256").update(JSON.stringify([p.diet, [...p.allergies].sort(), calories, p.goal])).digest("hex").slice(0, 32);
 

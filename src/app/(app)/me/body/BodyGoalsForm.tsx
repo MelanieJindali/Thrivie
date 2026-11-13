@@ -25,7 +25,7 @@ import type { Units } from "@/lib/units";
 const SEX_OPTIONS: { value: Sex; label: string }[] = [{ value: "female", label: "Female" }, { value: "male", label: "Male" }, { value: "unspecified", label: "Prefer not to say" }];
 
 
-const GOAL_OPTIONS: { value: Goal; label: string }[] = [{ value: "lose", label: "Lose weight" }, { value: "maintain", label: "Maintain" }, { value: "gain", label: "Gain muscle" }];
+const GOAL_OPTIONS: { value: Goal; label: string }[] = [{ value: "lose", label: "Lose weight" }, { value: "fat_loss", label: "Fat loss" }, { value: "maintain", label: "Maintain" }, { value: "gain", label: "Gain muscle" }];
 const DIET_OPTIONS: { value: DietType; label: string }[] = [{ value: "none", label: "No preference" }, { value: "vegetarian", label: "Vegetarian" }, { value: "vegan", label: "Vegan" }, { value: "pescatarian", label: "Pescatarian" }];
 const ALLERGEN_LABEL: Record<Allergen, string> = { dairy: "Dairy", gluten: "Gluten", nuts: "Nuts", eggs: "Eggs", soy: "Soy", shellfish: "Shellfish", fish: "Fish" };
 
@@ -133,7 +133,7 @@ export function BodyGoalsForm({ initial, units, prefillWeightKg, hideCalories: h
 
       <section className="card space-y-5" aria-labelledby="goals-h">
         <h2 id="goals-h" className="h2">Goal & food</h2>
-        <Choice label="Goal" value={goal} options={GOAL_OPTIONS} onChange={setGoal} />
+        <Choice label="Goal" value={goal} options={GOAL_OPTIONS} onChange={setGoal} hint={goal === "fat_loss" ? "A moderate calorie deficit with more protein, to lose fat while keeping muscle." : undefined} />
         <Choice label="Diet" value={diet} options={DIET_OPTIONS} onChange={setDiet} />
         <fieldset>
           <legend className="label">Allergies (we&apos;ll leave these out)</legend>
