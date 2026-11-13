@@ -38,7 +38,7 @@ The visual system pairs the Thrivie brand navy (#1E3A64) with Coastal Earth acce
    - It splits notes by day and resolves "Mon", "yesterday" or "11/3" in your timezone.
    - It finds sleep, weight, water, steps, mood, energy, workouts (distance, time, sets × reps), meals ("lunch: chicken salad 520 cal, 40g protein", "had salmon for dinner"), habits from ✅/❌, goal progress and journal reflections.
    - Every field has a confidence score.
-2. **Tier 2, optional.** A small on-device model (WebLLM, Qwen2.5-0.5B) runs in a Web Worker on devices with WebGPU.
+2. **Tier 2, optional.** A small on-device model (WebLLM, Qwen2.5-0.5B) runs in a Web Worker on devices with WebGPU. Devices with 16-bit shader support get the smaller q4f16 build; others get q4f32.
    - It's hidden elsewhere and off by default; turning it on means a one-time download.
    - It only re-reads snippets Tier 1 was unsure about. Its output is schema-validated, and any failure falls back to Tier 1.
 3. **Review.** Entries are grouped by date. Low-confidence fields are highlighted. You can edit, remove or approve each one, or use **Approve all**. Duplicates are checked against your existing entries before anything is overwritten.
@@ -139,4 +139,4 @@ e2e/                            viewport/a11y matrix, Lighthouse
 ### Why these choices
 - **Postgres + RLS, with our own small auth layer instead of Supabase Auth:** RLS is enforced by the database, and the same code runs on Neon, Supabase or any Postgres. Keeping auth in the app made it fully testable here, including passkeys, emailed codes, 2FA, rate limits and breach checks. The RLS migration works on Supabase too.
 - **Self-hosted fonts:** avoids sending every visitor's IP to a third party and keeps the CSP strict.
-- **Template-based daily brief:** free, private and consistent. When the on-device model is already downloaded, an optional "Rewrite with on-device AI" polish is offered. It's rejected if any number changes.
+- **Template-based daily brief:** free, private and consistent. When the on-device model is already downloaded, an optional "Rewrite with on-device AI" polish is offered. It rewrites one sentence at a time and keeps a sentence as written if its rewrite changes a number or a quoted goal name, or adds weight, food or medical wording.

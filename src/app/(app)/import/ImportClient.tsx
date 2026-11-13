@@ -54,7 +54,7 @@ export function ImportClient({ today, units, habits, goals, aliases, tipsSeen, o
 
   // Layers 1–2: parsed on this device, in a Web Worker, 250 ms after typing pauses.
   const ctx = useMemo(() => ({ today, units, habits: habits.map((h) => h.name), goals: goals.map((g) => ({ title: g.name, unit: g.unit })), aliases, personal }), [today, units, habits, goals, aliases, personal]);
-  const { parsed, pending } = useImportParser(text, ctx);
+  const { parsed, pending, failed, retry } = useImportParser(text, ctx);
   const entries = useMemo(() => enhanced ?? parsed?.entries ?? [], [enhanced, parsed]);
   const base = useMemo(() => normalizeEntries(entries, { today, units, habits, goals }), [entries, today, units, habits, goals]);
   useEffect(() => setEnhanced(null), [text]);
@@ -247,6 +247,13 @@ export function ImportClient({ today, units, habits, goals, aliases, tipsSeen, o
             {!text && <button type="button" className="btn-ghost" onClick={() => onText(example)}>Try the example</button>}
             {text && <button type="button" className="btn-ghost" onClick={reset}>Clear</button>}
           </div>
+
+          {text.trim() && !parsed && (
+            <div className={`flex flex-wrap items-center gap-3 rounded-2xl p-4 text-sm ${failed ? "bg-terracotta-soft text-terracotta-ink" : "bg-surface-2/60"}`} role={failed ? "alert" : "status"}>
+              <span className="min-w-0 flex-1">{failed ? "Thrivie couldn't read these notes on this device. Try again, or paste a shorter piece." : "Reading your notes…"}</span>
+              {failed && <button type="button" className="btn-outline" onClick={retry}>Try again</button>}
+            </div>
+          )}
 
           {parsed && (
             <div className="rounded-2xl bg-surface-2/60 p-4" aria-live="polite">
