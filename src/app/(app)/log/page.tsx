@@ -6,7 +6,6 @@ import { relativeLabel, todayInTz } from "@/lib/dates";
 import { describeWorkout } from "@/lib/format";
 import { PageHeader } from "@/components/ui";
 import { Tip } from "@/components/Tip";
-import { QuickLogButton } from "@/components/QuickLog";
 
 const TILES = [
   { href: "/health#log", module: "health", label: "Check-in", sub: "Mood, energy, sleep, water, steps, weight", icon: HeartPulse, tone: "bg-terracotta-soft text-terracotta-ink" },
@@ -37,15 +36,15 @@ export default async function LogPage() {
   return (
     <div className="space-y-6">
       <PageHeader theme="today" eyebrow="Log" title="What would you like to log?" />
-      <Tip id="log" seen={settings.tipsSeen}>Tap a tile for a quick form. Every field is optional, and each form links to its full page.</Tip>
+      <Tip id="log" seen={settings.tipsSeen}>Every field is optional. Log just what you know; you can always come back to it. For a faster way, use the plus button.</Tip>
       <ul className="t-stagger grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {TILES.filter((t) => settings.visibleModules.includes(t.module)).map(({ href, module, label, sub, icon: Icon, tone }) => (
+        {TILES.filter((t) => settings.visibleModules.includes(t.module)).map(({ href, label, sub, icon: Icon, tone }) => (
           <li key={href}>
-            <QuickLogButton kind={module} className="lift flex min-h-24 w-full items-center gap-4 rounded-3xl border border-border/70 bg-surface p-5 text-left shadow-soft">
+            <Link href={href} className="lift flex min-h-24 items-center gap-4 rounded-3xl border border-border/70 bg-surface p-5 shadow-soft">
               <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl ${tone}`} aria-hidden><Icon size={22} /></span>
               <span className="min-w-0 flex-1"><span className="block font-display text-lg font-semibold">{label}</span><span className="block text-sm text-muted">{sub}</span></span>
               <ChevronRight size={18} className="text-muted" aria-hidden />
-            </QuickLogButton>
+            </Link>
           </li>
         ))}
         <li>
