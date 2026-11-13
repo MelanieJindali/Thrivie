@@ -104,9 +104,10 @@ export async function isAiReady(): Promise<boolean> {
   if (plan.tier === "builtin") return true;
   return (await cachedModelFiles(plan.model!.id)).some((r) => r.url.endsWith(".onnx"));
 }
-/** Removes every downloaded model file from this device. */
+/** Removes every downloaded model file from this device, including the previous model's. */
 export async function deleteAiDownloads(): Promise<void> {
   release();
+  await import("@/lib/legacyAiCleanup").then((m) => m.removeLegacyAiFiles()).catch(() => 0);
   try {
     const cache = await caches.open(CACHE);
     for (const m of Object.values(MODELS)) for (const r of await cachedModelFiles(m.id)) await cache.delete(r);

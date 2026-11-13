@@ -1,4 +1,5 @@
 import { BackToTop } from "@/components/BackToTop";
+import { LegacyAiCleanup } from "@/components/LegacyAiCleanup";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Nav } from "@/components/Nav";
@@ -37,6 +38,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </div>
       </QuickLogProvider>
       <BackToTop />
+      <LegacyAiCleanup />
       </OfflineSync>
     </ToastProvider>
   );
