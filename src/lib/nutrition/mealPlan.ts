@@ -2,6 +2,7 @@
 // Pure and deterministic for a given seed, so a stored plan renders the same everywhere.
 // - Each day lands within ±10% of the calorie target (portion sizes and up to 3 snacks).
 // - Respects diet type and allergies; a meal is used at most twice a week when possible.
+// - With `proteinFocus` (the fat-loss goal), meals with more protein per calorie are preferred.
 import library from "@/data/meals.json";
 import { addDays, type DateStr } from "../dates";
 import type { Allergen, DietType } from "./calculations";
@@ -24,7 +25,7 @@ export type Macros = { kcal: number; proteinG: number; carbsG: number; fatG: num
 export type PlanItem = Macros & { mealId: string; slot: MealSlot; portion: number };
 export type DayPlan = { date: DateStr; targetCalories: number; items: PlanItem[]; totals: Macros; withinTarget: boolean };
 export type WeekPlan = { startDate: DateStr; seed: string; days: DayPlan[]; warnings: string[] };
-export type PlanPreferences = { diet: DietType; allergies: Allergen[] };
+export type PlanPreferences = { diet: DietType; allergies: Allergen[]; /** prefer protein-dense meals (fat-loss goal) */ proteinFocus?: boolean };
 /** What gets stored (encrypted): meal ids and portions only. Nutrition is recomputed from the library on read. */
 export type StoredPlan = { startDate: DateStr; seed: string; target: number; swaps: number; days: { date: DateStr; items: { mealId: string; portion: number }[] }[] };
 
@@ -61,14 +62,18 @@ function summarize(date: DateStr, target: number, items: PlanItem[]): DayPlan {
 
 const bestPortion = (m: LibraryMeal, kcal: number) => PORTIONS.reduce((b, p) => (Math.abs(m.kcal * p - kcal) < Math.abs(m.kcal * b - kcal) ? p : b), 1 as number);
 
-function pick(candidates: LibraryMeal[], kcal: number, usage: Map<string, number>, rng: () => number): { meal: LibraryMeal; portion: number } | null {
+/** Share of a meal's calories that come from protein. */
+const proteinShare = (m: LibraryMeal) => (m.kcal > 0 ? (m.proteinG * 4) / m.kcal : 0);
+const PROTEIN_SHARE_AIM = 0.3;
+
+function pick(candidates: LibraryMeal[], kcal: number, usage: Map<string, number>, rng: () => number, proteinFocus = false): { meal: LibraryMeal; portion: number } | null {
   let pool = candidates.filter((m) => (usage.get(m.id) ?? 0) < MAX_USES_PER_WEEK);
   if (!pool.length) pool = candidates; // very restrictive preferences: allow a repeat rather than an empty slot
   if (!pool.length) return null;
   const ranked = pool
     .map((meal) => {
       const portion = bestPortion(meal, kcal);
-      return { meal, portion, score: Math.abs(meal.kcal * portion - kcal) / kcal + (usage.get(meal.id) ?? 0) * 0.05 };
+      return { meal, portion, score: Math.abs(meal.kcal * portion - kcal) / kcal + (usage.get(meal.id) ?? 0) * 0.05 + (proteinFocus ? Math.max(0, PROTEIN_SHARE_AIM - proteinShare(meal)) : 0) };
     })
     .sort((a, b) => a.score - b.score || a.meal.id.localeCompare(b.meal.id));
   const top = ranked.slice(0, Math.min(3, ranked.length)); // choose among the closest few for variety
@@ -96,16 +101,16 @@ function fineTune(items: PlanItem[], target: number) {
   }
 }
 
-function buildDay(date: DateStr, target: number, eligible: LibraryMeal[], usage: Map<string, number>, rng: () => number): DayPlan {
+function buildDay(date: DateStr, target: number, eligible: LibraryMeal[], usage: Map<string, number>, rng: () => number, proteinFocus = false): DayPlan {
   const items: PlanItem[] = [];
   const add = (p: { meal: LibraryMeal; portion: number }) => { items.push(toItem(p.meal, p.portion)); usage.set(p.meal.id, (usage.get(p.meal.id) ?? 0) + 1); };
   for (const { slot, share } of MAIN_SLOTS) {
-    const p = pick(eligible.filter((m) => m.slot === slot), target * share, usage, rng);
+    const p = pick(eligible.filter((m) => m.slot === slot), target * share, usage, rng, proteinFocus);
     if (p) add(p);
   }
   const snacks = eligible.filter((m) => m.slot === "snack");
   for (let n = 0; n < MAX_SNACKS && target - sumKcal(items) > target * 0.05; n++) {
-    const p = pick(snacks, target - sumKcal(items), usage, rng);
+    const p = pick(snacks, target - sumKcal(items), usage, rng, proteinFocus);
     if (!p) break;
     add(p);
   }
@@ -119,7 +124,7 @@ export function generateWeekPlan({ calories, startDate, prefs, seed, lib = MEALS
   const usage = new Map<string, number>();
   const days = Array.from({ length: 7 }, (_, i) => {
     const date = addDays(startDate, i);
-    return buildDay(date, calories, eligible, usage, createRng(`${seed}|${date}`));
+    return buildDay(date, calories, eligible, usage, createRng(`${seed}|${date}`), prefs.proteinFocus);
   });
   return { startDate, seed, days, warnings: planWarnings(days, eligible) };
 }
@@ -144,7 +149,7 @@ export function swapMeal(week: WeekPlan, dayIndex: number, itemIndex: number, pr
   week.days.forEach((d, di) => d.items.forEach((it, ii) => { if (di !== dayIndex || ii !== itemIndex) usage.set(it.mealId, (usage.get(it.mealId) ?? 0) + 1); }));
   const sameDay = new Set(day.items.map((i) => i.mealId));
   const candidates = eligibleMeals(prefs).filter((m) => m.slot === current.slot && !sameDay.has(m.id));
-  const p = pick(candidates, current.kcal, usage, createRng(`${week.seed}|swap|${day.date}|${itemIndex}|${attempt}`));
+  const p = pick(candidates, current.kcal, usage, createRng(`${week.seed}|swap|${day.date}|${itemIndex}|${attempt}`), prefs.proteinFocus);
   if (!p) return null;
   const items = day.items.map((it, i) => (i === itemIndex ? toItem(p.meal, p.portion) : it));
   fineTuneOthers(items, itemIndex, day.targetCalories);
