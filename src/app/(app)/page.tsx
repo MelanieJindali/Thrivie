@@ -62,13 +62,47 @@ export default async function TodayPage() {
 
   return (
     <div className="space-y-6">
-      {/* Order: brief, highlights, goals, quick actions, habit progress, then everything else. */}
+      {/* Order: brief, today so far, highlights, goals, quick actions, habit progress, then today's habits and the meal plan. */}
       <header className="pt-1">
         <p className="eyebrow">{formatDate(today, { weekday: "long", month: "long", day: "numeric" })}</p>
         <h1 className="h1 mt-2">{greeting(settings.name, settings.timezone)}<span className="text-gold-bright">.</span></h1>
       </header>
 
       <DailyBrief brief={brief.brief} numbers={brief.numbers} hasData={hasAnyData} />
+
+      <section className="card space-y-4" aria-labelledby="sofar-h">
+        <h2 id="sofar-h" className="h2 flex items-center gap-2.5">
+          <span className="grid h-8 w-8 place-items-center rounded-xl bg-gold-soft text-gold-ink" aria-hidden><Sun size={16} /></span>
+          Today so far
+        </h2>
+        {vis.includes("health") &&
+          (todayLog ? (
+            <dl className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,6rem),1fr))] gap-2.5 text-center">
+              <Stat tone="bg-ocean-soft" label="Sleep" value={todayLog.sleepHours != null ? `${todayLog.sleepHours}h` : "—"} />
+              <Stat tone="bg-iris-soft" label="Mood" value={todayLog.mood ? MOOD_EMOJI[todayLog.mood - 1] : "—"} />
+              <Stat tone="bg-gold-soft" label="Energy" value={todayLog.energy ? ENERGY_EMOJI[todayLog.energy - 1] : "—"} />
+              <Stat tone="bg-sage-soft" label="Steps" value={todayLog.steps != null ? todayLog.steps.toLocaleString("en-US") : "—"} />
+              <Stat tone="bg-seaglass-soft" label="Water" value={todayLog.waterMl != null ? `${mlToDisplay(todayLog.waterMl, u)} ${waterUnit(u)}` : "—"} />
+              <Stat tone="bg-clay-soft" label="Weight" value={todayLog.weightKg != null ? `${kgToDisplay(todayLog.weightKg, u)} ${weightUnit(u)}` : "—"} />
+            </dl>
+          ) : (
+            <Link href="/health#log" className="flex min-h-14 items-center justify-between rounded-2xl bg-surface-2/60 px-4 text-sm">
+              <span>No check-in yet today. It takes a few seconds.</span>
+              <ChevronRight size={16} aria-hidden />
+            </Link>
+          ))}
+        {vis.includes("nutrition") && (
+          <Link href="/nutrition" className="flex min-h-12 items-center justify-between gap-3 rounded-2xl bg-clay-soft px-4 py-2.5 text-sm">
+            <span><span aria-hidden>🍽️ </span>{food.meals ? [`${food.meals} ${food.meals === 1 ? "meal" : "meals"}`, macroLine({ calories: food.calories, proteinG: food.proteinG })].filter(Boolean).join(" · ") : "No meals logged yet today."}</span>
+            <ChevronRight size={16} aria-hidden />
+          </Link>
+        )}
+        {vis.includes("workouts") && (
+          todaysWorkouts.length ? (
+            <ul className="space-y-2">{todaysWorkouts.map((w) => <li key={w.id} className="rounded-2xl bg-ocean-soft px-4 py-2.5 text-sm font-semibold">{describeWorkout(w, u)}</li>)}</ul>
+          ) : <p className="text-sm text-muted">No workout today. Rest days count too.</p>
+        )}
+      </section>
 
       {brief.insights.length > 0 && (
         <section className="card" aria-labelledby="hl-h">
@@ -146,54 +180,18 @@ export default async function TodayPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {vis.includes("habits") && (
-          <section className="card" aria-labelledby="habits-h">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <h2 id="habits-h" className="h2 flex items-center gap-2.5">
-                <span className="grid h-8 w-8 place-items-center rounded-xl bg-sage-soft text-sage-ink" aria-hidden><CircleCheck size={16} /></span>
-                Today&apos;s habits
-              </h2>
-              <Link href="/habits" className="inline-flex min-h-10 items-center text-xs font-bold text-primary">All habits <ChevronRight size={14} aria-hidden /></Link>
-            </div>
-            <HabitDayLogger habits={habits} today={today} />
-          </section>
-        )}
-
-        <section className="card space-y-4" aria-labelledby="sofar-h">
-          <h2 id="sofar-h" className="h2 flex items-center gap-2.5">
-            <span className="grid h-8 w-8 place-items-center rounded-xl bg-gold-soft text-gold-ink" aria-hidden><Sun size={16} /></span>
-            Today so far
-          </h2>
-          {vis.includes("health") &&
-            (todayLog ? (
-              <dl className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,6rem),1fr))] gap-2.5 text-center">
-                <Stat tone="bg-ocean-soft" label="Sleep" value={todayLog.sleepHours != null ? `${todayLog.sleepHours}h` : "—"} />
-                <Stat tone="bg-iris-soft" label="Mood" value={todayLog.mood ? MOOD_EMOJI[todayLog.mood - 1] : "—"} />
-                <Stat tone="bg-gold-soft" label="Energy" value={todayLog.energy ? ENERGY_EMOJI[todayLog.energy - 1] : "—"} />
-                <Stat tone="bg-sage-soft" label="Steps" value={todayLog.steps != null ? todayLog.steps.toLocaleString("en-US") : "—"} />
-                <Stat tone="bg-seaglass-soft" label="Water" value={todayLog.waterMl != null ? `${mlToDisplay(todayLog.waterMl, u)} ${waterUnit(u)}` : "—"} />
-                <Stat tone="bg-clay-soft" label="Weight" value={todayLog.weightKg != null ? `${kgToDisplay(todayLog.weightKg, u)} ${weightUnit(u)}` : "—"} />
-              </dl>
-            ) : (
-              <Link href="/health#log" className="flex min-h-14 items-center justify-between rounded-2xl bg-surface-2/60 px-4 text-sm">
-                <span>No check-in yet today. It takes a few seconds.</span>
-                <ChevronRight size={16} aria-hidden />
-              </Link>
-            ))}
-          {vis.includes("nutrition") && (
-            <Link href="/nutrition" className="flex min-h-12 items-center justify-between gap-3 rounded-2xl bg-clay-soft px-4 py-2.5 text-sm">
-              <span><span aria-hidden>🍽️ </span>{food.meals ? [`${food.meals} ${food.meals === 1 ? "meal" : "meals"}`, macroLine({ calories: food.calories, proteinG: food.proteinG })].filter(Boolean).join(" · ") : "No meals logged yet today."}</span>
-              <ChevronRight size={16} aria-hidden />
-            </Link>
-          )}
-          {vis.includes("workouts") && (
-            todaysWorkouts.length ? (
-              <ul className="space-y-2">{todaysWorkouts.map((w) => <li key={w.id} className="rounded-2xl bg-ocean-soft px-4 py-2.5 text-sm font-semibold">{describeWorkout(w, u)}</li>)}</ul>
-            ) : <p className="text-sm text-muted">No workout today. Rest days count too.</p>
-          )}
+      {vis.includes("habits") && (
+        <section className="card" aria-labelledby="habits-h">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <h2 id="habits-h" className="h2 flex items-center gap-2.5">
+              <span className="grid h-8 w-8 place-items-center rounded-xl bg-sage-soft text-sage-ink" aria-hidden><CircleCheck size={16} /></span>
+              Today&apos;s habits
+            </h2>
+            <Link href="/habits" className="inline-flex min-h-10 items-center text-xs font-bold text-primary">All habits <ChevronRight size={14} aria-hidden /></Link>
+          </div>
+          <HabitDayLogger habits={habits} today={today} />
         </section>
-      </div>
+      )}
 
       {plan?.state === "ready" && <MealPlanCard plan={planCard(plan, settings.hideCalories, await loggedFromPlan(db, plan, today))} compact />}
     </div>

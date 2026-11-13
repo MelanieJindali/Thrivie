@@ -1,11 +1,11 @@
-/* Today page section order: brief, highlights, goals, quick actions, habit progress, then the rest.
+/* Today page section order: brief, today so far, highlights, goals, quick actions, habit progress, today's habits, meal plan.
  *   DEMO_PASSWORD=… node e2e/todayorder.cjs [screenshot-dir]    (app running on BASE_URL, seeded demo account)
  */
 if (!process.env.DEMO_PASSWORD) { console.error("Set DEMO_PASSWORD to run this."); process.exit(1); }
 const { chromium, devices } = require("playwright");
 const BASE = process.env.BASE_URL || "http://localhost:3000";
 const shots = process.argv[2];
-const ORDER = [["Daily brief", "#brief-title"], ["Highlights", "#hl-h"], ["Goals", "#goals-h"], ["Quick actions", 'nav[aria-label="Quick log"]'], ["Habit progress", "#today-progress"], ["Today's habits", "#habits-h"], ["Today so far", "#sofar-h"]];
+const ORDER = [["Daily brief", "#brief-title"], ["Today so far", "#sofar-h"], ["Highlights", "#hl-h"], ["Goals", "#goals-h"], ["Quick actions", 'nav[aria-label="Quick log"]'], ["Habit progress", "#today-progress"], ["Today's habits", "#habits-h"], ["Meal plan", "text=Today's meal plan"]];
 let failed = 0;
 (async () => {
   const browser = await chromium.launch();
@@ -18,8 +18,7 @@ let failed = 0;
     const tops = [];
     for (const [name, sel] of ORDER) { const b = await p.locator(sel).first().boundingBox(); tops.push([name, b ? Math.round(b.y + (await p.evaluate(() => scrollY))) : null]); }
     const present = tops.filter(([, y]) => y != null);
-    // On a wide screen "Today's habits" and "Today so far" sit side by side, so equal tops are fine there.
-    const ok = present.length >= 6 && present.every(([, y], i) => i === 0 || y >= present[i - 1][1] - 12) && present.slice(0, 5).every(([, y], i, a) => i === 0 || y > a[i - 1][1]);
+    const ok = present.length >= 7 && present.every(([, y], i) => i === 0 || y > present[i - 1][1]);
     console.log(`${ok ? "  ok " : "  FAIL"} ${label}: ${present.map(([n, y]) => `${n} ${y}`).join(" → ")}`);
     if (!ok) failed++;
     const over = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
