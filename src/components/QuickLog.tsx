@@ -53,7 +53,7 @@ export function QuickLogProvider({ children }: { children: React.ReactNode }) {
         <Plus size={22} strokeWidth={2.2} aria-hidden />
       </button>
       <Sheet open={open} onClose={close} title="Quick log">
-        <ul className="space-y-2">
+        <ul className="t-stagger space-y-2">
           {kinds.map((k) => (
             <li key={k.kind}>
               <Row k={k} open={expanded === k.kind} onToggle={() => setExpanded((e) => (e === k.kind ? null : k.kind))} onNavigate={close}>
@@ -89,7 +89,7 @@ function Row({ k, open, onToggle, onNavigate, children }: { k: (typeof KINDS)[nu
         <ChevronDown size={18} className={`shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
       </button>
       {open && (
-        <div id={id} className="space-y-3 border-t border-border px-3 pt-3 pb-3">
+        <div id={id} className="t-acc space-y-3 border-t border-border px-3 pt-3 pb-3">
           {children}
           <Link href={k.href} onClick={onNavigate} className="inline-flex min-h-12 items-center gap-1 text-xs font-bold text-primary">Open the full {k.label.toLowerCase()} page <ArrowUpRight size={14} aria-hidden /></Link>
         </div>
@@ -117,7 +117,7 @@ function useSave(onSaved: () => void) {
   }
   return { pending, error, setError, save };
 }
-const Err = ({ error }: { error: string | null }) => (error ? <p className="text-sm text-terracotta-ink" role="alert">{error}</p> : null);
+const Err = ({ error }: { error: string | null }) => (error ? <p className="t-shake text-sm text-terracotta-ink" role="alert">{error}</p> : null);
 
 function CheckinMini({ data, onSaved }: MiniProps) {
   const run = useOfflineAction();
