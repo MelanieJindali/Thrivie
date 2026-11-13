@@ -41,6 +41,7 @@ async function load(m: LoadMsg) {
   try {
     generator = await open(m.device, m.dtype);
     post({ type: "ready", device: m.device, dtype: m.dtype });
+    return;
   } catch (first) {
     if (m.device !== "webgpu") throw first;
     // The GPU path can fail on older drivers; the CPU path works everywhere WebAssembly does.

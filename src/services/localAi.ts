@@ -136,6 +136,7 @@ function startWorker(plan: Plan): Worker {
     else if (m.type === "done" && m.id != null) { const j = jobs.get(m.id); jobs.delete(m.id); j?.resolve(m.text ?? j.full); }
     else if (m.type === "error") {
       const err = new Error(m.message ?? "on-device AI failed");
+      console.warn(`[on-device AI] ${m.stage} failed: ${err.message}`); // the error only, never the text being processed
       if (m.stage === "load") { failAll(err); markUnsupported(); }
       else if (m.id != null) { const j = jobs.get(m.id); jobs.delete(m.id); j?.reject(err); }
     }
@@ -208,7 +209,7 @@ export async function generate(o: GenerateOptions): Promise<string> {
   const id = ++jobSeq;
   const maxTokens = Math.min(o.maxTokens ?? plan.model!.maxTokens, plan.model!.maxTokens);
   return new Promise<string>((resolve, reject) => {
-    const timer = setTimeout(() => { jobs.delete(id); worker?.postMessage({ type: "stop" }); reject(new Error("timeout")); }, GENERATE_TIMEOUT_MS);
+    const timer = setTimeout(() => { jobs.delete(id); worker?.postMessage({ type: "stop" }); console.warn("[on-device AI] generation timed out"); reject(new Error("timeout")); }, GENERATE_TIMEOUT_MS);
     const finish = <T,>(fn: (v: T) => void) => (v: T) => { clearTimeout(timer); fn(v); };
     jobs.set(id, { resolve: finish(resolve), reject: finish(reject), onToken: o.onToken, full: "" });
     worker!.postMessage({ type: "generate", id, messages: [{ role: "system", content: o.system }, { role: "user", content: o.prompt }], maxTokens, temperature: o.temperature ?? 0.3 });

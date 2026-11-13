@@ -48,7 +48,7 @@ export function BriefText({ brief, enabled }: { brief: string; enabled: boolean 
         try { sessionStorage.setItem(KEY, JSON.stringify({ brief, text: good } satisfies Saved)); } catch { /* storage blocked */ }
       } else setNote("The rewrite changed some details, so your original stays. Tap to try again.");
     } catch {
-      setNote(null); // the status line below says why
+      setNote("Couldn't rewrite on this device right now, so your original stays.");
     }
     setLive(null);
     setBusy(false);
