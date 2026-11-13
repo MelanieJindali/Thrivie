@@ -60,7 +60,7 @@ export function PasskeySignIn({ next }: { next?: string }) {
   if (!supported) return null;
   return (
     <div className="space-y-2">
-      <button type="button" className="btn-primary w-full" disabled={busy} onClick={() => signIn(false)}>
+      <button type="button" className="btn-primary w-full" disabled={busy} aria-busy={busy} onClick={() => signIn(false)}>
         <Fingerprint size={18} aria-hidden /> {busy ? "Signing in…" : "Sign in with Face ID, Touch ID or passkey"}
       </button>
       {error && <p className="rounded-2xl bg-terracotta-soft px-4 py-2.5 text-sm text-terracotta-ink" role="alert">{error}</p>}

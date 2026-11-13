@@ -111,7 +111,7 @@ export function TargetsForm({ calorieTarget, proteinTargetG }: { calorieTarget: 
         </Field>
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <button className="btn-outline" disabled={pending}>{pending ? "Saving…" : "Save targets"}</button>
+        <button className="btn-outline" disabled={pending} aria-busy={pending}>{pending ? "Saving…" : "Save targets"}</button>
         <FormStatus error={error} message={message} />
       </div>
     </form>

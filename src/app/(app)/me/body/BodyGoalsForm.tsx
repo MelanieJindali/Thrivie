@@ -194,9 +194,9 @@ export function BodyGoalsForm({ initial, units, prefillWeightKg, hideCalories: h
       </section>
 
       <div className="flex flex-wrap items-center gap-3">
-        <button className="btn-primary" disabled={pending}>{pending ? "Saving…" : "Save profile"}</button>
+        <button className="btn-primary" disabled={pending} aria-busy={pending}>{pending ? "Saving…" : "Save profile"}</button>
         {initial && (
-          <button type="button" className="btn-ghost" disabled={pending} onClick={() => run(() => clearBodyProfile(), { success: "Profile removed." })}>Remove my profile</button>
+          <button type="button" className="btn-ghost" disabled={pending} aria-busy={pending} onClick={() => run(() => clearBodyProfile(), { success: "Profile removed." })}>Remove my profile</button>
         )}
         <FormStatus error={error} message={message} />
       </div>

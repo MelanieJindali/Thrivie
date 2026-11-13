@@ -48,7 +48,7 @@ export function SettingsForm({ initial }: { initial: S }) {
         <p className="mt-1 text-xs text-muted">Hidden modules keep their data; they just disappear from navigation and the dashboard.</p>
       </div>
       <div className="flex items-center gap-3">
-        <button className="btn-primary" disabled={pending}>Save settings</button>
+        <button className="btn-primary" disabled={pending} aria-busy={pending}>Save settings</button>
         <FormStatus error={error} message={message} />
       </div>
     </form>
@@ -113,7 +113,7 @@ export function BackupRestore() {
     <div className="space-y-2">
       <span className="label">Restore from backup</span>
       <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
-      <button className="btn-soft" disabled={busy} onClick={() => fileRef.current?.click()}>{busy ? "Restoring…" : "Import JSON backup…"}</button>
+      <button className="btn-soft" disabled={busy} aria-busy={busy} onClick={() => fileRef.current?.click()}>{busy ? "Restoring…" : "Import JSON backup…"}</button>
       <FormStatus error={status.error ?? null} message={status.message ?? null} />
     </div>
   );
@@ -128,7 +128,7 @@ export function DangerZone() {
       <p className="text-sm text-muted">Permanently removes every log, workout, habit, goal and journal entry. Export a backup first if you might want it back. Your settings are kept.</p>
       <div className="flex flex-wrap gap-2">
         <input className="input w-40" placeholder='Type "DELETE"' value={confirmText} onChange={(e) => setConfirmText(e.target.value)} aria-label="Type DELETE to confirm" />
-        <button className="btn-danger" disabled={pending || confirmText !== "DELETE"} onClick={() => run(() => deleteAllData(confirmText), { success: "All data deleted.", onOk: () => setConfirmText("") })}>
+        <button className="btn-danger" disabled={pending || confirmText !== "DELETE"} aria-busy={pending} onClick={() => run(() => deleteAllData(confirmText), { success: "All data deleted.", onOk: () => setConfirmText("") })}>
           Delete everything
         </button>
       </div>

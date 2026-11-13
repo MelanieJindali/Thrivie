@@ -61,13 +61,13 @@ export function TwoFactorCard({ enabled }: { enabled: boolean }) {
           <p className="text-xs text-muted">Can&apos;t scan? Enter this key: <code className="break-all">{setup.secret}</code></p>
           <div className="flex flex-wrap gap-2">
             <input className="input max-w-40 text-center tracking-[0.3em]" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} aria-label="6-digit code" />
-            <button className="btn-primary" disabled={busy || code.length !== 6} onClick={confirm}>Turn on</button>
+            <button className="btn-primary" disabled={busy || code.length !== 6} aria-busy={busy} onClick={confirm}>Turn on</button>
           </div>
         </div>
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-muted">Add a code from your phone when you sign in, for extra protection.</p>
-          <button className="btn-soft" disabled={busy} onClick={start}>Set up</button>
+          <button className="btn-soft" disabled={busy} aria-busy={busy} onClick={start}>Set up</button>
         </div>
       )}
       {error && <p className="text-sm text-terracotta-ink" role="alert">{error}</p>}

@@ -146,7 +146,7 @@ function CheckinMini({ data, onSaved }: MiniProps) {
         <label className="block min-w-0"><span className="label">Water ({waterUnit(data.units)})</span><input className="input" inputMode="decimal" value={water} onChange={(e) => setWater(e.target.value)} /></label>
       </div>
       <Err error={error} />
-      <button className="btn-primary w-full" disabled={pending}>{pending ? "Saving…" : "Save check-in"}</button>
+      <button className="btn-primary w-full" disabled={pending} aria-busy={pending}>{pending ? "Saving…" : "Save check-in"}</button>
       <p className="text-xs text-muted">Adds to today&apos;s check-in. Anything you logged earlier today stays.</p>
     </form>
   );
@@ -172,7 +172,7 @@ function WorkoutMini({ data, onSaved }: MiniProps) {
       </fieldset>
       <label className="block max-w-40"><span className="label">Minutes</span><input className="input" inputMode="numeric" value={minutes} onChange={(e) => setMinutes(e.target.value)} /></label>
       <Err error={error} />
-      <button className="btn-primary w-full" disabled={pending}>{pending ? "Saving…" : "Save workout"}</button>
+      <button className="btn-primary w-full" disabled={pending} aria-busy={pending}>{pending ? "Saving…" : "Save workout"}</button>
     </form>
   );
 }
@@ -203,7 +203,7 @@ function MealMini({ data, onSaved, onNavigate }: MiniProps & { onNavigate: () =>
       </div>
       <Err error={error} />
       <div className="flex flex-wrap gap-2">
-        <button className="btn-primary flex-1 basis-36" disabled={pending}>{pending ? "Saving…" : "Save meal"}</button>
+        <button className="btn-primary flex-1 basis-36" disabled={pending} aria-busy={pending}>{pending ? "Saving…" : "Save meal"}</button>
         <Link href="/nutrition/scan" onClick={onNavigate} className="btn-soft"><ScanBarcode size={16} aria-hidden /> Scan instead</Link>
       </div>
     </form>
@@ -222,7 +222,7 @@ function JournalMini({ data, onSaved }: MiniProps) {
     }}>
       <label className="block"><span className="label">A few lines about today</span><textarea className="input min-h-28" value={text} onChange={(e) => setText(e.target.value)} maxLength={20000} /></label>
       <Err error={error} />
-      <button className="btn-primary w-full" disabled={pending}>{pending ? "Saving…" : "Save entry"}</button>
+      <button className="btn-primary w-full" disabled={pending} aria-busy={pending}>{pending ? "Saving…" : "Save entry"}</button>
     </form>
   );
 }
@@ -248,7 +248,7 @@ function GoalMini({ data, onSaved }: MiniProps) {
         <label className="block min-w-0"><span className="label">Add{goal?.unit ? ` (${goal.unit})` : ""}</span><input className="input" inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} /></label>
       </div>
       <Err error={error} />
-      <button className="btn-primary w-full" disabled={pending}>{pending ? "Saving…" : "Add progress"}</button>
+      <button className="btn-primary w-full" disabled={pending} aria-busy={pending}>{pending ? "Saving…" : "Add progress"}</button>
     </form>
   );
 }

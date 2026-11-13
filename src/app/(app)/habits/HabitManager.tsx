@@ -37,7 +37,7 @@ function HabitForm({ initial, onDone }: { initial?: H; onDone?: () => void }) {
       </div>
       <FrequencyPicker key={`${initial?.id ?? "new"}-${round}`} value={start} onChange={setSchedule} />
       <div className="flex flex-wrap items-center gap-3">
-        <button className="btn-primary" disabled={pending || !name.trim() || !schedule}>{initial ? "Save" : "Add habit"}</button>
+        <button className="btn-primary" disabled={pending || !name.trim() || !schedule} aria-busy={pending}>{initial ? "Save" : "Add habit"}</button>
         {initial && <button type="button" className="btn-ghost" onClick={onDone}>Cancel</button>}
         <FormStatus error={error} message={message} />
       </div>

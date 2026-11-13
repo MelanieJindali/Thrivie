@@ -158,7 +158,7 @@ export function HealthForm({
       )}
 
       <div className="flex items-center gap-3">
-        <button className="btn-primary" disabled={pending}>{pending ? "Saving…" : existing ? "Update" : "Save"}</button>
+        <button className="btn-primary" disabled={pending} aria-busy={pending}>{pending ? "Saving…" : existing ? "Update" : "Save"}</button>
         <FormStatus error={error} message={message} />
       </div>
     </form>

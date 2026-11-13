@@ -70,12 +70,12 @@ export function MealPlanDay({ day, dayIndex, hideCalories, compact = false, titl
                 {isLogged ? (
                   <span className="inline-flex min-h-11 items-center gap-1 px-2 text-xs font-bold text-sage-ink"><Check size={14} aria-hidden /> Logged</span>
                 ) : (
-                  <button type="button" className="btn-soft min-h-11 px-3 text-xs" disabled={pending} onClick={() => log(i, meal.name)} aria-label={`Log it: ${SLOT_LABEL[it.slot].toLowerCase()}, ${meal.name}`}>
+                  <button type="button" className="btn-soft min-h-11 px-3 text-xs" disabled={pending} aria-busy={pending} onClick={() => log(i, meal.name)} aria-label={`Log it: ${SLOT_LABEL[it.slot].toLowerCase()}, ${meal.name}`}>
                     <Plus size={14} className={logging === i ? "animate-pulse" : ""} aria-hidden /> Log it
                   </button>
                 )}
                 {!isLogged && (
-                  <button type="button" className="btn-ghost min-h-11 px-3 text-xs" disabled={pending} onClick={() => swap(i)} aria-label={`Swap ${SLOT_LABEL[it.slot].toLowerCase()}: ${meal.name}`}>
+                  <button type="button" className="btn-ghost min-h-11 px-3 text-xs" disabled={pending} aria-busy={pending} onClick={() => swap(i)} aria-label={`Swap ${SLOT_LABEL[it.slot].toLowerCase()}: ${meal.name}`}>
                     <RefreshCw size={14} className={busy === i ? "animate-spin" : ""} aria-hidden /> Swap
                   </button>
                 )}
@@ -126,7 +126,7 @@ export function MealPlanCard({ plan, compact = false }: { plan: PlanCardState; c
 export function NewPlanButton() {
   const [pending, start] = useTransition();
   return (
-    <button type="button" className="btn-soft" disabled={pending} onClick={() => start(async () => { await newMealPlan(); })}>
+    <button type="button" className="btn-soft" disabled={pending} aria-busy={pending} onClick={() => start(async () => { await newMealPlan(); })}>
       <RefreshCw size={15} className={pending ? "animate-spin" : ""} aria-hidden /> New plan for this week
     </button>
   );

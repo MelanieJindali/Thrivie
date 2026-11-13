@@ -12,7 +12,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
   if (await getCurrentUser()) redirect("/");
   return (
     <main className="brand-bg flex min-h-dvh flex-col items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md">
+      <div className="t-page w-full max-w-md">
         <h1 className="mb-4 flex justify-center">
           <Logo variant="lockup" tone="light" size="2xl" />
         </h1>

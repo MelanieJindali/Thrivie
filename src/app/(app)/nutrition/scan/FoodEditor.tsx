@@ -115,7 +115,7 @@ export function FoodEditor({ draft, title, intro, onSaved, onCancel }: { draft: 
 
       {error && <p className="rounded-2xl bg-terracotta-soft px-4 py-2.5 text-sm text-terracotta-ink" role="alert">{error}</p>}
       <div className="flex flex-wrap gap-2">
-        <button className="btn-primary" disabled={pending}>{pending ? "Saving…" : "Save food"}</button>
+        <button className="btn-primary" disabled={pending} aria-busy={pending}>{pending ? "Saving…" : "Save food"}</button>
         <button type="button" className="btn-ghost" onClick={onCancel}>Cancel</button>
       </div>
       <p className="text-xs text-muted">Saved as your own food. Only you can see it.</p>
