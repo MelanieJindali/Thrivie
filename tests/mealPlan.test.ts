@@ -107,3 +107,26 @@ describe("storage", () => {
     expect(formatPortion(0.75)).toBe("¾ serving");
   });
 });
+
+describe("fat loss plans (protein focus)", () => {
+  const avgProtein = (prefs: PlanPreferences) => { const w = plan(1900, prefs); return w.days.reduce((s, d) => s + d.totals.proteinG, 0) / 7; };
+  it("gives more protein than the same plan without it, and stays in the calorie range", () => {
+    for (const diet of DIETS) {
+      const prefs = { diet, allergies: [] as Allergen[] };
+      expect(avgProtein({ ...prefs, proteinFocus: true }), diet).toBeGreaterThanOrEqual(avgProtein(prefs));
+      for (const d of plan(1900, { ...prefs, proteinFocus: true }).days) expect(Math.abs(d.totals.kcal - 1900) / 1900, `${diet} ${d.date}`).toBeLessThanOrEqual(TOLERANCE);
+    }
+    expect(avgProtein({ diet: "none", allergies: [], proteinFocus: true })).toBeGreaterThan(avgProtein({ diet: "none", allergies: [] }));
+  });
+  it("still respects diet and allergies, including after a swap", () => {
+    const prefs: PlanPreferences = { diet: "vegetarian", allergies: ["nuts", "gluten"], proteinFocus: true };
+    const ok = new Set(eligibleMeals(prefs).map((m) => m.id));
+    const w = plan(1700, prefs);
+    for (const d of w.days) for (const it of d.items) expect(ok.has(it.mealId), it.mealId).toBe(true);
+    const s = swapMeal(w, 2, 1, prefs, 1)!;
+    expect(ok.has(s.days[2].items[1].mealId)).toBe(true);
+  });
+  it("leaves other goals' plans unchanged", () => {
+    expect(plan(2000, { diet: "none", allergies: [], proteinFocus: false })).toEqual(plan(2000, { diet: "none", allergies: [] }));
+  });
+});
