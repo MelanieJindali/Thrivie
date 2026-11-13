@@ -45,7 +45,7 @@ export const BRIEF_SYSTEM = "You are a supportive wellness assistant. Rewrite th
 export const BRIEF_EXAMPLES = [
   { input: "You slept 8 hours and did 2 workouts (20 minutes) yesterday.", output: "Nice work yesterday: 8 hours of sleep and 2 workouts (20 minutes)." },
   { input: "Your nighttime skincare streak (2 days) is waiting for today's check-in.", output: "Your nighttime skincare streak is at 2 days, and today's check-in keeps it going." },
-  { input: "1 of 2 goals are on track; “Run 50 miles” could use a little attention.", output: "1 of 2 goals is on track, and “Run 50 miles” would love a little attention." },
+  { input: "2 of 3 goals are on track; “Run 50 miles” could use a little attention.", output: "2 of 3 goals are on track, and “Run 50 miles” would love a little attention." },
   { input: "Make some room for rest this Thursday too.", output: "Save a little time for rest this Thursday, too." },
 ];
 export const BRIEF_SENTENCE_SYSTEM = `${BRIEF_SYSTEM} You will be given one sentence of the summary at a time: rewrite only that sentence, as one sentence, keeping its numbers and anything in quotation marks exactly.`;

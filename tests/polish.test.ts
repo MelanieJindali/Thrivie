@@ -112,3 +112,14 @@ describe("model choice", () => {
     expect(Math.max(MODELS.tiny.gpu.mb, MODELS.tiny.cpu.mb)).toBeLessThan(150);
   });
 });
+
+import { readsAsEntry } from "@/lib/import/enhanceCheck";
+
+describe("Enhance only keeps lines the reader understands", () => {
+  const ctx = { today: "2026-11-13", units: "imperial", habits: [], goals: [], aliases: [], personal: {} } as never;
+  it("accepts log lines and rejects paraphrases", () => {
+    expect(readsAsEntry("snack: apple (~95 cal)", ctx)).toBe(true);
+    expect(readsAsEntry("spin class 45 min", ctx)).toBe(true);
+    expect(readsAsEntry("spin class at the Y, runnable but not very fun", ctx)).toBe(false);
+  });
+});
