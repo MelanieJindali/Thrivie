@@ -5,7 +5,7 @@ import { Cpu } from "lucide-react";
 import { setOnDeviceAi } from "@/app/actions";
 import { useLocalAi } from "@/components/useLocalAi";
 import { acceptEnhance, ENHANCE_EXAMPLES, ENHANCE_SYSTEM } from "@/lib/import/polish";
-import type { ParseOutput } from "@/lib/import/parser";
+import type { ParseContext, ParseOutput } from "@/lib/import/parser";
 
 /**
  * Optional on-device AI for the parts of a note Thrivie couldn't read. Off by default; when on,
@@ -13,8 +13,8 @@ import type { ParseOutput } from "@/lib/import/parser";
  * replaces the original in the note, so the usual reader picks it up and you review it as usual.
  * Nothing is downloaded until it's turned on and Enhance is tapped.
  */
-export function OnDeviceEnhance({ enabled, parsed, onReplace }: {
-  enabled: boolean; parsed: ParseOutput | null; onReplace: (changes: { from: string; to: string }[]) => void;
+export function OnDeviceEnhance({ enabled, parsed, ctx, onReplace }: {
+  enabled: boolean; parsed: ParseOutput | null; ctx: ParseContext; onReplace: (changes: { from: string; to: string }[]) => void;
 }) {
   const [on, setOn] = useState(enabled);
   const ai = useLocalAi(on);
@@ -39,13 +39,14 @@ export function OnDeviceEnhance({ enabled, parsed, onReplace }: {
     setNote(null);
     const changes: { from: string; to: string }[] = [];
     try {
-      const { generate } = await import("@/services/localAi");
+      const [{ generate }, { readsAsEntry }] = await Promise.all([import("@/services/localAi"), import("@/lib/import/enhanceCheck")]);
       const list = uncertain.slice(0, 8);
       for (const [i, u] of list.entries()) {
         setLive({ index: i + 1, total: list.length, text: "" });
         const raw = await generate({ system: ENHANCE_SYSTEM, examples: ENHANCE_EXAMPLES, prompt: u.text.slice(0, 300), maxTokens: 60, temperature: 0, onToken: (_d, full) => setLive({ index: i + 1, total: list.length, text: full }) });
+        // Used only if Thrivie's own reader can read the new line; otherwise the original stays.
         const line = acceptEnhance(u.text, raw);
-        if (line) changes.push({ from: u.text, to: line });
+        if (line && readsAsEntry(line, ctx)) changes.push({ from: u.text, to: line });
       }
       if (changes.length) onReplace(changes);
       setNote(changes.length ? `Rewrote ${changes.length} part${changes.length === 1 ? "" : "s"} of your note. Check the entries below before saving.` : "Couldn't improve these parts, so your note stays as it was.");

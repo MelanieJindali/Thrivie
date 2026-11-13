@@ -274,7 +274,7 @@ export function ImportClient({ today, units, habits, goals, aliases, tipsSeen, o
             </div>
           )}
 
-          <OnDeviceEnhance enabled={onDeviceAi} parsed={parsed} onReplace={(changes) => onText(changes.reduce((t, c) => (t.includes(c.from) ? t.replace(c.from, c.to) : t), text))} />
+          <OnDeviceEnhance enabled={onDeviceAi} parsed={parsed} ctx={ctx} onReplace={(changes) => onText(changes.reduce((t, c) => (t.includes(c.from) ? t.replace(c.from, c.to) : t), text))} />
         </section>
       )}
 
