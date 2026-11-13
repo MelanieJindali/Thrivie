@@ -8,6 +8,7 @@ import Fuse from "fuse.js";
 import { addDays, isDateStr, resolveRelativeDate, type DateStr } from "../dates";
 import type { Units } from "../units";
 import type { ImportEntry } from "./schema";
+import { estimateFromFoods } from "../nutrition/foodEstimate";
 import { cleanText } from "./cleanText";
 
 export type AliasRule = { kind: "exercise" | "habit" | "workout" | "metric"; alias: string; target: string };
@@ -20,7 +21,7 @@ export type ParseContext = {
   /** Layer 2: the user's own recent values and names (no note text). */
   personal?: { recentWeightKg?: number | null; exerciseNames?: string[]; workoutTitles?: string[] };
 };
-/** `uncertain` lists snippets (with their date) that Tier 1 could not read confidently; only these go to the optional on-device AI. */
+/** `uncertain` lists snippets (with their date) that could not be read confidently. */
 export type ParseOutput = { entries: ImportEntry[]; unparsed: string[]; uncertain: { text: string; date: DateStr }[]; segments: number };
 
 // --------------------------------------------------------------- vocabulary --
@@ -46,7 +47,7 @@ const CARDIO: Record<string, string> = {
   hiked: "Hike", hike: "Hike", hiking: "Hike", biked: "Bike ride", bike: "Bike ride", cycled: "Bike ride", cycling: "Bike ride", rode: "Bike ride",
   swam: "Swim", swim: "Swim", swimming: "Swim", hiit: "HIIT", circuits: "Circuits", circuit: "Circuits", zumba: "Zumba", dance: "Dance", danced: "Dance", dancing: "Dance", stairmaster: "Stair climber", rowed: "Row", rowing: "Row", elliptical: "Elliptical", spin: "Spin class", spinning: "Spin class",
 };
-const MOBILITY: Record<string, string> = { yoga: "Yoga", pilates: "Pilates", stretching: "Stretching", stretched: "Stretching", mobility: "Mobility" };
+const MOBILITY: Record<string, string> = { yoga: "Yoga", pilates: "Pilates", stretching: "Stretching", stretched: "Stretching", stretch: "Stretching", stretches: "Stretching", mobility: "Mobility", foam: "Foam rolling", barre: "Barre" };
 const SPORT: Record<string, string> = { tennis: "Tennis", soccer: "Soccer", football: "Football", basketball: "Basketball", golf: "Golf", climbing: "Climbing", climbed: "Climbing", skiing: "Skiing", skied: "Skiing", snowboarding: "Snowboarding", surfing: "Surfing", surfed: "Surfing", kayaking: "Kayaking", kayaked: "Kayaking", pickleball: "Pickleball", volleyball: "Volleyball", boxing: "Boxing" };
 const STRENGTH_WORDS = /\b(gym|lifted|lifting|weights|strength|leg day|legs day|push day|pull day|upper body|lower body|full body|deadlifts?|squats?|bench(?:ed)?|crossfit)\b/i;
 const EXERCISE_NAMES: Record<string, string> = {
@@ -83,6 +84,25 @@ const NUM = "(\\d+(?:[.,]\\d+)?)";
 const MEAL_WORD = "(breakfast|brunch|lunch|dinner|supper|snacks?|dessert)";
 const MEAL_LINE = new RegExp(`^[ \\t>*•-]*${MEAL_WORD}\\s*[:\\-–—=]\\s*(.+)$`, "i");
 const MEAL_ATE = new RegExp(`\\b(?:had|ate|eaten)\\s+([^,;.!?\\n]+?)\\s+(?:for|at)\\s+${MEAL_WORD}\\b([^,;!?\\n]*)`, "gi");
+// Plain eating notes with no meal word: "ate an apple", "had coffee and a bagel", "munched on pad thai around noon".
+// "ate" and friends always mean food; "had", "grabbed" and "drank" count only when a known food follows.
+const EAT_STRONG = /^(?:ate|eaten|eating|munched on|snacked on|nibbled on|devoured)$/i;
+const MEAL_EAT = /(^|[,;.\n]\s*|\band\s+|\bthen\s+)(?:i\s+)?(ate|eaten|eating|munched on|snacked on|nibbled on|devoured|had|grabbed|drank)\s+([^,;.!?\n]{2,80})/gi;
+const EAT_WHEN = /\s+(?:(?:around|at|about|by|before|after)\s+|this\s+|in the\s+|for\s+)?(noon|midday|lunchtime|morning|afternoon|evening|tonight|night|\d{1,2}(?::\d{2})?\s*(?:am|pm))\b.*$/i;
+// Everyday foods and drinks, so "had coffee and a bagel" reads as a meal even without a calorie estimate.
+const FOOD_WORDS = /\b(coffee|latte|espresso|cappuccino|tea|matcha|juice|smoothie|shake|soda|beer|wine|bagel|muffin|croissant|donut|doughnut|pancakes?|waffles?|cereal|granola|sandwich|wrap|burrito|tacos?|pizza|burger|fries|sushi|ramen|pho|curry|soup|stew|chili|stir[- ]?fry|pad thai|noodles|dumplings|salad|bowl|toast|bacon|sausage|cheese|crackers|chips|popcorn|cookies?|cake|brownie|chocolate|candy|ice cream|fruit|grapes|mango|pear|peach|melon|protein bar|granola bar|leftovers?)\b/i;
+const NOT_FOOD = /^(?:well|too much|a lot|lots|out|healthy|clean|badly|bad|late|early|nothing|ok|okay|fine|light|less|more)\b/i;
+function slotForTime(when: string | undefined): Meal["slot"] | null {
+  if (!when) return null;
+  const w = when.toLowerCase();
+  if (/morning/.test(w)) return "breakfast";
+  if (/noon|midday|lunchtime|afternoon/.test(w)) return "lunch";
+  if (/evening|tonight|night/.test(w)) return "dinner";
+  const m = w.match(/^(\d{1,2})(?::\d{2})?\s*(am|pm)$/);
+  if (!m) return null;
+  const h = (Number(m[1]) % 12) + (m[2] === "pm" ? 12 : 0);
+  return h < 11 ? "breakfast" : h < 16 ? "lunch" : h < 22 ? "dinner" : "snack";
+}
 /** "turkey wrap 480 cal for lunch": no "ate", but the calories make it clearly food. */
 const MEAL_CAL_FOR = new RegExp(`(?<=^|[,;.\\n])\\s*([^,;.!?\\n]*?\\b\\d+\\s*(?:k?cals?|calories)\\b[^,;.!?\\n]*?)\\s+(?:for|at)\\s+${MEAL_WORD}\\b([^,;!?\\n]*)`, "gi");
 const MACROS: [keyof Pick<Meal, "calories" | "protein_g" | "carbs_g" | "fat_g">, RegExp[]][] = [
@@ -115,6 +135,7 @@ function resolveMarker(marker: string, today: DateStr): { date: DateStr | null; 
 export type Segment = { dateText: string | null; date: DateStr; body: string; dateConfidence: number };
 
 /** Split notes into day segments at date markers ("Mon -", "Tues:", "11/3", "yesterday,"). */
+const NOT_AFTER_DAY = new Set(["is", "was", "were", "will", "with", "down", "up", "on", "in", "at", "by", "out", "there", "here", "around", "and", "or", "for", "the", "a", "an", "back", "next", "to", "through", "still", "came", "came", "set", "rose", "shone", "felt"]);
 export function segmentByDay(input: string, today: DateStr): Segment[] {
   const text = input.replace(/\r\n?/g, "\n");
   const marks: { index: number; end: number; marker: string }[] = [];
@@ -124,7 +145,10 @@ export function segmentByDay(input: string, today: DateStr): Segment[] {
       if (re === LINE_MARKER && AMBIGUOUS_DAY.test(marker.trim())) {
         const after = text.slice(m.index! + m[0].length, m.index! + m[0].length + 2);
         const sep = /[:\-–—).,]/.test(m[0].slice(m[0].indexOf(marker) + marker.length)) || /^\s*($|\n|\d)/.test(after);
-        if (!sep && marker !== marker.toUpperCase()) continue; // "sun is out", "sat with friends"
+        // "Sat hike 2 hours" is a day; "Sun was out" and "sat with friends" are not.
+        const next = text.slice(m.index! + m[0].length).match(/^\s*([a-z']+)/i)?.[1]?.toLowerCase() ?? "";
+        const dayLike = /^[A-Z]/.test(marker.trim()) && !!next && !NOT_AFTER_DAY.has(next);
+        if (!sep && !dayLike && marker !== marker.toUpperCase()) continue;
       }
       const start = m.index! + m[0].indexOf(marker);
       if (!marks.some((x) => Math.abs(x.index - start) < 3)) marks.push({ index: start, end: m.index! + m[0].length, marker });
@@ -189,10 +213,13 @@ function wordScore(clause: string, table: [RegExp, number][]): number | null {
   return null;
 }
 
+// Past tenses that don't share a stem with the habit's name ("took supplements" -> Take supplements).
+const IRREGULAR: Record<string, string> = { took: "take", taken: "take", ate: "eat", drank: "drink", did: "do", done: "do", went: "go", wrote: "write", written: "write", slept: "sleep", made: "make", read: "read", woke: "wake", got: "get" };
+const WORKOUT_FEEL = /\b(fun|brutal|hard|tough|easy|light|gentle|chill|relaxing|great|good|nice|tiring|exhausting|sweaty|intense|rough|amazing|awesome|killer|loved it|hated it)\b/;
 const HABIT_STOP = new Set(["min", "mins", "minutes", "the", "a", "an", "my", "to", "of", "for", "daily"]);
 /** Matches a clause to one of the user's habits by word stem ("stretched" -> Stretch, "15 min meditation" -> Meditate). */
 function makeStemMatcher(habits: string[]) {
-  const sig = (s: string) => s.toLowerCase().split(/[^a-z']+/).filter((w) => w && !HABIT_STOP.has(w) && !/^\d/.test(w));
+  const sig = (s: string) => s.toLowerCase().split(/[^a-z']+/).filter((w) => w && !HABIT_STOP.has(w) && !/^\d/.test(w)).map((w) => IRREGULAR[w] ?? w);
   const list = habits.map((name) => ({ name, words: sig(name) })).filter((h) => h.words.length);
   const same = (hw: string, cw: string) => {
     if (hw.length <= 4) return cw === hw || cw === hw + "s" || cw === hw + "ing" || cw === hw + "ed";
@@ -272,7 +299,30 @@ export function parseSegments(segments: Segment[], ctx: ParseContext): SegmentRe
       entries.push(meal);
       return "";
     };
-    const body = withoutMealLines.replace(MEAL_ATE, readMeal).replace(MEAL_CAL_FOR, readMeal);
+    const readEating = (all: string, lead: string, verb: string, rest: string) => {
+      if (/\bwater\b/i.test(rest) || NOT_FOOD.test(rest.trim())) return all;
+      const when = rest.match(EAT_WHEN)?.[1];
+      const food = clean(rest.replace(EAT_WHEN, "").replace(/^(?:some|an?|the|my|leftover|a few|a couple of)\s+/i, "").replace(/^(?:some|leftover)\s+/i, ""));
+      const known = estimateFromFoods(food);
+      // Without a food Thrivie knows, only an unmistakable eating verb and a short phrase count.
+      if (!known && !FOOD_WORDS.test(food) && (!EAT_STRONG.test(verb) || food.split(" ").length > 6 || !/[a-z]{3}/i.test(food))) return all;
+      const slot = slotForTime(when);
+      const meal = parseMeal(slot ?? "snack", food, base, clean(all.slice(lead.length)), seg.dateConfidence);
+      if (!meal) return all;
+      meal.confidence = Math.min(meal.confidence, 0.65); // always shown for a look before saving
+      if (!slot) meal.field_confidence.slot = 0.5;
+      if (meal.calories == null && known) {
+        // An estimate from typical servings, marked so it's checked rather than trusted.
+        meal.calories = known.macros.calories;
+        meal.protein_g ??= known.macros.proteinG;
+        meal.carbs_g ??= known.macros.carbsG;
+        meal.fat_g ??= known.macros.fatG;
+        meal.field_confidence.calories = 0.5;
+      }
+      entries.push(meal);
+      return lead;
+    };
+    const body = withoutMealLines.replace(MEAL_ATE, readMeal).replace(MEAL_CAL_FOR, readMeal).replace(MEAL_EAT, readEating);
 
     for (const raw of splitClauses(body)) {
       let clause = raw;
@@ -389,6 +439,8 @@ export function parseSegments(segments: Segment[], ctx: ParseContext): SegmentRe
       if (fuzzy && (fuzzy.score ?? 1) < 0.22 && habitText.split(" ").length <= 4 && !isWorkoutish && !REFLECTIVE.test(lc)) {
         entries.push({ kind: "habit", ...base, source_text: raw, confidence: 0.6, field_confidence: { habit_name: 0.6 }, habit_name: cap(habitText), matched_habit: fuzzy.item.name, completed: true });
         used = true;
+        // The note is just the habit's name ("stretch"); a workout is added only when a duration was written.
+        if (!/\d/.test(lc)) continue;
       } else if (byStem) {
         entries.push({ kind: "habit", ...base, source_text: raw, confidence: 0.7, field_confidence: { habit_name: 0.7 }, habit_name: byStem, matched_habit: byStem, completed: true });
         used = true;
@@ -445,6 +497,10 @@ export function parseSegments(segments: Segment[], ctx: ParseContext): SegmentRe
         const durH = lc.match(new RegExp(`${NUM}\\s*(?:h|hr|hrs|hours?)\\b`));
         const hhmm = lc.match(/\b(\d{1,2}):(\d{2})(?::(\d{2}))?\b/);
         let duration: number | null = durMin ? num(durMin[1]) : durH && !sleep ? Math.round(num(durH[1]) * 60) : null;
+        // A bare number after the activity ("pilates 45") is read as minutes, and flagged for a look.
+        const bare = !dist && duration == null && !hhmm ? lc.match(/(?<![\d.:/x×])\b(\d{1,3})\b(?!\s*(?:[a-z%:/.x×]|\d))/) : null;
+        const guessed = !!bare && num(bare[1]) >= 5 && num(bare[1]) <= 240;
+        if (guessed) duration = num(bare![1]);
         if (duration == null && hhmm) duration = hhmm[3] ? num(hhmm[1]) * 60 + num(hhmm[2]) : num(hhmm[1]) + num(hhmm[2]) / 60 > 3 ? num(hhmm[1]) : num(hhmm[1]) * 60 + num(hhmm[2]);
         const intensity = /\b(easy|light|gentle|recovery)\b/.test(lc) ? 2 : /\b(hard|intense|tough|brutal|tempo|intervals?|sprints?)\b/.test(lc) ? 4 : /\b(max|race|all out|pr)\b/.test(lc) ? 5 : null;
         let unit: string | null = dist ? dist[2] : null;
@@ -453,6 +509,7 @@ export function parseSegments(segments: Segment[], ctx: ParseContext): SegmentRe
         if (unit === "meters" || unit === "metres") unit = "m";
         const fc: Record<string, number> = {};
         if (duration == null) fc.duration = 0.5;
+        else if (guessed) fc.duration = 0.6;
         lastWorkout = {
           kind: "workout", ...base, source_text: raw, confidence: Math.min(seg.dateConfidence, duration != null || dist ? 0.9 : 0.7), field_confidence: fc,
           type: (aliased ? "other" : type) as Workout["type"], title: aliased ?? CARDIO[verb] ?? MOBILITY[verb] ?? SPORT[verb] ?? cap(verb),
@@ -470,6 +527,13 @@ export function parseSegments(segments: Segment[], ctx: ParseContext): SegmentRe
           used = true;
           continue;
         }
+      }
+
+      // A short remark right after a workout ("spin class, brutal but fun") describes it; nothing to log separately.
+      if (!used && lastWorkout && !/\d/.test(lc) && words.length <= 5 && WORKOUT_FEEL.test(lc) && !/\b(felt|feel|feeling|mood)\b/.test(lc)) {
+        lastWorkout.intensity ??= /\b(hard|intense|tough|brutal|killer|exhausting|rough)\b/.test(lc) ? 4 : /\b(easy|light|gentle|chill|relaxing)\b/.test(lc) ? 2 : null;
+        used = true;
+        continue;
       }
 
       // Goal progress: "read 40 pages", "finished a book", "saved $50"

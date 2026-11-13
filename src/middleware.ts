@@ -21,8 +21,7 @@ function csp(nonce: string) {
     "img-src 'self' blob: data:",
     "font-src 'self'",
     "media-src 'self' blob:",
-    // On-device AI (optional) downloads model files from Hugging Face and its file CDN; nothing personal is sent.
-    `connect-src 'self' https://huggingface.co https://*.huggingface.co https://*.hf.co${dev ? " ws:" : ""}`,
+    `connect-src 'self'${dev ? " ws:" : ""}`,
     "worker-src 'self' blob:",
     "manifest-src 'self'",
     "object-src 'none'",

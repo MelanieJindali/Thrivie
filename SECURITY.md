@@ -84,15 +84,12 @@ Two independent layers mean one user can never read or change another user's dat
   - a restrictive `Permissions-Policy`: microphone and camera for this site only, everything else off
 - **No caching of personal data:** API responses are `private, no-store`. The service worker never caches API calls or auth pages, and cached pages and the offline queue are cleared on sign-out.
 
-## Smart Import and on-device AI
+## Smart Import
 
 - Pasted notes are parsed **on the device** (Tier 1, rule-based). The raw text is never sent to the server. Only entries the user approves are saved. The duplicate check fetches only the user's own existing entries for the dates involved and compares them locally.
-- The optional on-device AI (Chrome's built-in model, or Transformers.js in a Web Worker) only sees the note parts Tier 1 couldn't read, or the day's brief. Inference never leaves the device; there is no AI API on the server.
-  - Enhanced note lines replace the original text in the note and go back through Tier 1 and the normal review; nothing is saved without approval.
-  - A brief rewrite is discarded if it uses a number that isn't in the brief or adds weight, food or medical wording.
-  - Any failure falls back to the original text.
-  - Downloading the model contacts Hugging Face (huggingface.co and its file CDN under hf.co), allowed in the CSP's connect-src. No personal data is sent. The ONNX runtime files are self-hosted.
-- Pasted text and model output are treated as untrusted and are only ever rendered as text, never as HTML.
+- There is no AI model, on the device or on a server. Reading is rule-based, and calorie estimates for plain eating notes come from a bundled table and are always shown for review.
+- The page makes no third-party network requests: the CSP `connect-src` is `'self'` only.
+- Pasted text is treated as untrusted and is only ever rendered as text, never as HTML.
 
 ## Food scanner
 

@@ -1,27 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ListControls, NoMatches, ShowMoreButton, useListView } from "@/components/ListControls";
 import { Wand2 } from "lucide-react";
-import { deleteAlias, setOnDeviceAi, updateAlias } from "@/app/actions";
+import { deleteAlias, updateAlias } from "@/app/actions";
 import { UndoDeleteButton, useToast } from "@/components/Toast";
 
 type Alias = { id: string; kind: string; alias: string; target: string };
 
-export function SmartImportCard({ aliases, onDeviceAi }: { aliases: Alias[]; onDeviceAi: boolean }) {
-  const [gpu, setGpu] = useState(false);
-  const [on, setOn] = useState(onDeviceAi);
-  const [cached, setCached] = useState(false);
+export function SmartImportCard({ aliases }: { aliases: Alias[] }) {
   const view = useListView(aliases, {
     searchText: (a) => `${a.alias} ${a.target}`,
     sorts: [{ key: "az", label: "A–Z", compare: (a, b) => a.alias.localeCompare(b.alias) }, { key: "kind", label: "By type", compare: (a, b) => a.kind.localeCompare(b.kind) || a.alias.localeCompare(b.alias) }],
     pageSize: 10,
   });
   const toast = useToast();
-  useEffect(() => {
-    // Only checks what this browser supports and what is already downloaded; nothing is fetched.
-    import("@/services/localAi").then(async (m) => { const plan = await m.getPlan(); setGpu(!!plan); setCached(!!plan && plan.tier !== "builtin" && (await m.isAiReady())); }).catch(() => {});
-  }, []);
 
   return (
     <section className="card space-y-4" aria-labelledby="si-h">
@@ -29,17 +22,6 @@ export function SmartImportCard({ aliases, onDeviceAi }: { aliases: Alias[]; onD
         <span className="grid h-8 w-8 place-items-center rounded-xl bg-iris-soft text-iris" aria-hidden><Wand2 size={16} /></span>
         Smart Import
       </h2>
-      {gpu && (
-        <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-surface-2/60 p-3 text-sm">
-          <span className="min-w-0 flex-1"><b>On-device AI</b> for messy notes. Runs privately on this device.{cached ? " The model is downloaded." : ""}</span>
-          <button className="btn-outline" onClick={() => { if (on) void import("@/services/localAi").then((m) => m.release()); setOn(!on); void setOnDeviceAi(!on); }} aria-pressed={on}>{on ? "Turn off" : "Turn on"}</button>
-          {cached && (
-            <button className="btn-ghost text-xs" onClick={async () => { const m = await import("@/services/localAi"); await m.deleteAiDownloads(); setCached(false); toast({ message: "Downloaded model deleted from this device" }); }}>
-              Delete downloaded model
-            </button>
-          )}
-        </div>
-      )}
       <div>
         <h3 className="label">Your shorthand</h3>
         {aliases.length ? (
