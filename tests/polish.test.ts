@@ -24,6 +24,11 @@ describe("brief rewrite safety", () => {
     expect(acceptRewrite("You slept 8 hours.", "You slept 8 hours and walked 3 miles.")).toBeNull();
     expect(acceptRewrite("0 of 1 goals are on track.", "Your goals are on track.")).toBeNull();
   });
+  it("keeps day words: yesterday stays yesterday", () => {
+    expect(acceptRewrite("A fresh start today; yesterday stayed off the log.", "A fresh start today, and tomorrow stays off the log.")).toBeNull();
+    expect(acceptRewrite("A fresh start today; yesterday stayed off the log.", "Today is a fresh start, even though yesterday stayed off the log.")).not.toBeNull();
+    expect(acceptRewrite("Enjoy your Friday.", "Have a lovely Saturday.")).toBeNull();
+  });
   it("keeps quoted goal names word for word", () => {
     const o = "0 of 1 goals are on track; “Do Zumba 100 times” could use a little attention.";
     expect(acceptRewrite(o, "0 of 1 goals are on track, and “Do Zumba 100 times” could use some love.")).not.toBeNull();
@@ -31,7 +36,7 @@ describe("brief rewrite safety", () => {
   });
   it("rejects weight, food and medical language that wasn't there", () => {
     expect(acceptRewrite("You slept 8 hours.", "You slept 8 hours, so watch your weight.")).toBeNull();
-    expect(acceptRewrite("Your weight is 172.", "Your weight is steady at 172 today.")).not.toBeNull();
+    expect(acceptRewrite("Your weight is 172.", "Your weight is a steady 172.")).not.toBeNull();
   });
   it("rejects empty, cut-off, runaway and unchanged output", () => {
     expect(acceptRewrite("You slept 8 hours.", "")).toBeNull();

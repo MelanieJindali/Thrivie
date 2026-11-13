@@ -9,6 +9,9 @@ export const numbersIn = (s: string) =>
   (s.toLowerCase().replace(/\b(zero|one|two|three|four|five|six|seven|eight|nine|ten)\b/g, (w) => WORD_NUMBERS[w]).match(/\d+(?:\.\d+)?/g) ?? []).sort().join(",");
 
 const SENSITIVE = /weight|calori|diet|doctor|diagnos|medic/gi;
+// Day words carry facts too: "yesterday" must not become "tomorrow".
+const DAY_WORDS = /\b(yesterday|today|tonight|tomorrow|morning|evening|monday|tuesday|wednesday|thursday|friday|saturday|sunday|week|weekend|month)\b/gi;
+const dayWords = (s: string) => [...new Set((s.match(DAY_WORDS) ?? []).map((w) => w.toLowerCase()))].sort().join(",");
 
 /** Splits a brief into sentences without cutting at decimal points ("7.5 hours"). */
 export function splitSentences(text: string): string[] {
@@ -26,6 +29,7 @@ export function acceptRewrite(original: string, candidate: string): string | nul
   if (out.length > Math.max(80, original.length * 2.2) || out.length < original.length * 0.4) return null;
   if (!/[.!?]["”)]?$/.test(out)) return null; // cut off mid-sentence
   if (numbersIn(out) !== numbersIn(original)) return null;
+  if (dayWords(out) !== dayWords(original)) return null;
   const allowed = new Set((original.match(SENSITIVE) ?? []).map((w) => w.toLowerCase()));
   if ((out.match(SENSITIVE) ?? []).some((w) => !allowed.has(w.toLowerCase()))) return null;
   for (const q of original.match(/[“"][^”"]+[”"]/g) ?? []) if (!out.includes(q.slice(1, -1))) return null;
