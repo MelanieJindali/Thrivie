@@ -44,27 +44,8 @@ describe("brief rewrite safety", () => {
   });
 });
 
-import { acceptBrief, acceptEnhance } from "@/lib/import/polish";
+import { acceptEnhance } from "@/lib/import/polish";
 import { isConstrainedDevice } from "@/services/localAi";
-
-describe("brief rewrite (whole brief)", () => {
-  const brief = "You slept 8 hours, did 2 workouts (20 minutes) and checked off 4 habits yesterday. Nice. 0 of 1 goals are on track.";
-  it("accepts a warm rewrite that only uses numbers from the original", () => {
-    expect(acceptBrief(brief, "Great job sleeping 8 hours and fitting in 2 workouts for 20 minutes, plus 4 habits checked off yesterday!")).not.toBeNull();
-  });
-  it("rejects invented numbers and new sensitive wording", () => {
-    expect(acceptBrief(brief, "You slept 9 hours and did 2 workouts yesterday, which is a lovely start to the week.")).toBeNull();
-    expect(acceptBrief(brief, "You slept 8 hours and did 2 workouts; keep an eye on your weight and enjoy the day.")).toBeNull();
-  });
-  it("strips a lead-in and drops an unfinished last sentence", () => {
-    expect(acceptBrief(brief, "Here's your summary: You slept 8 hours and did 2 workouts yesterday. Keep it up, you are doing")).toBe("You slept 8 hours and did 2 workouts yesterday.");
-  });
-  it("rejects empty, unchanged or very short replies", () => {
-    expect(acceptBrief(brief, "")).toBeNull();
-    expect(acceptBrief(brief, brief)).toBeNull();
-    expect(acceptBrief(brief, "Nice day!")).toBeNull();
-  });
-});
 
 describe("enhance note line", () => {
   it("takes one clean line and drops a date the model added", () => {

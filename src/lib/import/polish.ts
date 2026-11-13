@@ -33,30 +33,12 @@ export function acceptRewrite(original: string, candidate: string): string | nul
 }
 
 export const BRIEF_SYSTEM = "You are a supportive wellness assistant. Rewrite the provided user stats into a concise, warm, friendly, and encouraging daily summary (2-4 sentences). Keep all factual numbers accurate, avoid robotic phrasing, and do not include meta-commentary.";
-
-const numberList = (s: string) => numbersIn(s).split(",").filter(Boolean);
-
 /**
- * The rewritten brief if it is safe to show, otherwise null (the original stays).
- * It may leave a number out, but every number it does use must come from the original.
+ * The brief is rewritten one sentence at a time: a small model given the whole brief tends to move
+ * facts between sentences (a streak credited to the wrong habit), while one sentence is easy to
+ * check exactly with `acceptRewrite`.
  */
-export function acceptBrief(original: string, candidate: string): string | null {
-  let out = candidate.replace(/\s+/g, " ").trim();
-  if (/^["“].*["”]$/.test(out)) out = out.slice(1, -1).trim();
-  out = out.replace(/^(here(?:'s| is)[^:]{0,60}:|summary:|rewritten(?: summary)?:)\s*/i, "");
-  if (!out || out === original || out.length < 40 || out.length > Math.max(400, original.length * 1.6)) return null;
-  // Cut off mid-sentence (the reply limit was reached): keep the complete sentences only.
-  if (!/[.!?]["”)]?$/.test(out)) {
-    const whole = splitSentences(out).filter((s) => /[.!?]["”)]?$/.test(s));
-    if (!whole.length) return null;
-    out = whole.join(" ");
-  }
-  const known = new Set(numberList(original));
-  if (numberList(out).some((n) => !known.has(n))) return null;
-  const allowed = new Set((original.match(SENSITIVE) ?? []).map((w) => w.toLowerCase()));
-  if ((out.match(SENSITIVE) ?? []).some((w) => !allowed.has(w.toLowerCase()))) return null;
-  return out;
-}
+export const BRIEF_SENTENCE_SYSTEM = `${BRIEF_SYSTEM} You will be given one sentence of the summary at a time: rewrite only that sentence, as one sentence, keeping its numbers and anything in quotation marks exactly.`;
 
 export const ENHANCE_SYSTEM = `You are a health and habit log parser. Convert the user's unrecognized natural-language note into a clean, structured log entry that matches this app's format (e.g., '1/2/26 - snack: apple (~95 cal)'). Estimate reasonable nutritional or activity metrics if missing, and return only the corrected entry text.
 Formats the app reads:

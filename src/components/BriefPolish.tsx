@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { acceptBrief, BRIEF_SYSTEM } from "@/lib/import/polish";
+import { acceptRewrite, BRIEF_SENTENCE_SYSTEM, splitSentences } from "@/lib/import/polish";
 import { useLocalAi } from "./useLocalAi";
 
 const KEY = "thrivie-brief-rewrite";
@@ -9,8 +9,9 @@ type Saved = { brief: string; text: string };
 
 /**
  * Shows the brief, with an optional rewrite by the on-device model. The rewrite streams into the
- * card, is kept for this browser session so switching between the two versions never runs the
- * model again, and is dropped if it invents a number.
+ * card one sentence at a time; a sentence whose rewrite changes a number or quoted goal, or adds
+ * weight, food or medical wording, stays as written. The result is kept for this browser session,
+ * so switching between the two versions never runs the model again.
  */
 export function BriefText({ brief, enabled }: { brief: string; enabled: boolean }) {
   const ai = useLocalAi(enabled);
@@ -34,14 +35,17 @@ export function BriefText({ brief, enabled }: { brief: string; enabled: boolean 
     setLive("");
     try {
       const { generate } = await import("@/services/localAi");
-      let good: string | null = null;
-      // A second, steadier attempt if the first one changes a number.
-      for (const temperature of [0.4, 0.1]) {
-        setLive("");
-        const raw = await generate({ system: BRIEF_SYSTEM, prompt: brief, maxTokens: 150, temperature, onToken: (_d, full) => setLive(full) });
-        good = acceptBrief(brief, raw);
-        if (good) break;
+      const done: string[] = [];
+      let changed = 0;
+      for (const sentence of splitSentences(brief).slice(0, 8)) {
+        const before = done.join(" ");
+        const raw = await generate({ system: BRIEF_SENTENCE_SYSTEM, prompt: sentence, maxTokens: 60, temperature: 0.3, onToken: (_d, full) => setLive(`${before} ${full}`.trim()) });
+        const better = acceptRewrite(sentence, raw);
+        if (better) changed++;
+        done.push(better ?? sentence);
+        setLive(done.join(" "));
       }
+      const good = changed ? done.join(" ") : null;
       if (good) {
         setRewrite(good);
         setShowOriginal(false);
