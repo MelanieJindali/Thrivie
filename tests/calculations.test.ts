@@ -106,3 +106,16 @@ describe("fat loss goal", () => {
     expect(r.ok && r.notes.some((n) => n.includes("keep muscle"))).toBe(true);
   });
 });
+
+describe("goal notes", () => {
+  it("gives every goal its own note under the target", async () => {
+    const { GOAL_NOTE, GOALS } = await import("@/lib/nutrition/calculations");
+    const adult: BodyProfile = { ...base, weightKg: 80, heightCm: 178, sex: "male", activity: "moderate" };
+    for (const goal of GOALS) {
+      const r = calculateTargets({ ...adult, goal });
+      expect(r.ok && r.notes.filter((n) => Object.values(GOAL_NOTE).includes(n)), goal).toEqual([GOAL_NOTE[goal]]);
+    }
+    expect(new Set(Object.values(GOAL_NOTE)).size).toBe(4);
+    expect(GOAL_NOTE.fat_loss).toBe("Protein is set higher on this goal to help you keep muscle during a calorie deficit. Regular strength training helps too.");
+  });
+});
