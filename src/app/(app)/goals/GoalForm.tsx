@@ -1,4 +1,5 @@
 "use client";
+import { GoalProgressForm } from "./GoalProgressForm";
 import { useOfflineAction } from "@/components/OfflineSync";
 
 import { UndoDeleteButton } from "@/components/Toast";
@@ -163,10 +164,7 @@ export function GoalForm({ habits, today, units, initial, onDone }: { habits: { 
 
 export function GoalActions({ goal, habits, today, units = "metric" }: { goal: GoalInit; habits: { id: string; name: string }[]; today: string; units?: Units }) {
   const [mode, setMode] = useState<"none" | "edit" | "progress">("none");
-  const [value, setValue] = useState("");
-  const [note, setNote] = useState("");
-  const offline = useOfflineAction();
-  const { pending, error, message, run } = useAction();
+  const { error, message, run } = useAction();
 
   if (mode === "edit")
     return (
@@ -177,21 +175,7 @@ export function GoalActions({ goal, habits, today, units = "metric" }: { goal: G
 
   return (
     <div className="mt-3 space-y-2">
-      {mode === "progress" && (
-        <form
-          className="flex flex-wrap gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const n = numOrNull(value);
-            if (n == null) return;
-            run(() => offline("addGoalProgress", goal.id, n, note), { success: "Progress added ✓", onOk: () => { setValue(""); setNote(""); setMode("none"); } });
-          }}
-        >
-          <input className="input w-24" inputMode="decimal" placeholder={`+ ${goal.unit}`} value={value} onChange={(e) => setValue(e.target.value)} autoFocus />
-          <input className="input min-w-0 flex-1" placeholder="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
-          <button className="btn-primary" disabled={pending} aria-busy={pending}>Add</button>
-        </form>
-      )}
+      {mode === "progress" && <GoalProgressForm goals={[{ id: goal.id, title: goal.title, unit: goal.unit }]} today={today} onDone={() => setMode("none")} />}
       <div className="flex flex-wrap gap-1">
         {goal.linkType === "manual" && !goal.archived && mode !== "progress" && (
           <button className="btn-soft px-3 py-1.5 text-xs" onClick={() => setMode("progress")}>+ Add progress</button>

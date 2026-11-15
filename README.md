@@ -30,7 +30,7 @@ The visual system pairs the Thrivie brand navy (#1E3A64) with Coastal Earth acce
 - **Insights**: 7/30/90-day trends, weekly workout volume, habit heatmap, goal progress, highlights and a weekly review.
 - **Nutrition**: food diary plus a simple daily meal plan and 7-day view built from 44 meals calculated from USDA FoodData Central values (respects diet and allergies, one-tap swap, optional hidden calories, safety rules for under-18s, pregnancy and low BMI).
 - **Me**: profile and units, friendly timezone picker, Body & Goals, theme, visible modules, reminders, health sync (Apple Shortcuts / Android), two-step verification, Smart Import shorthand, export (JSON/CSV), restore, delete all data, delete account.
-- **On every screen**: a quick-add button on phones (2 taps to any entry), Undo toasts instead of confirm dialogs, skeleton loaders, offline logging with sync, installable as a PWA, light/dark/system themes, and reduced-motion support.
+- **On every screen**: a quick-add button on phones that opens the same forms as the full pages (most-used fields first, the rest under *More details*, and what you typed carries over if you open the full page), Undo toasts instead of confirm dialogs, one confirmation toast for every save, skeleton loaders, offline logging with sync, installable as a PWA, light/dark/system themes, and reduced-motion support.
 
 ### Smart Import (free, on your device)
 

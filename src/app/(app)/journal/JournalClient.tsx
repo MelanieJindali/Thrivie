@@ -7,14 +7,18 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { deleteJournal, saveJournal } from "@/app/actions";
-import { Empty, FormStatus, RatingPicker, useAction } from "@/components/ui";
+import { Empty, FormStatus, MoreDetails, RatingPicker, clearDraft, useAction, useSheetDraft } from "@/components/ui";
 import { JOURNAL_PROMPTS, MOOD_EMOJI } from "@/lib/constants";
 import { relativeLabel } from "@/lib/dates";
 import { AttachmentGallery, MediaBar, PendingList, uploadMedia, type PendingMedia, type SavedAttachment } from "./media";
 
 type Entry = { id: string; date: string; content: string; mood: number | null; prompt: string | null; attachments?: SavedAttachment[] };
 
-export function JournalComposer({ today, initial, onDone, compact = false }: { today: string; initial?: Entry; onDone?: () => void; compact?: boolean }) {
+export function JournalComposer({ today, initial, onDone, sheet = false }: {
+  today: string; initial?: Entry; onDone?: () => void;
+  /** In the quick-log sheet: the same fields, with the less-used ones under "More details". */
+  sheet?: boolean;
+}) {
   const [date, setDate] = useState(initial?.date ?? today);
   const [prompt, setPrompt] = useState<string | null>(initial?.prompt ?? null);
   const [content, setContent] = useState(initial?.content ?? "");
@@ -22,11 +26,13 @@ export function JournalComposer({ today, initial, onDone, compact = false }: { t
   const [media, setMedia] = useState<PendingMedia[]>([]);
   const { pending, error, message, run } = useAction();
   const offline = useOfflineAction();
+  // What's typed in the sheet carries over to the full page (photos and voice notes are not carried).
+  useSheetDraft("journal", sheet, { date, prompt, content, mood }, (d) => { setDate(d.date); setPrompt(d.prompt); setContent(d.content); setMood(d.mood); }, !initial);
   const fallbackText = media.some((m) => m.kind === "photo") ? "📷 Photo entry" : media.length ? "🎙️ Voice note" : "";
   return (
     <form
-      id={compact || initial ? undefined : "new"}
-      className={compact || initial ? "space-y-3" : "card scroll-mt-6 space-y-3"}
+      id={sheet || initial ? undefined : "new"}
+      className={sheet || initial ? "space-y-3" : "card scroll-mt-6 space-y-3"}
       onSubmit={(e) => {
         e.preventDefault();
         run(
@@ -42,8 +48,9 @@ export function JournalComposer({ today, initial, onDone, compact = false }: { t
             return r;
           },
           {
-            success: "Saved ✓",
+            success: initial ? "Journal entry updated ✓" : "Journal entry saved ✓",
             onOk: () => {
+              clearDraft("journal");
               media.forEach((m) => URL.revokeObjectURL(m.url));
               setMedia([]);
               if (!initial) { setContent(""); setPrompt(null); setMood(null); }
@@ -53,32 +60,58 @@ export function JournalComposer({ today, initial, onDone, compact = false }: { t
         );
       }}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        {!initial && !compact && <h2 className="h2">New entry</h2>}
-        <input type="date" className="input w-auto py-1.5 text-sm" value={date} max={today} onChange={(e) => setDate(e.target.value || today)} aria-label="Date" />
-      </div>
-      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-        {JOURNAL_PROMPTS.map((p) => (
-          <button type="button" key={p} className={`chip shrink-0 text-xs ${prompt === p ? "chip-on" : ""}`} onClick={() => setPrompt(prompt === p ? null : p)}>
-            {p}
-          </button>
-        ))}
-      </div>
-      <textarea
-        className="input min-h-32"
-        placeholder={prompt ?? "What's on your mind?"}
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        aria-label="Journal entry"
-      />
-      <MediaBar onAdd={(m) => setMedia((xs) => [...xs, m])} onDictate={(t) => setContent((c) => (c.trim() ? `${c.trimEnd()} ${t}` : t))} />
-      <PendingList items={media} onRemove={(k) => setMedia((xs) => xs.filter((x) => x.key !== k))} />
-      <div>
-        <span className="label">Mood (optional)</span>
-        <RatingPicker name="Mood" value={mood} onChange={setMood} labels={MOOD_EMOJI} />
-      </div>
+      {(() => {
+        const dateField = <input type="date" className="input w-auto py-1.5 text-sm" value={date} max={today} onChange={(e) => setDate(e.target.value || today)} aria-label="Date" />;
+        const prompts = (
+          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="group" aria-label="Writing prompts">
+            {JOURNAL_PROMPTS.map((p) => (
+              <button type="button" key={p} aria-pressed={prompt === p} className={`chip shrink-0 text-xs ${prompt === p ? "chip-on" : ""}`} onClick={() => setPrompt(prompt === p ? null : p)}>
+                {p}
+              </button>
+            ))}
+          </div>
+        );
+        const text = <textarea className={`input ${sheet ? "min-h-28" : "min-h-32"}`} placeholder={prompt ?? "What's on your mind?"} value={content} onChange={(e) => setContent(e.target.value)} aria-label="Journal entry" />;
+        const mediaFields = (
+          <>
+            <MediaBar onAdd={(m) => setMedia((xs) => [...xs, m])} onDictate={(t) => setContent((c) => (c.trim() ? `${c.trimEnd()} ${t}` : t))} />
+            <PendingList items={media} onRemove={(k) => setMedia((xs) => xs.filter((x) => x.key !== k))} />
+          </>
+        );
+        const moodField = (
+          <div>
+            <span className="label">Mood (optional)</span>
+            <RatingPicker name="Mood" value={mood} onChange={setMood} labels={MOOD_EMOJI} />
+          </div>
+        );
+        if (sheet) {
+          return (
+            <>
+              {text}
+              <MoreDetails defaultOpen={media.length > 0}>
+                <div><span className="label">Date</span>{dateField}</div>
+                <div><span className="label">Writing prompts</span>{prompts}</div>
+                {moodField}
+                <div><span className="label">Photos and voice notes</span>{mediaFields}</div>
+              </MoreDetails>
+            </>
+          );
+        }
+        return (
+          <>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              {!initial && <h2 className="h2">New entry</h2>}
+              {dateField}
+            </div>
+            {prompts}
+            {text}
+            {mediaFields}
+            {moodField}
+          </>
+        );
+      })()}
       <div className="flex items-center gap-3">
-        <button className="btn-primary" disabled={pending || (!content.trim() && !media.length)} aria-busy={pending}>{pending ? "Saving…" : "Save entry"}</button>
+        <button className={`btn-primary ${sheet ? "w-full" : ""}`} disabled={pending || (!content.trim() && !media.length)} aria-busy={pending}>{pending ? "Saving…" : "Save entry"}</button>
         {initial && <button type="button" className="btn-ghost" onClick={onDone}>Cancel</button>}
         <FormStatus error={error} message={message} />
       </div>

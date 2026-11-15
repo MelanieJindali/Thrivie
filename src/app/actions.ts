@@ -8,7 +8,8 @@ import crypto from "node:crypto";
 import { loadSampleData } from "@/lib/sampleData";
 import { getSettings, getToday, ALL_MODULES } from "@/lib/settings";
 import { addDays, isDateStr, isValidTimezone, todayInTz } from "@/lib/dates";
-import { getHabitViews } from "@/lib/queries";
+import { getHabitViews, getHealthRange } from "@/lib/queries";
+import { healthFormData, mealFormData, workoutFormData } from "@/lib/formData";
 import { MEAL_SLOTS, WORKOUT_TYPES } from "@/lib/constants";
 import { InvalidScheduleError, parseSchedule } from "@/lib/habits/schedule";
 import { BodyProfileSchema } from "@/lib/nutrition/calculations";
@@ -434,9 +435,14 @@ export async function saveGoal(input: z.input<typeof goalInput>): Promise<Action
 export async function addGoalProgress(goalId: string, value: number, note?: string, date?: string): Promise<ActionResult> {
   const { db, user } = await requireUser();
   if (await tooFast(user.id)) return SLOW_DOWN;
-  if (!Number.isFinite(value)) return { ok: false, error: "Enter a number." };
-  const d = date && isDateStr(date) ? date : await getToday();
-  await db.goalProgress.create({ data: { goalId, value, note: note?.trim() || null, date: d } });
+  if (typeof value !== "number" || !Number.isFinite(value) || Math.abs(value) > 1e9) return { ok: false, error: "Enter a number." };
+  if (typeof goalId !== "string" || (note != null && typeof note !== "string")) return { ok: false, error: "That didn't look right. Please try again." };
+  const todayStr = await getToday();
+  const d = date && isDateStr(date) ? date : todayStr;
+  if (d > addDays(todayStr, 1)) return { ok: false, error: "Progress can be logged for today or a past day, not a future one." };
+  // The goal must be one of this person's own (the scoped client only finds theirs).
+  if (!(await db.goal.findFirst({ where: { id: goalId }, select: { id: true } }))) return { ok: false, error: "That goal couldn't be found." };
+  await db.goalProgress.create({ data: { goalId, value, note: note?.trim().slice(0, 500) || null, date: d } });
   done();
   return { ok: true };
 }
@@ -686,45 +692,18 @@ export async function deleteAlias(id: string): Promise<ActionResult> {
   return { ok: true };
 }
 
-const quickCheckinInput = z.object({
-  mood: rating.nullable().optional(),
-  sleepHours: z.number().min(0).max(24).nullable().optional(),
-  water: optNum, // display units
-});
-
-/**
- * Quick check-in for today: saves only the values given and leaves everything else in
- * today's check-in as it is (safe to repeat, so it can be queued offline).
- */
-export async function quickCheckin(input: z.input<typeof quickCheckinInput>): Promise<ActionResult> {
-  const { db, user } = await requireUser();
-  if (await tooFast(user.id)) return SLOW_DOWN;
-  try {
-    const v = quickCheckinInput.parse(input);
-    const { units } = await getSettings();
-    const data = {
-      ...(v.mood != null && { mood: v.mood }),
-      ...(v.sleepHours != null && { sleepHours: v.sleepHours }),
-      ...(v.water != null && { waterMl: displayToMl(v.water, units) }),
-    };
-    if (!Object.keys(data).length) return { ok: false, error: "Add at least one value." };
-    const date = await getToday();
-    await db.healthLog.upsert({ where: { userId_date: { userId: user.id, date } }, update: data, create: { userId: user.id, date, ...data } });
-    done();
-    return { ok: true };
-  } catch (e) {
-    return fail(e);
-  }
-}
-
 /** What the quick-log sheet needs, fetched only when it is opened. */
 export async function getQuickLogData() {
   const { db } = await requireUser();
   const settings = await getSettings();
   const today = await getToday();
-  const [habits, goals] = await Promise.all([
-    settings.visibleModules.includes("habits") ? getHabitViews(db, today) : [],
-    settings.visibleModules.includes("goals") ? db.goal.findMany({ where: { archived: false, linkType: "manual" }, select: { id: true, title: true, unit: true }, orderBy: { createdAt: "asc" } }) : [],
+  const vis = settings.visibleModules as string[];
+  const [habits, goals, health, workout, meal] = await Promise.all([
+    vis.includes("habits") ? getHabitViews(db, today) : [],
+    vis.includes("goals") ? db.goal.findMany({ where: { archived: false, linkType: "manual" }, select: { id: true, title: true, unit: true }, orderBy: { createdAt: "asc" } }) : [],
+    vis.includes("health") ? getHealthRange(db, today, 90).then((logs) => healthFormData(logs, settings.units)) : null,
+    vis.includes("workouts") ? workoutFormData(db, today, settings.units) : null,
+    vis.includes("nutrition") ? mealFormData(db, today) : null,
   ]);
-  return { today, units: settings.units, visible: settings.visibleModules as string[], habits, goals };
+  return { today, units: settings.units, visible: vis, habits, goals, health, workout, meal };
 }

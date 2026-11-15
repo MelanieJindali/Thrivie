@@ -13,6 +13,7 @@ import { suggestNext, type RecentFood } from "@/lib/nutrition/dayFit";
 import { DayLeft, type PlanGap } from "./DayLeft";
 import { getPlanContext, loggedFromPlan, planCard } from "@/lib/nutrition/planStore";
 
+import { mealFormData } from "@/lib/formData";
 const str = (v: number | null) => (v == null ? "" : String(v));
 
 export default async function NutritionPage() {
@@ -33,23 +34,7 @@ export default async function NutritionPage() {
     })),
   }));
 
-  // Every distinct meal from the past year, most recent first, with how often it was had,
-  // so repeat meals can be re-entered with one tap. The first four show as quick chips.
-  const history = await db.meal.findMany({
-    where: { date: { gte: addDays(today, -365) } },
-    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
-    select: { name: true, slot: true, calories: true, proteinG: true, carbsG: true, fatG: true },
-    take: 3000,
-  });
-  const byName = new Map<string, RecentMeal>();
-  for (const m of history) {
-    const key = m.name.trim().toLowerCase();
-    const had = byName.get(key);
-    if (had) had.times = (had.times ?? 1) + 1;
-    else if (byName.size < 400) byName.set(key, { slot: m.slot as MealSlot, name: m.name, calories: str(m.calories), proteinG: str(m.proteinG), carbsG: str(m.carbsG), fatG: str(m.fatG), times: 1 });
-  }
-  const allMeals = [...byName.values()];
-  const recent = allMeals.slice(0, 4);
+  const { allMeals, recent } = await mealFormData(db, today);
 
   const t = dayTotals(meals.filter((m) => m.date === today));
   const { calorieTarget: calT, proteinTargetG: proT } = settings;
