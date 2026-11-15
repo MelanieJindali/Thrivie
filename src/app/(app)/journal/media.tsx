@@ -163,6 +163,13 @@ export type SavedAttachment = { id: string; kind: string; durationS: number | nu
 
 export function AttachmentGallery({ items, onDelete }: { items: SavedAttachment[]; onDelete?: (id: string) => void }) {
   const [open, setOpen] = useState<string | null>(null);
+  // Escape closes the full-screen photo, like every other dialog.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
   if (!items.length) return null;
   const photos = items.filter((a) => a.kind === "photo");
   const audio = items.filter((a) => a.kind === "audio");
@@ -185,7 +192,8 @@ export function AttachmentGallery({ items, onDelete }: { items: SavedAttachment[
         </div>
       ))}
       {open && (
-        <div className="t-fade fixed inset-0 z-50 grid place-items-center bg-black/80 p-4" onClick={() => setOpen(null)} role="dialog" aria-label="Photo">
+        <div className="t-fade fixed inset-0 z-50 grid place-items-center bg-black/80 p-4" onClick={() => setOpen(null)} role="dialog" aria-modal="true" aria-label="Photo">
+          <button type="button" className="btn-ghost absolute top-4 right-4 bg-black/40 px-3 text-white" aria-label="Close photo" onClick={() => setOpen(null)}>Close</button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={`/api/attachments/${open}`} alt="Journal photo" className="t-zoom max-h-[85dvh] max-w-full rounded-2xl" />
           {onDelete && (

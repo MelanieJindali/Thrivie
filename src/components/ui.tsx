@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { ActionResult } from "@/app/actions";
+import { useHasToasts, useToast } from "./Toast";
 import { THEME, type ThemeKey } from "@/lib/constants";
 
 export type Crumb = { href: string; label: string };
@@ -123,8 +124,14 @@ export function numOrNull(v: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-/** Runs a server action with pending state + error message + refresh. */
+/**
+ * Runs a server action with pending state + error message + refresh. The same pattern everywhere:
+ * success shows a toast (or, on pages without toasts, a note beside the button), and an error
+ * shows beside the button and stays until the next try.
+ */
 export function useAction() {
+  const toast = useToast();
+  const hasToasts = useHasToasts();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -136,11 +143,12 @@ export function useAction() {
       const r = await fn();
       if (r.ok) {
         if ((r as { queued?: boolean }).queued) {
-          setMessage("Saved on this device. It will sync when you're back online.");
-          setTimeout(() => setMessage(null), 4000);
+          const queued = "Saved on this device. It will sync when you're back online.";
+          if (hasToasts) toast({ message: queued });
+          else { setMessage(queued); setTimeout(() => setMessage(null), 4000); }
         } else if (opts.success) {
-          setMessage(opts.success);
-          setTimeout(() => setMessage(null), 2500);
+          if (hasToasts) toast({ message: opts.success });
+          else { setMessage(opts.success); setTimeout(() => setMessage(null), 2500); }
         }
         opts.onOk?.(r);
         router.refresh();
@@ -151,7 +159,7 @@ export function useAction() {
 }
 
 export function FormStatus({ error, message }: { error: string | null; message: string | null }) {
-  if (error) return <p className="text-sm text-terracotta-ink" role="alert">{error}</p>;
+  if (error) return <p className="t-shake text-sm text-terracotta-ink" role="alert">{error}</p>;
   if (message) return <p className="rounded-full bg-primary-soft px-3 py-1 text-sm font-medium text-primary" role="status">{message}</p>;
   return null;
 }
@@ -171,4 +179,53 @@ export function ProgressBar({ pct, expected, tone = "primary", label }: { pct: n
 
 export function Empty({ children }: { children: React.ReactNode }) {
   return <div className="rounded-3xl border border-dashed border-border bg-surface-2/40 p-8 text-center text-sm text-muted">{children}</div>;
+}
+
+/** The rest of a form's fields, one tap away. Used by forms shown in the quick-log sheet. */
+export function MoreDetails({ children, label = "More details", defaultOpen = false }: { children: React.ReactNode; label?: string; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const id = useId();
+  return (
+    <div>
+      <button type="button" aria-expanded={open} aria-controls={id} onClick={() => setOpen((o) => !o)} className="inline-flex min-h-11 items-center gap-1 text-sm font-bold text-primary">
+        <ChevronDown size={16} className={`transition-transform duration-150 ${open ? "rotate-180" : ""}`} aria-hidden />
+        {open ? "Fewer details" : label}
+      </button>
+      {/* Kept mounted so nothing typed is lost when it's closed. */}
+      <div id={id} hidden={!open} className={open ? "t-acc mt-2 space-y-4" : undefined}>{children}</div>
+    </div>
+  );
+}
+
+const DRAFT = "thrivie-draft:";
+/** Forgets a form's carried-over draft (after saving, or on sign-out). */
+export function clearDraft(kind?: string) {
+  try {
+    if (kind) sessionStorage.removeItem(DRAFT + kind);
+    else for (const k of Object.keys(sessionStorage)) if (k.startsWith(DRAFT)) sessionStorage.removeItem(k);
+  } catch { /* storage blocked */ }
+}
+/**
+ * Carries what was typed in the quick-log sheet over to the full page. The sheet copy of a form
+ * keeps a draft for this browser tab only; the full-page copy picks it up once and removes it.
+ * It never leaves the device and is cleared on save and on sign-out.
+ */
+export function useSheetDraft<T>(kind: string, sheet: boolean, value: T, restore: (v: T) => void, enabled = true) {
+  const restored = useRef(false);
+  useEffect(() => {
+    if (sheet || !enabled || restored.current) return;
+    restored.current = true;
+    try {
+      const raw = sessionStorage.getItem(DRAFT + kind);
+      if (!raw) return;
+      sessionStorage.removeItem(DRAFT + kind);
+      restore(JSON.parse(raw) as T);
+    } catch { /* nothing usable */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const json = JSON.stringify(value);
+  useEffect(() => {
+    if (!sheet || !enabled) return;
+    try { sessionStorage.setItem(DRAFT + kind, json); } catch { /* storage blocked */ }
+  }, [sheet, enabled, kind, json]);
 }

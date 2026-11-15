@@ -8,6 +8,9 @@ import type { ActionResult } from "@/app/actions";
 type Toast = { id: number; message: string; undo?: () => void; tone?: "ok" | "error" };
 const Ctx = createContext<(t: Omit<Toast, "id">) => void>(() => {});
 export const useToast = () => useContext(Ctx);
+const HasToasts = createContext(false);
+/** True inside the app shell, where toasts are shown. (The sign-in pages have none.) */
+export const useHasToasts = () => useContext(HasToasts);
 
 /** Toasts (bottom of screen, above the tab bar). Announced to screen readers. */
 export function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -19,7 +22,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, []);
   return (
     <Ctx.Provider value={push}>
-      {children}
+      <HasToasts.Provider value={true}>{children}</HasToasts.Provider>
       <div className="pointer-events-none fixed inset-x-0 bottom-28 z-50 flex flex-col items-center gap-2 px-4 md:bottom-8" role="status" aria-live="polite">
         {toasts.map((t) => (
           <div key={t.id} className={`t-toast pointer-events-auto flex max-w-full items-center gap-3 rounded-full py-2 pr-2 pl-5 text-sm font-semibold shadow-lift ${t.tone === "error" ? "bg-terracotta-ink text-primary-text" : "bg-text text-bg"}`}>

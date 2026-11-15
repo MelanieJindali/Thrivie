@@ -87,8 +87,11 @@ export function BackupRestore() {
   const [busy, setBusy] = useState(false);
   const router = useRouter();
 
+  const [picked, setPicked] = useState<File | null>(null);
+  const cancel = () => { setPicked(null); if (fileRef.current) fileRef.current.value = ""; };
+
   async function onFile(f: File) {
-    if (!confirm("Restoring replaces ALL current data with the backup. Continue?")) return;
+    setPicked(null);
     setBusy(true);
     setStatus({});
     try {
@@ -112,8 +115,18 @@ export function BackupRestore() {
   return (
     <div className="space-y-2">
       <span className="label">Restore from backup</span>
-      <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
-      <button className="btn-soft" disabled={busy} aria-busy={busy} onClick={() => fileRef.current?.click()}>{busy ? "Restoring…" : "Import JSON backup…"}</button>
+      <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={(e) => { if (e.target.files?.[0]) { setStatus({}); setPicked(e.target.files[0]); } }} />
+      {picked ? (
+        <div className="t-fade space-y-2 rounded-2xl border border-terracotta-ink/30 p-3" role="alertdialog" aria-label="Confirm restore">
+          <p className="text-sm">Restoring replaces <strong>all</strong> your current data with this backup. This can&apos;t be undone.</p>
+          <div className="flex flex-wrap gap-2">
+            <button className="btn-danger" autoFocus onClick={() => onFile(picked)}>Replace my data</button>
+            <button className="btn-ghost" onClick={cancel}>Cancel</button>
+          </div>
+        </div>
+      ) : (
+        <button className="btn-soft" disabled={busy} aria-busy={busy} onClick={() => fileRef.current?.click()}>{busy ? "Restoring…" : "Import JSON backup…"}</button>
+      )}
       <FormStatus error={status.error ?? null} message={status.message ?? null} />
     </div>
   );

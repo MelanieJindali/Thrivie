@@ -4,7 +4,7 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, Search, Sparkles } from "lucide-react";
 import type { FoodEstimate } from "@/lib/nutrition/foodEstimate";
 import { useOfflineAction } from "@/components/OfflineSync";
-import { Field, FormStatus, numOrNull, useAction } from "@/components/ui";
+import { Field, FormStatus, MoreDetails, clearDraft, numOrNull, useAction, useSheetDraft } from "@/components/ui";
 import { MEAL_EMOJI, MEAL_LABELS, MEAL_SLOTS, type MealSlot } from "@/lib/constants";
 
 export type MealDraft = {
@@ -18,7 +18,8 @@ export type MealDraft = {
   fatG: string;
   notes: string;
 };
-export type RecentMeal = Omit<MealDraft, "id" | "date" | "notes"> & { times?: number };
+export type { RecentMeal } from "@/lib/formData";
+import type { RecentMeal } from "@/lib/formData";
 
 /** A sensible default for the time of day (the user can change it with one tap). */
 function slotNow(): MealSlot {
@@ -28,7 +29,11 @@ function slotNow(): MealSlot {
 
 const blank = (date: string, slot: MealSlot): MealDraft => ({ date, slot, name: "", calories: "", proteinG: "", carbsG: "", fatG: "", notes: "" });
 
-export function MealForm({ today, recent, allMeals = recent, editing, onDone }: { today: string; recent: RecentMeal[]; allMeals?: RecentMeal[]; editing: MealDraft | null; onDone: () => void }) {
+export function MealForm({ today, recent, allMeals = recent, editing, onDone, sheet = false }: {
+  today: string; recent: RecentMeal[]; allMeals?: RecentMeal[]; editing: MealDraft | null; onDone: () => void;
+  /** In the quick-log sheet: the same fields, with the less-used ones under "More details". */
+  sheet?: boolean;
+}) {
   const [m, setM] = useState<MealDraft>(editing ?? blank(today, "lunch"));
   const { pending, error, message, run } = useAction();
   const offline = useOfflineAction();
@@ -44,9 +49,12 @@ export function MealForm({ today, recent, allMeals = recent, editing, onDone }: 
   const showEst = est && blankNums.length > 0;
   const applyEst = (keys: readonly ("calories" | "proteinG" | "carbsG" | "fatG")[]) => est && setM((x) => ({ ...x, ...Object.fromEntries(keys.map((k) => [k, String(est[k])])) }));
 
+  // What's typed in the sheet carries over to the full page (new meals only).
+  useSheetDraft("meal", sheet, m, setM, !editing && !m.id);
+
   // The time of day is only known on the device, so pick the slot after mount.
   useEffect(() => {
-    if (!editing) setM((x) => ({ ...x, slot: slotNow() }));
+    if (!editing) setM((x) => (x.name ? x : { ...x, slot: slotNow() })); // a carried-over draft keeps its slot
   }, [editing]);
 
   function submit(e: React.FormEvent) {
@@ -69,6 +77,7 @@ export function MealForm({ today, recent, allMeals = recent, editing, onDone }: 
       {
         success: m.id ? "Meal updated ✓" : "Meal saved ✓",
         onOk: () => {
+          clearDraft("meal");
           setM(blank(today, m.slot));
           onDone();
         },
@@ -76,87 +85,107 @@ export function MealForm({ today, recent, allMeals = recent, editing, onDone }: 
     );
   }
 
+  const slotField = (
+    <fieldset>
+      <legend className="label">Meal</legend>
+      <div className="flex flex-wrap gap-2">
+        {MEAL_SLOTS.map((sl) => (
+          <button key={sl} type="button" className={`chip ${m.slot === sl ? "chip-on" : ""}`} aria-pressed={m.slot === sl} onClick={() => set("slot", sl)}>
+            <span aria-hidden>{MEAL_EMOJI[sl]}</span> {MEAL_LABELS[sl]}
+          </button>
+        ))}
+      </div>
+    </fieldset>
+  );
+  const again = !m.id && recent.length > 0 && (
+    <div>
+      <p className="label">Have it again</p>
+      <div className="flex flex-wrap gap-2">
+        {recent.map((r) => (
+          <button key={`${r.slot}-${r.name}`} type="button" className="chip max-w-full" onClick={() => setM((x) => ({ ...x, ...fill(r), slot: x.slot }))} title={`Fill in ${r.name}`}>
+            <span className="truncate">{r.name}</span>
+          </button>
+        ))}
+      </div>
+      {allMeals.length > recent.length && <AllMeals meals={allMeals} onPick={(r) => setM((x) => ({ ...x, ...fill(r), slot: x.slot }))} />}
+    </div>
+  );
+  const nameField = (
+    <Field label="What did you have?">
+      <input className="input" value={m.name} onChange={(e) => set("name", e.target.value)} maxLength={200} placeholder="e.g. Greek yogurt with berries" autoComplete="off" required />
+    </Field>
+  );
+  const dateField = (
+    <Field label="Date">
+      <input className="input" type="date" value={m.date} max={today} onChange={(e) => set("date", e.target.value)} required />
+    </Field>
+  );
+  const suggestion = showEst && (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl bg-seaglass-soft/70 px-3.5 py-2.5 text-sm" aria-live="polite">
+      <Sparkles size={16} className="shrink-0 text-primary" aria-hidden />
+      <p className="min-w-0 flex-1 basis-52">
+        <span className="font-semibold">Suggested: {est.calories} kcal · {est.proteinG} g protein · {est.carbsG} g carbs · {est.fatG} g fat</span>
+        <span className="block text-xs text-muted">Based on {est.basis}. Approximate; adjust to your portion.</span>
+      </p>
+      <button type="button" className="btn-soft min-h-11 shrink-0 px-3 text-xs" onClick={() => applyEst(blankNums)}>Use all</button>
+    </div>
+  );
+  const NUMS = [["calories", "Calories", "numeric", "kcal"], ["proteinG", "Protein (g)", "decimal", ""], ["carbsG", "Carbs (g)", "decimal", ""], ["fatG", "Fat (g)", "decimal", ""]] as const;
+  const numField = ([k, label, mode, ph]: (typeof NUMS)[number]) => (
+    <div key={k} className="min-w-0">
+      <Field label={label}>
+        <input className="input" inputMode={mode} value={m[k]} onChange={(e) => set(k, e.target.value)} placeholder={ph || undefined} />
+      </Field>
+      {showEst && m[k].trim() === "" && (
+        <button type="button" className="mt-1 flex min-h-11 max-w-full flex-wrap items-center gap-x-1 text-left text-xs text-muted" onClick={() => applyEst([k])}>
+          Suggested <b className="font-semibold text-text">{est[k]}{k === "calories" ? "" : " g"}</b> <span className="font-bold text-primary underline">Use<span className="sr-only"> for {label.replace(" (g)", "").toLowerCase()}</span></span>
+        </button>
+      )}
+    </div>
+  );
+  const noteField = (
+    <Field label="Note (private)">
+      <input className="input" value={m.notes} onChange={(e) => set("notes", e.target.value)} maxLength={2000} placeholder="How it felt, where you ate…" />
+    </Field>
+  );
+  const actions = (
+    <div className="flex flex-wrap items-center gap-3">
+      <button className={`btn-primary ${sheet ? "w-full" : ""}`} disabled={pending} aria-busy={pending}>{pending ? "Saving…" : m.id ? "Update meal" : "Save meal"}</button>
+      {m.id && <button type="button" className="btn-ghost" onClick={() => { setM(blank(today, m.slot)); onDone(); }}>Cancel</button>}
+      <FormStatus error={error} message={message} />
+    </div>
+  );
+
+  if (sheet) {
+    return (
+      <form onSubmit={submit} className="space-y-4">
+        {slotField}
+        <div className="grid grid-cols-[minmax(0,1fr)_6.5rem] gap-3">{nameField}{numField(NUMS[0])}</div>
+        {suggestion}
+        <MoreDetails>
+          {dateField}
+          <div className="grid grid-cols-3 gap-3">{NUMS.slice(1).map(numField)}</div>
+          {noteField}
+          {again}
+        </MoreDetails>
+        {actions}
+      </form>
+    );
+  }
+
   return (
     <form onSubmit={submit} className="card space-y-4" aria-labelledby="meal-form-h">
       <h2 id="meal-form-h" className="h2">{m.id ? "Edit meal" : "Log a meal"}</h2>
-
-      <fieldset>
-        <legend className="label">Meal</legend>
-        <div className="flex flex-wrap gap-2">
-          {MEAL_SLOTS.map((s) => (
-            <button key={s} type="button" className={`chip ${m.slot === s ? "chip-on" : ""}`} aria-pressed={m.slot === s} onClick={() => set("slot", s)}>
-              <span aria-hidden>{MEAL_EMOJI[s]}</span> {MEAL_LABELS[s]}
-            </button>
-          ))}
-        </div>
-      </fieldset>
-
-      {!m.id && recent.length > 0 && (
-        <div>
-          <p className="label">Have it again</p>
-          <div className="flex flex-wrap gap-2">
-            {recent.map((r) => (
-              <button
-                key={`${r.slot}-${r.name}`}
-                type="button"
-                className="chip max-w-full"
-                onClick={() => setM((x) => ({ ...x, ...fill(r), slot: x.slot }))}
-                title={`Fill in ${r.name}`}
-              >
-                <span className="truncate">{r.name}</span>
-              </button>
-            ))}
-          </div>
-          {allMeals.length > recent.length && <AllMeals meals={allMeals} onPick={(r) => setM((x) => ({ ...x, ...fill(r), slot: x.slot }))} />}
-        </div>
-      )}
-
-      <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-        <Field label="What did you have?">
-          <input className="input" value={m.name} onChange={(e) => set("name", e.target.value)} maxLength={200} placeholder="e.g. Greek yogurt with berries" autoComplete="off" required />
-        </Field>
-        <Field label="Date">
-          <input className="input" type="date" value={m.date} max={today} onChange={(e) => set("date", e.target.value)} required />
-        </Field>
-      </div>
-
+      {slotField}
+      {again}
+      <div className="grid gap-3 sm:grid-cols-[1fr_auto]">{nameField}{dateField}</div>
       <div>
         <p className="mb-1.5 text-xs text-muted">Numbers are optional. Add what you know{est ? ", or use the suggestions" : ""}.</p>
-        {showEst && (
-          <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl bg-seaglass-soft/70 px-3.5 py-2.5 text-sm" aria-live="polite">
-            <Sparkles size={16} className="shrink-0 text-primary" aria-hidden />
-            <p className="min-w-0 flex-1 basis-52">
-              <span className="font-semibold">Suggested: {est.calories} kcal · {est.proteinG} g protein · {est.carbsG} g carbs · {est.fatG} g fat</span>
-              <span className="block text-xs text-muted">Based on {est.basis}. Approximate; adjust to your portion.</span>
-            </p>
-            <button type="button" className="btn-soft min-h-11 shrink-0 px-3 text-xs" onClick={() => applyEst(blankNums)}>Use all</button>
-          </div>
-        )}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {([["calories", "Calories", "numeric", "kcal"], ["proteinG", "Protein (g)", "decimal", ""], ["carbsG", "Carbs (g)", "decimal", ""], ["fatG", "Fat (g)", "decimal", ""]] as const).map(([k, label, mode, ph]) => (
-            <div key={k} className="min-w-0">
-              <Field label={label}>
-                <input className="input" inputMode={mode} value={m[k]} onChange={(e) => set(k, e.target.value)} placeholder={ph || undefined} />
-              </Field>
-              {showEst && m[k].trim() === "" && (
-                <button type="button" className="mt-1 flex min-h-9 max-w-full flex-wrap items-center gap-x-1 text-left text-xs text-muted" onClick={() => applyEst([k])}>
-                  Suggested <b className="font-semibold text-text">{est[k]}{k === "calories" ? "" : " g"}</b> <span className="font-bold text-primary underline">Use<span className="sr-only"> for {label.replace(" (g)", "").toLowerCase()}</span></span>
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
+        {suggestion && <div className="mb-3">{suggestion}</div>}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">{NUMS.map(numField)}</div>
       </div>
-
-      <Field label="Note (private)">
-        <input className="input" value={m.notes} onChange={(e) => set("notes", e.target.value)} maxLength={2000} placeholder="How it felt, where you ate…" />
-      </Field>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <button className="btn-primary" disabled={pending} aria-busy={pending}>{pending ? "Saving…" : m.id ? "Update meal" : "Save meal"}</button>
-        {m.id && <button type="button" className="btn-ghost" onClick={() => { setM(blank(today, m.slot)); onDone(); }}>Cancel</button>}
-        <FormStatus error={error} message={message} />
-      </div>
+      {noteField}
+      {actions}
     </form>
   );
 }
