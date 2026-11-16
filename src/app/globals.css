@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./palettes.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -43,6 +44,8 @@
   --glass-edge: rgb(255 255 255 / 0.75);
   --chart-grid: #EAE2D5;
   --series-1: #00897B; --series-2: #D2553A; --series-3: #6A55C9; --series-4: #B8820E; --series-5: #3D7AB8;
+  /* trend chart lines */
+  --sapphire: #3D7AB8; --amber: #B8820E; --plum: #6A55C9; --rose: #C4506E; --emerald: #00897B; --teal: #2B6280;
   --shadow: 0 1px 2px rgb(31 59 77 / 0.05), 0 14px 34px -18px rgb(31 59 77 / 0.25);
   --shadow-lg: 0 2px 4px rgb(31 59 77 / 0.06), 0 24px 48px -20px rgb(31 59 77 / 0.3);
   --scene-1: rgb(43 82 141 / 0.16);
@@ -77,6 +80,7 @@
   --glass-edge: rgb(237 230 218 / 0.12);
   --chart-grid: #22354F;
   --series-1: #1FA898; --series-2: #E0603F; --series-3: #8C78E8; --series-4: #B88A1C; --series-5: #4F8FD0;
+  --sapphire: #7FB0EA; --amber: #E0B050; --plum: #B9A6F7; --rose: #F08FA8; --emerald: #3CC9B5; --teal: #8FC3DD;
   --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 14px 34px -18px rgb(0 0 0 / 0.7);
   --shadow-lg: 0 2px 4px rgb(0 0 0 / 0.35), 0 24px 48px -20px rgb(0 0 0 / 0.8);
   --scene-1: rgb(91 140 220 / 0.10);

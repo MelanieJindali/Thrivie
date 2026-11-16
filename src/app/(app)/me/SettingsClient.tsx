@@ -1,5 +1,6 @@
 "use client";
 
+import { PALETTES, PALETTE_KEY, isPalette, type PaletteId } from "@/lib/palettes";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { deleteAllData, saveSettings } from "@/app/actions";
@@ -70,13 +71,55 @@ export function ThemePicker() {
     const dark = t === "dark" || (t === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
     document.documentElement.classList.toggle("dark", dark);
   };
+  const [palette, setPalette] = useState<PaletteId>("thrivie");
+  useEffect(() => {
+    try {
+      const p = localStorage.getItem(PALETTE_KEY);
+      if (isPalette(p)) setPalette(p);
+    } catch {}
+  }, []);
+  const pick = (p: PaletteId) => {
+    setPalette(p);
+    try {
+      if (p === "thrivie") localStorage.removeItem(PALETTE_KEY);
+      else localStorage.setItem(PALETTE_KEY, p);
+    } catch {}
+    if (p === "thrivie") document.documentElement.removeAttribute("data-palette");
+    else document.documentElement.setAttribute("data-palette", p);
+  };
   return (
-    <div className="flex flex-wrap gap-2">
-      {["system", "light", "dark"].map((t) => (
-        <button key={t} type="button" className={`chip capitalize ${theme === t ? "chip-on" : ""}`} onClick={() => apply(t)}>
-          {t === "system" ? "Match device" : t}
-        </button>
-      ))}
+    <div className="space-y-4">
+      <div>
+        <span className="label">Mode</span>
+        <div className="flex flex-wrap gap-2">
+          {["system", "light", "dark"].map((t) => (
+            <button key={t} type="button" aria-pressed={theme === t} className={`chip capitalize ${theme === t ? "chip-on" : ""}`} onClick={() => apply(t)}>
+              {t === "system" ? "Match device" : t}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div role="radiogroup" aria-label="Colour theme">
+        <span className="label">Colour theme</span>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {PALETTES.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              role="radio"
+              aria-checked={palette === p.id}
+              onClick={() => pick(p.id)}
+              className={`flex min-h-12 items-center gap-2.5 rounded-2xl border px-3 py-2 text-left text-sm transition-colors ${palette === p.id ? "border-primary bg-primary-soft font-semibold" : "border-border bg-surface"}`}
+            >
+              <span className="flex h-6 w-9 flex-none overflow-hidden rounded-full border border-border" aria-hidden="true">
+                {p.swatch.map((c) => <span key={c} className="flex-1" style={{ background: c }} />)}
+              </span>
+              <span className="min-w-0">{p.name}{p.id === "thrivie" ? <span className="block text-xs font-normal text-muted">Default</span> : null}</span>
+            </button>
+          ))}
+        </div>
+        <p className="mt-2 text-xs text-muted">Every theme works in light and dark. Your choice is saved on this device.</p>
+      </div>
     </div>
   );
 }

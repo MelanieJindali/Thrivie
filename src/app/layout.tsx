@@ -42,7 +42,7 @@ export const viewport: Viewport = {
 };
 
 // Applies the saved theme before paint to avoid a flash.
-const themeScript = `(function(){try{var t=localStorage.getItem('thrivie-theme')||'system';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();`;
+const themeScript = `(function(){try{var t=localStorage.getItem('thrivie-theme')||'system';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);var p=localStorage.getItem('thrivie-palette');if(p&&/^(golden|lavender|ember|pastel|clay|reef)$/.test(p))document.documentElement.setAttribute('data-palette',p);}catch(e){}})();`;
 
 export const dynamic = "force-dynamic";
 
