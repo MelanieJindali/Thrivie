@@ -38,7 +38,7 @@ const check = (name, ok, detail = "") => { console.log(`${ok ? "  ok " : "  FAIL
       const v = await vars();
       check(`${mode.toLowerCase()}: has its own colours`, !seen.has(v) && !v.split(" ").includes(""), v);
       seen.add(v);
-      for (const path of ["/", "/insights", "/me"]) {
+      for (const path of ["/", "/log", "/insights", "/me"]) {
         await p.goto(BASE + path);
         await p.waitForLoadState("networkidle");
         check(`${mode.toLowerCase()} ${path}: kept after navigation`, (await vars()) === v);
@@ -46,7 +46,7 @@ const check = (name, ok, detail = "") => { console.log(`${ok ? "  ok " : "  FAIL
         check(`${mode.toLowerCase()} ${path}: text contrast`, axe.violations.length === 0, axe.violations.flatMap((x) => x.nodes).slice(0, 3).map((n) => n.html.slice(0, 70)).join(" | "));
         const wide = await p.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
         check(`${mode.toLowerCase()} ${path}: no sideways scroll`, !wide);
-        if (process.env.SHOTS && path !== "/me") await p.screenshot({ path: `${process.env.SHOTS}/${id || "thrivie"}-${mode.toLowerCase()}${path === "/" ? "-today" : "-insights"}.png`, fullPage: path !== "/" });
+        if (process.env.SHOTS && path !== "/me") await p.screenshot({ path: `${process.env.SHOTS}/${id || "thrivie"}-${mode.toLowerCase()}${path === "/" ? "-today" : path.replace("/", "-")}.png`, fullPage: true });
       }
     }
   }
