@@ -83,6 +83,7 @@ export function TrendChart({ spec, days, height = 160 }: { spec: TrendSpec; days
   const hasData = data.some((d) => d.value != null);
   const color = spec.color ?? "var(--primary)";
   const gradId = `grad-${spec.key}`;
+  const lastIdx = data.reduce((a, d, i) => (d.value != null ? i : a), -1);
   return (
     <div className="rounded-2xl bg-surface-2/35 p-3.5">
       <div className="mb-2 flex items-baseline justify-between gap-2">
@@ -99,7 +100,7 @@ export function TrendChart({ spec, days, height = 160 }: { spec: TrendSpec; days
             <AreaChart data={data} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" style={{ stopColor: color, stopOpacity: 0.28 }} />
+                  <stop offset="0%" style={{ stopColor: color, stopOpacity: 0.4 }} />
                   <stop offset="100%" style={{ stopColor: color, stopOpacity: 0 }} />
                 </linearGradient>
               </defs>
@@ -128,10 +129,16 @@ export function TrendChart({ spec, days, height = 160 }: { spec: TrendSpec; days
                 dataKey="value"
                 name={spec.title}
                 stroke={color}
-                strokeWidth={2.25}
+                strokeWidth={2.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 fill={`url(#${gradId})`}
                 connectNulls
-                dot={days <= 7 ? { r: 4, fill: color, stroke: "var(--surface)", strokeWidth: 2 } : false}
+                dot={(p: { cx?: number; cy?: number; index?: number; value?: unknown }) => {
+                  // every point on short ranges; on longer ones only the latest value stands out
+                  const show = p.cx != null && p.cy != null && (Array.isArray(p.value) ? p.value[1] : p.value) != null && (days <= 7 || p.index === lastIdx);
+                  return show ? <circle key={p.index} cx={p.cx} cy={p.cy} r={p.index === lastIdx ? 4.5 : 3.5} fill={color} stroke="var(--surface)" strokeWidth={2} /> : <g key={p.index} />;
+                }}
                 activeDot={{ r: 5.5, fill: color, stroke: "var(--surface)", strokeWidth: 2.5 }}
                 isAnimationActive={false}
               />
@@ -191,6 +198,14 @@ export function WorkoutVolumeChart({ data, height = 200 }: { data: WeekVolume[];
       <p className="sr-only">Weekly workout minutes, {summary}.</p>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
+          <defs>
+            {types.map((t) => (
+              <linearGradient key={t} id={`bar-${t}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" style={{ stopColor: TYPE_COLORS[t], stopOpacity: 1 }} />
+                <stop offset="100%" style={{ stopColor: TYPE_COLORS[t], stopOpacity: 0.55 }} />
+              </linearGradient>
+            ))}
+          </defs>
           <CartesianGrid stroke="var(--chart-grid)" vertical={false} strokeDasharray="3 4" />
           <XAxis dataKey="week" tick={axisTick} tickLine={false} axisLine={false} tickFormatter={(d: string) => formatDate(d, { month: "short", day: "numeric" })} />
           <YAxis tick={axisTick} tickLine={false} axisLine={false} width={40} />
@@ -218,7 +233,7 @@ export function WorkoutVolumeChart({ data, height = 200 }: { data: WeekVolume[];
               dataKey={t}
               name={TYPE_LABEL[t]}
               stackId="v"
-              fill={TYPE_COLORS[t]}
+              fill={`url(#bar-${t})`}
               stroke="var(--surface)"
               strokeWidth={1}
               radius={i === types.length - 1 ? [8, 8, 0, 0] : 0}

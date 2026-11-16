@@ -30,7 +30,7 @@ The visual system pairs the Thrivie brand navy (#1E3A64) with Coastal Earth acce
 - **Insights**: 7/30/90-day trends, weekly workout volume, habit heatmap, goal progress, highlights and a weekly review.
 - **Nutrition**: food diary plus a simple daily meal plan and 7-day view built from 44 meals calculated from USDA FoodData Central values (respects diet and allergies, one-tap swap, optional hidden calories, safety rules for under-18s, pregnancy and low BMI).
 - **Me**: profile and units, friendly timezone picker, Body & Goals, theme, visible modules, reminders, health sync (Apple Shortcuts / Android), two-step verification, Smart Import shorthand, export (JSON/CSV), restore, delete all data, delete account.
-- **On every screen**: a quick-add button on phones that opens the same forms as the full pages (most-used fields first, the rest under *More details*, and what you typed carries over if you open the full page), Undo toasts instead of confirm dialogs, one confirmation toast for every save, skeleton loaders, offline logging with sync, installable as a PWA, light/dark/system themes, and reduced-motion support.
+- **On every screen**: a quick-add button on phones that opens the same forms as the full pages (most-used fields first, the rest under *More details*, and what you typed carries over if you open the full page), Undo toasts instead of confirm dialogs, one confirmation toast for every save, skeleton loaders, offline logging with sync, installable as a PWA, light/dark/system modes with seven colour themes (Thrivie by default, plus Golden Hour, Lavender Dusk, Ember, Pastel Shore, Desert Clay and Coral Reef) that restyle every screen and chart, and reduced-motion support.
 
 ### Smart Import (free, on your device)
 
@@ -91,6 +91,7 @@ Demo logins: **demo@thrivie.app** and **demo2@thrivie.app**, both with the `DEMO
 | `node e2e/matrix.cjs` | Playwright: 7 viewports × light/dark × key screens, axe accessibility checks, no horizontal scroll, and 200% text size. Needs the app running and seeded, and `DEMO_PASSWORD` set. |
 | `node e2e/auth.cjs` | Sign-in flows in a real browser with a virtual Face ID authenticator on iPhone and Android screens: password, passkey upgrade, passkey sign-in, emailed code, session rotation, 48px touch targets. Needs `DEMO_PASSWORD` and `E2E_DATABASE_URL`. |
 | `node e2e/scan.cjs` | Food scanner in a real browser with a fake camera: scan to log, product not found to label reading, offline, camera refused, hide calories, layout from 320 to 1440 px. Needs `DEMO_PASSWORD` and `E2E_DATABASE_URL`. |
+| `node e2e/themes.cjs` | Picks every colour theme in Settings and checks it in light and dark on Today, Insights and Me: applied, kept after navigation, text contrast (axe), no sideways scroll. Needs the app running and `DEMO_PASSWORD` |
 | `node e2e/lighthouse.cjs` | Lighthouse (mobile) for sign-in and Today |
 | `npm run db:new-migration` | Create a migration after you change `prisma/schema.prisma` |
 | `npm audit --omit=dev` | Dependency check (0 known vulnerabilities at release) |
