@@ -36,18 +36,18 @@ html[data-palette="golden"] {
   --scene-1: rgb(255 201 60 / 0.18);
   --scene-2: rgb(233 75 60 / 0.16);
   --teal: #1C8CA8;
-  --ocean: #365F90;
-  --ocean-soft: #D5DEE6;
+  --ocean: #335A89;
+  --ocean-soft: #D1DBE5;
   --iris: #A2342A;
-  --iris-soft: #FAD6CF;
-  --gold-bright: #FFC93C;
-  --gold-ink: #7C621C;
-  --gold-soft: #FFF2CF;
+  --iris-soft: #FAD2CB;
+  --gold-bright: #F2B705;
+  --gold-ink: #7C5E05;
+  --gold-soft: #FCECBE;
   --clay: #F47B20;
   --clay-ink: #924A14;
-  --clay-soft: #FDE0C8;
-  --seaglass: #FBC670;
-  --seaglass-soft: #FEEACA;
+  --clay-soft: #FCDEC4;
+  --seaglass: #97C6BF;
+  --seaglass-soft: #D9E9E3;
 }
 html[data-palette="golden"].dark {
   --bg: #101B2D;
@@ -83,18 +83,18 @@ html[data-palette="golden"].dark {
   --scene-1: rgb(255 212 94 / 0.1);
   --scene-2: rgb(242 100 90 / 0.08);
   --teal: #5CC8E0;
-  --ocean: #90ADCD;
-  --ocean-soft: #283C58;
-  --iris: #F28D84;
-  --iris-soft: #433647;
-  --gold-bright: #FFD567;
-  --gold-ink: #FFD567;
-  --gold-soft: #464A47;
+  --ocean: #9BB5D2;
+  --ocean-soft: #2D425F;
+  --iris: #F59D96;
+  --iris-soft: #503B49;
+  --gold-bright: #F5C73C;
+  --gold-ink: #F5C73C;
+  --gold-soft: #51513E;
   --clay: #F69851;
-  --clay-ink: #F69D5A;
-  --clay-soft: #443E43;
-  --seaglass: #6A5C47;
-  --seaglass-soft: #454544;
+  --clay-ink: #F6AB71;
+  --clay-soft: #524444;
+  --seaglass: #41616E;
+  --seaglass-soft: #344D5E;
 }
 
 /* Lavender Dusk */
@@ -132,18 +132,18 @@ html[data-palette="lavender"] {
   --scene-1: rgb(165 108 193 / 0.18);
   --scene-2: rgb(233 168 160 / 0.16);
   --teal: #2389AD;
-  --ocean: #306098;
-  --ocean-soft: #D5E0F2;
+  --ocean: #2E5B90;
+  --ocean-soft: #D1DDF1;
   --iris: #744C87;
-  --iris-soft: #EBDCF1;
-  --gold-bright: #E9A8A0;
-  --gold-ink: #7D5B56;
-  --gold-soft: #FAEAEA;
-  --clay: #7A93B0;
-  --clay-ink: #516275;
-  --clay-soft: #E2E5EE;
-  --seaglass: #DCC0EF;
-  --seaglass-soft: #F3E8FA;
+  --iris-soft: #E9D9F0;
+  --gold-bright: #D98A7E;
+  --gold-ink: #82524C;
+  --gold-soft: #F6E1E0;
+  --clay: #6F8FA8;
+  --clay-ink: #4A5F70;
+  --clay-soft: #DCE2EA;
+  --seaglass: #9DA3D4;
+  --seaglass-soft: #D4D5EC;
 }
 html[data-palette="lavender"].dark {
   --bg: #141631;
@@ -179,18 +179,18 @@ html[data-palette="lavender"].dark {
   --scene-1: rgb(201 160 230 / 0.1);
   --scene-2: rgb(240 175 166 / 0.08);
   --teal: #6FD0E6;
-  --ocean: #8AB0DB;
-  --ocean-soft: #2D3963;
-  --iris: #C5A1D7;
-  --iris-soft: #3D3662;
-  --gold-bright: #EEBBB5;
-  --gold-ink: #EEBBB5;
-  --gold-soft: #48405D;
-  --clay: #97ABC1;
-  --clay-ink: #A1B3C7;
-  --clay-soft: #363D5F;
-  --seaglass: #605682;
-  --seaglass-soft: #433F68;
+  --ocean: #96B8DF;
+  --ocean-soft: #32406B;
+  --iris: #CBAADB;
+  --iris-soft: #463D6A;
+  --gold-bright: #E1A49A;
+  --gold-ink: #E4B1A9;
+  --gold-soft: #51435D;
+  --clay: #8FA8BB;
+  --clay-ink: #A9BCCA;
+  --clay-soft: #3B4465;
+  --seaglass: #515990;
+  --seaglass-soft: #343967;
 }
 
 /* Ember */
@@ -228,18 +228,18 @@ html[data-palette="ember"] {
   --scene-1: rgb(239 176 160 / 0.18);
   --scene-2: rgb(142 42 28 / 0.16);
   --teal: #23888A;
-  --ocean: #2F4A3C;
-  --ocean-soft: #D1D3CE;
-  --iris: #8E2A1C;
-  --iris-soft: #E6CCC7;
+  --ocean: #2F5A46;
+  --ocean-soft: #CDD4CD;
+  --iris: #982E42;
+  --iris-soft: #EACACD;
   --gold-bright: #E8604A;
   --gold-ink: #9A3F30;
-  --gold-soft: #FAD8D1;
-  --clay: #EFB0A0;
-  --clay-ink: #7B5A52;
-  --clay-soft: #FBEAE4;
-  --seaglass: #F7CFC4;
-  --seaglass-soft: #FCEBE6;
+  --gold-soft: #F9D5CD;
+  --clay: #C98A2B;
+  --clay-ink: #7E561B;
+  --clay-soft: #F2DFC6;
+  --seaglass: #B091A3;
+  --seaglass-soft: #DFD0D5;
 }
 html[data-palette="ember"].dark {
   --bg: #1C1014;
@@ -275,18 +275,18 @@ html[data-palette="ember"].dark {
   --scene-1: rgb(245 187 170 / 0.1);
   --scene-2: rgb(200 64 46 / 0.08);
   --teal: #6FCFC4;
-  --ocean: #8E9C96;
-  --ocean-soft: #342A2B;
-  --iris: #C4908A;
-  --iris-soft: #432526;
+  --ocean: #94AAA0;
+  --ocean-soft: #373332;
+  --iris: #D296A1;
+  --iris-soft: #502A32;
   --gold-bright: #ED8372;
-  --gold-ink: #EE8979;
-  --gold-soft: #512D2D;
-  --clay: #F3C1B5;
-  --clay-ink: #F3C1B5;
-  --clay-soft: #523A3B;
-  --seaglass: #6D5251;
-  --seaglass-soft: #533B3C;
+  --gold-ink: #F19A8C;
+  --gold-soft: #5D3432;
+  --clay: #D5A45A;
+  --clay-ink: #D9AD6A;
+  --clay-soft: #563C2C;
+  --seaglass: #715265;
+  --seaglass-soft: #462F39;
 }
 
 /* Pastel Shore */
@@ -324,18 +324,18 @@ html[data-palette="pastel"] {
   --scene-1: rgb(201 198 236 / 0.18);
   --scene-2: rgb(231 181 220 / 0.16);
   --teal: #2F87A3;
-  --ocean: #516772;
-  --ocean-soft: #E3EBEF;
+  --ocean: #3F6778;
+  --ocean-soft: #D9E7ED;
   --iris: #61598C;
-  --iris-soft: #E5E3F3;
-  --gold-bright: #E7B5DC;
-  --gold-ink: #71586B;
-  --gold-soft: #FAEFF7;
-  --clay: #6E8279;
-  --clay-ink: #516059;
-  --clay-soft: #DFE4E2;
-  --seaglass: #DCDAF3;
-  --seaglass-soft: #F3F2FB;
+  --iris-soft: #E3E0F2;
+  --gold-bright: #D889C4;
+  --gold-ink: #815276;
+  --gold-soft: #F6E3F1;
+  --clay: #6E9279;
+  --clay-ink: #4D6655;
+  --clay-soft: #DCE5DF;
+  --seaglass: #EBC1A2;
+  --seaglass-soft: #F8E8DD;
 }
 html[data-palette="pastel"].dark {
   --bg: #171C24;
@@ -371,18 +371,18 @@ html[data-palette="pastel"].dark {
   --scene-1: rgb(196 188 240 / 0.1);
   --scene-2: rgb(240 201 232 / 0.08);
   --teal: #8AD4E4;
-  --ocean: #A0BBC8;
-  --ocean-soft: #394552;
-  --iris: #B6AEDD;
-  --iris-soft: #3B3F55;
-  --gold-bright: #ECC5E4;
-  --gold-ink: #ECC5E4;
-  --gold-soft: #4A4758;
-  --clay: #8E9E96;
-  --clay-ink: #A8B4AE;
-  --clay-soft: #374048;
-  --seaglass: #585C6F;
-  --seaglass-soft: #454A5A;
+  --ocean: #A3C5D4;
+  --ocean-soft: #3A4C5A;
+  --iris: #C0BAE2;
+  --iris-soft: #43465F;
+  --gold-bright: #E1A3D1;
+  --gold-ink: #E5B4D9;
+  --gold-soft: #53485E;
+  --clay: #8EAA96;
+  --clay-ink: #B0C3B6;
+  --clay-soft: #3D4A4E;
+  --seaglass: #635853;
+  --seaglass-soft: #544D4C;
 }
 
 /* Desert Clay */
@@ -420,18 +420,18 @@ html[data-palette="clay"] {
   --scene-1: rgb(232 169 180 / 0.18);
   --scene-2: rgb(163 82 63 / 0.16);
   --teal: #238686;
-  --ocean: #3E5241;
-  --ocean-soft: #D5D6D1;
-  --iris: #8C4636;
-  --iris-soft: #EBD6D1;
+  --ocean: #386142;
+  --ocean-soft: #D1D8D0;
+  --iris: #8C4255;
+  --iris-soft: #EDD3D8;
   --gold-bright: #C97B3A;
   --gold-ink: #855227;
-  --gold-soft: #F3DFD0;
-  --clay: #E8A9B4;
-  --clay-ink: #77565C;
-  --clay-soft: #FAE9EB;
-  --seaglass: #F0C6CC;
-  --seaglass-soft: #FAE9EB;
+  --gold-soft: #F2DCCC;
+  --clay: #A3523F;
+  --clay-ink: #854233;
+  --clay-soft: #E9D2CD;
+  --seaglass: #9FBBBE;
+  --seaglass-soft: #D9E1E2;
 }
 html[data-palette="clay"].dark {
   --bg: #171D18;
@@ -467,18 +467,18 @@ html[data-palette="clay"].dark {
   --scene-1: rgb(240 184 194 / 0.1);
   --scene-2: rgb(200 112 90 / 0.08);
   --teal: #7CCFC8;
-  --ocean: #A0AAA1;
-  --ocean-soft: #303A32;
-  --iris: #CDA096;
-  --iris-soft: #403A32;
+  --ocean: #A5BAAA;
+  --ocean-soft: #344438;
+  --iris: #D8A8B4;
+  --iris-soft: #4C4040;
   --gold-bright: #D59865;
-  --gold-ink: #DDAB82;
-  --gold-soft: #464131;
-  --clay: #EDBCC4;
-  --clay-ink: #EDBCC4;
-  --clay-soft: #4B4844;
-  --seaglass: #605755;
-  --seaglass-soft: #4B4844;
+  --gold-ink: #E2B794;
+  --gold-soft: #514735;
+  --clay: #B77869;
+  --clay-ink: #D2AAA0;
+  --clay-soft: #493F36;
+  --seaglass: #4A605E;
+  --seaglass-soft: #3B4C48;
 }
 
 /* Coral Reef */
@@ -516,18 +516,18 @@ html[data-palette="reef"] {
   --scene-1: rgb(250 201 154 / 0.18);
   --scene-2: rgb(63 143 208 / 0.16);
   --teal: #0F86A6;
-  --ocean: #2C6492;
-  --ocean-soft: #D5E5F1;
-  --iris: #1E685C;
-  --iris-soft: #D1E8E2;
-  --gold-bright: #F0A860;
-  --gold-ink: #825B33;
-  --gold-soft: #FCEAD8;
-  --clay: #4A6B5F;
-  --clay-ink: #426156;
-  --clay-soft: #D7DDD8;
-  --seaglass: #A1DACF;
-  --seaglass-soft: #DFF1EB;
+  --ocean: #2A5F8B;
+  --ocean-soft: #D1E3F0;
+  --iris: #8D4D3C;
+  --iris-soft: #F8DED5;
+  --gold-bright: #E8A640;
+  --gold-ink: #845E25;
+  --gold-soft: #F9E8CD;
+  --clay: #4A7B5F;
+  --clay-ink: #3C644E;
+  --clay-soft: #D4DED5;
+  --seaglass: #82CBC0;
+  --seaglass-soft: #D1EBE4;
 }
 html[data-palette="reef"].dark {
   --bg: #10201F;
@@ -563,16 +563,16 @@ html[data-palette="reef"].dark {
   --scene-1: rgb(250 208 164 / 0.1);
   --scene-2: rgb(125 184 234 / 0.08);
   --teal: #58C8E6;
-  --ocean: #8ABCE3;
-  --ocean-soft: #2A4650;
-  --iris: #81C3BA;
-  --iris-soft: #274845;
-  --gold-bright: #F3BB83;
-  --gold-ink: #F3BB83;
-  --gold-soft: #454A3E;
-  --clay: #728C82;
-  --clay-ink: #A1B2AC;
-  --clay-soft: #2C413E;
-  --seaglass: #416461;
-  --seaglass-soft: #314F4C;
+  --ocean: #9BC5E6;
+  --ocean-soft: #2F4E5A;
+  --iris: #EDB2A3;
+  --iris-soft: #4F4943;
+  --gold-bright: #EDBA6A;
+  --gold-ink: #F0C37F;
+  --gold-soft: #51523D;
+  --clay: #729882;
+  --clay-ink: #A6BEB0;
+  --clay-soft: #314A43;
+  --seaglass: #37635E;
+  --seaglass-soft: #2F5450;
 }
