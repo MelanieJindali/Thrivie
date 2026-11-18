@@ -40,7 +40,7 @@ export default function PrivacyPage() {
       <Section title="Other services we use">
         <ul className="list-disc space-y-1 pl-5">
           <li><b>Password safety check</b>: when you choose a password we check it against known breaches using only the first 5 characters of its hash, never the password itself (Have I Been Pwned).</li>
-          <li><b>Email</b>: sign-in links are sent by our email provider, if this server has them turned on.</li>
+          <li><b>Email</b>: sign-in links are sent by our email provider, if this server has them turned on. Messages you send from <b>Contact us</b> go through the same provider to the Thrivie team&apos;s inbox, with only what you type in the form (plus your email if you allow a reply, and device details if you tick that box). None of your logged entries are attached.</li>
           <li><b>Reminders</b>: if you turn them on, your browser&apos;s push service (Apple, Google or Mozilla) delivers a short message.</li>
         </ul>
         <p>No ads, no analytics, no tracking, and we never sell or share your data.</p>
