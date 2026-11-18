@@ -12,6 +12,8 @@ import { SmartImportCard } from "./SmartImportCard";
 import { ReminderCard } from "./ReminderCard";
 import { getVapidKeys } from "@/lib/push";
 import { HealthSyncCard } from "./HealthSyncCard";
+import { ContactCard } from "./ContactCard";
+import { contactEnabled } from "@/lib/email";
 import { Settings as SettingsIcon } from "lucide-react";
 
 export default async function SettingsPage() {
@@ -59,6 +61,14 @@ export default async function SettingsPage() {
           <p className="text-sm text-muted">{habitCount} active habit{habitCount === 1 ? "" : "s"}. Add, rename, archive or delete them.</p>
         </div>
         <Link href="/habits#manage" className="btn-soft">Manage habits</Link>
+      </section>
+
+      <section id="contact" className="card scroll-mt-24 space-y-3">
+        <div>
+          <h2 className="h2">Contact us</h2>
+          <p className="text-sm text-muted">Reach a coach, ask a question, report a problem or share an idea.</p>
+        </div>
+        <ContactCard email={user.email} enabled={contactEnabled()} />
       </section>
 
       <section className="card space-y-2 text-sm">

@@ -92,6 +92,7 @@ Demo logins: **demo@thrivie.app** and **demo2@thrivie.app**, both with the `DEMO
 | `node e2e/auth.cjs` | Sign-in flows in a real browser with a virtual Face ID authenticator on iPhone and Android screens: password, passkey upgrade, passkey sign-in, emailed code, session rotation, 48px touch targets. Needs `DEMO_PASSWORD` and `E2E_DATABASE_URL`. |
 | `node e2e/scan.cjs` | Food scanner in a real browser with a fake camera: scan to log, product not found to label reading, offline, camera refused, hide calories, layout from 320 to 1440 px. Needs `DEMO_PASSWORD` and `E2E_DATABASE_URL`. |
 | `node e2e/themes.cjs` | Picks every colour theme in Settings and checks it in light and dark on Today, Insights and Me: applied, kept after navigation, text contrast (axe), no sideways scroll. Needs the app running and `DEMO_PASSWORD` |
+| `node e2e/contact.cjs` | Contact us form on two phone sizes: categories and sub-topics, validation, emergency note, accessibility, tap sizes, friendly error when email fails, nothing from the message in server logs, hourly limit. Needs the app running with `SUPPORT_EMAIL` set and `DEMO_PASSWORD` |
 | `node e2e/lighthouse.cjs` | Lighthouse (mobile) for sign-in and Today |
 | `npm run db:new-migration` | Create a migration after you change `prisma/schema.prisma` |
 | `npm audit --omit=dev` | Dependency check (0 known vulnerabilities at release) |
@@ -114,6 +115,7 @@ Vercel runs the app; a free **Neon** Postgres database, added from inside Vercel
 3. **Deploy the new version:** merge this branch into `main` on GitHub (or set **Settings → Git → Production Branch** to this branch). Vercel rebuilds, and the build applies the database migrations, including all security policies, automatically.
 4. **Reminders (optional):** at [cron-job.org](https://cron-job.org), call `https://<your-app>/api/cron/reminders?secret=<CRON_SECRET>` **every hour**.
 5. **Email (optional, recommended):** add `RESEND_API_KEY`, `EMAIL_FROM` and `APP_URL` (Resend's free tier is enough). This turns on emailed sign-in codes, "Forgot password?" reset emails and password-change notices. `APP_URL` is also the address passkeys are tied to, so set it to the site's real address. Without email, people can still reset a forgotten password with the recovery key they create in **Me → Account**.
+6. **Contact us form (optional):** add `SUPPORT_EMAIL`, the team inbox that receives messages from the Contact us form in Settings (needs the email settings above). Messages are sorted by topic in the subject line, and the sender's address is set as Reply-To only when they allow it. Each account can send 3 messages an hour and 8 a day. Without `SUPPORT_EMAIL` the card says messages aren't available yet.
 6. Open the site in Safari, create your account with the signup code, then tap **Share → Add to Home Screen**.
 
 > **Keep a safe copy of `ENCRYPTION_KEY`.** Without it, encrypted entries can't be read. To rotate it, set the old key as `ENCRYPTION_KEY_PREVIOUS` and the new one as `ENCRYPTION_KEY`.

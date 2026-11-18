@@ -1,4 +1,5 @@
 import "server-only";
+import { z } from "zod";
 
 // Transactional email via Resend (free tier: 3,000 emails/month).
 // Email features (sign-in codes, reset links, notices) are only offered when
@@ -11,7 +12,7 @@ export function emailEnabled(): boolean {
 const base = () => process.env.APP_URL!.replace(/\/$/, "");
 const esc = (t: string) => t.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
-async function send(to: string, subject: string, lines: string[], link?: { href: string; label: string }) {
+async function send(to: string, subject: string, lines: string[], link?: { href: string; label: string }, replyTo?: string) {
   const text = [...lines, ...(link ? ["", link.href] : [])].join("\n");
   const html =
     lines.map((l) => (l ? `<p>${esc(l)}</p>` : "")).join("") +
@@ -19,7 +20,7 @@ async function send(to: string, subject: string, lines: string[], link?: { href:
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: process.env.EMAIL_FROM, to, subject, text, html }),
+    body: JSON.stringify({ from: process.env.EMAIL_FROM, to, subject, text, html, ...(replyTo ? { reply_to: replyTo } : {}) }),
     signal: AbortSignal.timeout(8000),
   });
   if (!res.ok) {
@@ -39,7 +40,7 @@ class EmailError extends Error {
  * still sees the same message either way, so nothing reveals whether an account exists.
  * Email addresses are blanked out; the recipient is never logged.
  */
-export function logEmailFailure(kind: "sign-in code" | "reset link" | "password-changed notice") {
+export function logEmailFailure(kind: "sign-in code" | "reset link" | "password-changed notice" | "contact message") {
   return (e: unknown) => {
     const scrub = (t: string) => t.replace(/[^\s@<>"']+@[^\s@<>"']+/g, "[email]").slice(0, 300);
     if (e instanceof EmailError) console.error(`[email] ${kind} not sent: HTTP ${e.status} ${e.reason}: ${scrub(e.detail)}`);
@@ -70,4 +71,17 @@ export async function sendPasswordChangedEmail(to: string) {
     "The password for your Thrivie account was just changed, and other devices were signed out.",
     "If this wasn't you, reset your password right away from the sign-in page.",
   ]);
+}
+
+/** The "Contact us" form is offered only when an inbox for it is set (SUPPORT_EMAIL) as well as email itself. */
+export function contactEnabled(): boolean {
+  return emailEnabled() && z.string().email().safeParse(process.env.SUPPORT_EMAIL?.trim()).success;
+}
+
+/**
+ * Sends a message from the Contact us form to the team inbox. The person's address is included
+ * (and set as Reply-To) only when they allow a reply. The message itself is never logged.
+ */
+export async function sendContactEmail(msg: { subject: string; lines: string[]; replyTo?: string }) {
+  await send(process.env.SUPPORT_EMAIL!.trim(), msg.subject, msg.lines, undefined, msg.replyTo);
 }
