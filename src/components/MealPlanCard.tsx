@@ -89,16 +89,20 @@ export function MealPlanDay({ day, dayIndex, hideCalories, compact = false, titl
 }
 
 /** "Today's Meal Plan" card (Nutrition and Today pages). */
-export function MealPlanCard({ plan, compact = false }: { plan: PlanCardState; compact?: boolean }) {
+export function MealPlanCard({ plan, compact = false, bare = false }: { plan: PlanCardState; compact?: boolean; bare?: boolean }) {
+  const week = plan.state === "ready" && <Link href="/nutrition/plan" className="inline-flex min-h-11 items-center text-xs font-bold text-primary">This week <ChevronRight size={14} aria-hidden /></Link>;
+  const Wrap = bare ? "div" : "section";
   return (
-    <section className="card" aria-labelledby="mealplan-h">
+    <Wrap className={bare ? "" : "card"} {...(bare ? {} : { "aria-labelledby": "mealplan-h" })}>
+      {bare ? null : (
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h2 id="mealplan-h" className="h2 flex items-center gap-2.5">
           <span className="grid h-8 w-8 place-items-center rounded-xl bg-clay-soft text-clay-ink" aria-hidden><Salad size={16} /></span>
           Today&apos;s meal plan
         </h2>
-        {plan.state === "ready" && <Link href="/nutrition/plan" className="inline-flex min-h-11 items-center text-xs font-bold text-primary">This week <ChevronRight size={14} aria-hidden /></Link>}
+        {week}
       </div>
+      )}
       {plan.state === "no-profile" && (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-muted">Tell us a little about you and your goal to get a simple daily meal plan.</p>
@@ -117,9 +121,10 @@ export function MealPlanCard({ plan, compact = false }: { plan: PlanCardState; c
           {plan.warnings.map((w) => <p key={w} className="mt-1 text-sm text-terracotta-ink">{w}</p>)}
           <MealPlanDay day={plan.day} dayIndex={plan.dayIndex} hideCalories={plan.hideCalories} compact={compact} logged={plan.logged} />
           {!compact && <p className="mt-2 text-xs text-muted">{NOT_MEDICAL_ADVICE}</p>}
+          {bare && <div className="mt-1 flex justify-end">{week}</div>}
         </>
       )}
-    </section>
+    </Wrap>
   );
 }
 

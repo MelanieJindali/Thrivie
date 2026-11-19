@@ -3,14 +3,15 @@ import { getSettings } from "@/lib/settings";
 import { requireUser } from "@/lib/auth";
 import { addDays, formatDate, todayInTz } from "@/lib/dates";
 import { dayTotals, groupByDay, macroLine } from "@/lib/nutrition";
-import { MEAL_SLOTS, type MealSlot } from "@/lib/constants";
+import { MEAL_LABELS, MEAL_SLOTS, type MealSlot } from "@/lib/constants";
 import { PageHeader, ProgressBar } from "@/components/ui";
 import { NutritionView, TargetsForm, type DayGroup } from "./NutritionView";
 import type { RecentMeal } from "./MealForm";
 import { MealPlanCard } from "@/components/MealPlanCard";
 import { loadDay } from "@/lib/nutrition/dayData";
 import { suggestNext, type RecentFood } from "@/lib/nutrition/dayFit";
-import { DayLeft, type PlanGap } from "./DayLeft";
+import { DayLeft, MealSuggestions, PlanAdjust, type PlanGap } from "./DayLeft";
+import { MealIdeas } from "./MealIdeas";
 import { getPlanContext, loggedFromPlan, planCard } from "@/lib/nutrition/planStore";
 
 import { mealFormData } from "@/lib/formData";
@@ -54,14 +55,19 @@ export default async function NutritionPage() {
   const openPlan = plan.state === "ready" ? plan.plan.days[plan.todayIndex].items.filter((it) => !loggedSlots.has(it.slot)) : [];
   const planGap: PlanGap = plan.state === "ready" ? { plannedKcal: openPlan.reduce((s, it) => s + it.kcal, 0), openMeals: openPlan.length } : null;
 
+  const planDay = plan.state === "ready" ? plan.plan.days[plan.todayIndex] : null;
+  const planMeals = planDay ? `${planDay.items.length} ${planDay.items.length === 1 ? "meal" : "meals"}` : "";
+  const planSummary = plan.state === "no-profile" ? "Set up Body & Goals to get one"
+    : plan.state === "blocked" ? "Not available for your profile"
+    : !planDay ? "No plan for today" : settings.hideCalories ? planMeals
+    : `${planDay.totals.kcal.toLocaleString("en-US")} kcal for a ${planDay.targetCalories.toLocaleString("en-US")} kcal day · ${planMeals}`;
+
   return (
     <div className="space-y-6">
       <PageHeader theme="nutrition" icon={<Utensils size={26} />} eyebrow="Nourish" title="Nutrition" crumbs={[{ href: "/log", label: "Log" }]}
         subtitle={t.meals ? `${t.meals} ${t.meals === 1 ? "meal" : "meals"} logged today.` : "A simple, private food diary. Numbers are optional."} />
 
-      <DayLeft targets={day.targets} eaten={day.eaten} left={day.left} hideCalories={settings.hideCalories} slot={nowSlot} suggestions={suggestions} planGap={planGap} />
-
-      <MealPlanCard plan={planCard(plan, settings.hideCalories, await loggedFromPlan(db, plan, today))} />
+      <DayLeft targets={day.targets} eaten={day.eaten} left={day.left} hideCalories={settings.hideCalories} slot={nowSlot} />
 
       <section className="card" aria-labelledby="today-food-h">
         <h2 id="today-food-h" className="h2 mb-4">Today</h2>
@@ -115,6 +121,16 @@ export default async function NutritionPage() {
         </section>
         <TargetsForm calorieTarget={calT} proteinTargetG={proT} />
       </div>
+
+      <MealIdeas
+        nextSummary={suggestions.length ? `${suggestions.length} ${suggestions.length === 1 ? "idea" : "ideas"} for ${MEAL_LABELS[nowSlot].toLowerCase()} that fit what's left` : "No ideas right now"}
+        planSummary={planSummary}
+        next={<MealSuggestions slot={nowSlot} suggestions={suggestions} hideCalories={settings.hideCalories} />}
+        plan={<>
+          <PlanAdjust targets={day.targets} left={day.left} hideCalories={settings.hideCalories} planGap={planGap} />
+          <MealPlanCard plan={planCard(plan, settings.hideCalories, await loggedFromPlan(db, plan, today))} bare />
+        </>}
+      />
     </div>
   );
 }
