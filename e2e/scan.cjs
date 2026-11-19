@@ -236,12 +236,30 @@ async function layout(page, label) {
   const leftCard = page.locator("section[aria-labelledby=left-h]");
   const leftText = await leftCard.innerText();
   check("remaining calories, protein, carbs and fat are shown", /CALORIES/i.test(leftText) && /PROTEIN/i.test(leftText) && /CARBS/i.test(leftText) && /FAT/i.test(leftText) && /left of/.test(leftText));
-  const sug = leftCard.getByRole("button", { name: /^Log it:/ });
+  const ideas = page.locator("section#meal-ideas");
+  const folds = ideas.getByRole("button", { expanded: false });
+  check("Meal ideas sits at the bottom, after the meal log", await page.evaluate(() => { const i = document.getElementById("meal-ideas"), l = document.getElementById("log"); return !!i && !!l && (l.compareDocumentPosition(i) & Node.DOCUMENT_POSITION_FOLLOWING) > 0 && !document.querySelector("#left-h ~ * #meal-ideas"); }));
+  check("both parts start closed", (await folds.count()) === 2 && !(await ideas.getByRole("button", { name: /^Log it:/ }).first().isVisible().catch(() => false)));
+  check("What to eat next is no longer inside Left today", !/What to eat next/.test(leftText));
+  await leftCard.getByRole("link", { name: /^Meal ideas for/ }).click();
+  await page.waitForTimeout(400);
+  check("the link under Left today opens What to eat next", (await ideas.getByRole("button", { name: /^What to eat next/ }).getAttribute("aria-expanded")) === "true");
+  await ideas.getByRole("button", { name: /^Today's meal plan/ }).click();
+  check("Today's meal plan opens on tap", (await ideas.getByRole("button", { name: /^Today's meal plan/ }).getAttribute("aria-expanded")) === "true");
+  await page.reload({ waitUntil: "networkidle" });
+  check("open parts are remembered on this device", (await ideas.getByRole("button", { name: /^Today's meal plan/ }).getAttribute("aria-expanded")) === "true");
+  await ideas.getByRole("button", { name: /^Today's meal plan/ }).click();
+  await ideas.getByRole("button", { name: /^What to eat next/ }).click();
+  await page.reload({ waitUntil: "networkidle" });
+  check("closing them is remembered too", (await ideas.getByRole("button", { expanded: false }).count()) === 2);
+  await ideas.getByRole("button", { name: /^What to eat next/ }).click();
+  const sug = ideas.getByRole("button", { name: /^Log it:/ });
   if (await sug.count()) {
     const n = (await mealsToday()).length; await sug.first().click();
     let added = false; for (let i = 0; i < 20 && !added; i++) { await page.waitForTimeout(400); added = (await mealsToday()).length === n + 1; }
     check("a suggestion can be logged in one tap", added);
-  } else check("suggestions appear when there is room left today", /What to eat next/.test(leftText) || /0 kcal left|left of/.test(leftText), "none shown: little is left today for the demo account");
+  } else check("suggestions appear when there is room left today", /No ideas right now/.test(await ideas.innerText()), "none shown: little is left today for the demo account");
+  await ideas.getByRole("button", { name: /^What to eat next/ }).click();
   await layout(page, "Nutrition with Left today (Pixel 7)");
 
   section("Hide calorie numbers");
